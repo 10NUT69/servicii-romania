@@ -10,6 +10,22 @@
     <!-- ============================= -->
     <div class="md:col-span-2">
 
+        <!-- 🔙 BUTON ÎNAPOI -->
+        <a href="{{ url()->previous() }}"
+           class="inline-flex items-center gap-2 mb-5 px-4 py-2 rounded-lg 
+                  font-semibold text-white 
+                  bg-gradient-to-r from-red-500 to-orange-500
+                  hover:opacity-90 transition shadow-lg
+                  dark:from-red-600 dark:to-orange-600">
+
+            <svg xmlns="http://www.w3.org/2000/svg" 
+                 class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M15 19l-7-7 7-7" />
+            </svg>
+            Înapoi
+        </a>
+
         <!-- TITLU -->
         <h1 class="text-3xl font-bold text-gray-900 dark:text-white mb-4 uppercase">
             {{ $service->title }}
@@ -65,15 +81,12 @@
             </div>
         @endif
 
-
-
         <!-- ============================= -->
         <!--        DESCRIERE ANUNȚ        -->
         <!-- ============================= -->
         <div class="text-gray-700 dark:text-gray-300 leading-relaxed text-lg mb-6 whitespace-pre-line">
             {{ $service->description }}
         </div>
-
 
         <!-- ============================= -->
         <!--     VIZUALIZĂRI + DATA        -->
@@ -103,65 +116,64 @@
 
 
     <!-- ============================= -->
-<!--       C O L O A N A   DREAPTA -->
-<!-- ============================= -->
-<div class="mt-[6.5rem]"> <!-- 🔥 acest mt mută cardul doar la pozitia initială -->
+    <!--       C O L O A N A   DREAPTA -->
+    <!-- ============================= -->
+    <div class="mt-[6.5rem]">
 
-    <div class="bg-white dark:bg-gray-900 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 
-                p-6 h-fit sticky top-16">  <!-- 🔥 sticky la inaltimea headerului -->
+        <div class="bg-white dark:bg-gray-900 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 
+                    p-6 h-fit sticky top-16">
 
-        <h3 class="text-xl font-semibold mb-4 text-gray-900 dark:text-white">
-            Contact
-        </h3>
+            <h3 class="text-xl font-semibold mb-4 text-gray-900 dark:text-white">
+                Contact
+            </h3>
 
-        <div class="space-y-4 text-gray-800 dark:text-gray-300">
+            <div class="space-y-4 text-gray-800 dark:text-gray-300">
 
-            @if($service->phone)
-            <div class="flex items-center gap-3">
-                <span class="text-primary text-lg">📱</span>
-                <a href="tel:{{ $service->phone }}" class="font-semibold hover:text-primary">
-                    {{ $service->phone }}
-                </a>
-            </div>
-            @endif
-
-            @if($service->email)
-            <div class="flex items-center gap-3">
-                <span class="text-primary text-lg">📧</span>
-                <a href="mailto:{{ $service->email }}" class="hover:text-primary">
-                    {{ $service->email }}
-                </a>
-            </div>
-            @endif
-
-            <!-- PREȚ -->
-            @if($service->price_value)
-            <div class="mt-4 p-3 bg-gray-100 dark:bg-gray-800 rounded-lg text-gray-800 dark:text-gray-200 font-semibold">
-                {{ number_format($service->price_value, 0, ',', '.') }} {{ $service->currency }}
-                @if($service->price_type === 'negotiable')
-                    <span class="text-orange-600 dark:text-orange-300">Negociabil</span>
+                @if($service->phone)
+                <div class="flex items-center gap-3">
+                    <span class="text-primary text-lg">📱</span>
+                    <a href="tel:{{ $service->phone }}" class="font-semibold hover:text-primary">
+                        {{ $service->phone }}
+                    </a>
+                </div>
                 @endif
-            </div>
-            @else
-            <div class="mt-4 p-3 bg-gray-100 dark:bg-gray-800 rounded-lg text-gray-800 dark:text-gray-200 font-semibold">
-                Cere ofertă
-            </div>
-            @endif
 
-            <!-- BUTON SUNĂ -->
-            @if($service->phone)
-            <a href="tel:{{ $service->phone }}"
-                class="block w-full text-center mt-5 py-3 rounded-lg text-white font-semibold 
-                       bg-gradient-to-r from-red-500 to-orange-500 hover:opacity-90 transition">
-                Sună acum
-            </a>
-            @endif
+                @if($service->email)
+                <div class="flex items-center gap-3">
+                    <span class="text-primary text-lg">📧</span>
+                    <a href="mailto:{{ $service->email }}" class="hover:text-primary">
+                        {{ $service->email }}
+                    </a>
+                </div>
+                @endif
+
+                <!-- PREȚ -->
+                @if($service->price_value)
+                <div class="mt-4 p-3 bg-gray-100 dark:bg-gray-800 rounded-lg text-gray-800 dark:text-gray-200 font-semibold">
+                    {{ number_format($service->price_value, 0, ',', '.') }} {{ $service->currency }}
+                    @if($service->price_type === 'negotiable')
+                        <span class="text-orange-600 dark:text-orange-300">Negociabil</span>
+                    @endif
+                </div>
+                @else
+                <div class="mt-4 p-3 bg-gray-100 dark:bg-gray-800 rounded-lg text-gray-800 dark:text-gray-200 font-semibold">
+                    Cere ofertă
+                </div>
+                @endif
+
+                <!-- BUTON SUNĂ -->
+                @if($service->phone)
+                <a href="tel:{{ $service->phone }}"
+                    class="block w-full text-center mt-5 py-3 rounded-lg text-white font-semibold 
+                           bg-gradient-to-r from-red-500 to-orange-500 hover:opacity-90 transition">
+                    Sună acum
+                </a>
+                @endif
+
+            </div>
 
         </div>
-
     </div>
-</div>
-
 
 </div>
 @endsection
