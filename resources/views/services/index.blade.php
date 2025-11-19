@@ -4,17 +4,15 @@
 
 @section('content')
 
-<!-- 🔍 BARA DE CĂUTARE -->
 <div class="max-w-7xl mx-auto mt-8 mb-12 relative z-20">
 
     <form method="GET"
-        class="bg-white rounded-2xl shadow-xl border border-gray-200
-               p-4 md:p-5 flex flex-col md:flex-row items-center gap-4">
+        class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-700
+               p-4 md:p-5 flex flex-col md:flex-row items-center gap-4 transition-colors duration-300">
 
-        <!-- INPUT SEARCH -->
-        <div class="flex items-center w-full bg-gray-50 rounded-xl border border-gray-300 px-4">
+        <div class="flex items-center w-full bg-gray-50 dark:bg-gray-900 rounded-xl border border-gray-300 dark:border-gray-600 px-4 transition-colors">
             <svg xmlns="http://www.w3.org/2000/svg"
-                class="h-5 w-5 text-gray-400"
+                class="h-5 w-5 text-gray-400 dark:text-gray-500"
                 fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
                       d="M21 21l-4.35-4.35m1.1-5.4a6.5 6.5 0 11-13 0 
@@ -26,13 +24,12 @@
                 placeholder="Ex: electrician, zugrav, instalator"
                 value="{{ request('search') }}"
                 class="flex-1 bg-transparent border-none focus:ring-0 
-                       py-3 px-3 text-gray-700 text-base">
+                       py-3 px-3 text-gray-700 dark:text-gray-100 dark:placeholder-gray-400 text-base">
         </div>
 
-        <!-- SELECT JUDEȚ -->
         <select name="county"
-            class="px-4 py-3 rounded-xl border border-gray-300 bg-gray-50
-                   focus:ring-2 focus:ring-primary-end outline-none text-gray-700 w-full md:w-56">
+            class="px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900
+                   focus:ring-2 focus:ring-primary-end outline-none text-gray-700 dark:text-gray-100 w-full md:w-56 transition-colors">
             <option value="">Alege județul</option>
             @foreach($counties as $county)
                 <option value="{{ $county->id }}" {{ request('county') == $county->id ? 'selected' : '' }}>
@@ -41,7 +38,6 @@
             @endforeach
         </select>
 
-        <!-- BUTON CAUTĂ -->
         <button
             class="px-8 py-3 bg-[#e52620] text-white font-semibold rounded-xl shadow-md
                    hover:bg-[#d51d68] hover:shadow-lg active:scale-95 transition-all duration-200
@@ -61,13 +57,11 @@
 </div>
 
 
-<!-- 🟩 TITLU SECȚIUNE -->
-<h2 class="text-2xl font-bold mb-6 text-gray-900 max-w-7xl mx-auto">
+<h2 class="text-2xl font-bold mb-6 text-gray-900 dark:text-white max-w-7xl mx-auto transition-colors">
     Anunțuri recente
 </h2>
 
 
-<!-- 🟦 GRID CARDURI -->
 <div class="max-w-7xl mx-auto grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
 
 @forelse($services as $service)
@@ -79,12 +73,11 @@
         $images = array_values(array_filter($images));
     @endphp
 
-    <div class="relative bg-white rounded-2xl border border-gray-200 shadow-sm 
-                hover:shadow-xl transition overflow-hidden group">
+    <div class="relative bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm 
+                hover:shadow-xl transition-all duration-300 overflow-hidden group">
 
-        <!-- FAVORITE BUTTON -->
         <button type="button"
-                class="absolute top-2 right-2 z-30 bg-white/90 backdrop-blur-sm rounded-full p-1.5 shadow favorite-btn"
+                class="absolute top-2 right-2 z-30 bg-white/90 dark:bg-gray-900/80 backdrop-blur-sm rounded-full p-1.5 shadow favorite-btn transition-colors"
                 data-id="{{ $service->id }}">
 
             @php
@@ -94,7 +87,7 @@
             @endphp
 
             <svg xmlns="http://www.w3.org/2000/svg"
-                class="h-6 w-6 transition {{ $isFav ? 'text-red-500' : 'text-gray-400' }}"
+                class="h-6 w-6 transition {{ $isFav ? 'text-red-500' : 'text-gray-400 dark:text-gray-300' }}"
                 fill="{{ $isFav ? 'currentColor' : 'none' }}"
                 viewBox="0 0 24 24"
                 stroke="currentColor" stroke-width="1.6">
@@ -107,11 +100,9 @@
             </svg>
         </button>
 
-        <!-- CARD LINK -->
         <a href="{{ route('services.show', ['id' => $service->id, 'slug' => $service->slug]) }}" class="block">
 
-            <!-- IMAGINE -->
-            <div class="relative w-full aspect-[4/3] bg-gray-100 overflow-hidden">
+            <div class="relative w-full aspect-[4/3] bg-gray-100 dark:bg-gray-900 overflow-hidden">
                 @if(!empty($images))
                     <img src="{{ asset('storage/services/' . $images[0]) }}"
                          class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110">
@@ -120,50 +111,40 @@
                          class="w-full h-full object-cover opacity-60">
                 @endif
 
-                <!-- BADGE CATEGORIE -->
                 <span class="absolute bottom-2 left-2 bg-black/60 text-white text-[10px] px-2 py-1 rounded-md font-semibold uppercase">
                     {{ $service->category->name }}
                 </span>
             </div>
 
-            <!-- TEXT -->
             <div class="p-4">
 
-                <!-- TITLU -->
-                <h3 class="text-sm font-bold text-gray-900 dark:text-gray-100 mb-1 uppercase 
-           truncate whitespace-nowrap overflow-hidden" 
-     title="{{ $service->title }}">
-    {{ $service->title }}
-</h3>
+                <h3 class="text-sm font-bold text-gray-900 dark:text-white mb-1 uppercase 
+                           truncate whitespace-nowrap overflow-hidden transition-colors" 
+                    title="{{ $service->title }}">
+                    {{ $service->title }}
+                </h3>
 
+                <div class="text-base font-bold mb-1">
+                    @if(!empty($service->price_value) && $service->price_type === 'negotiable')
+                        <span class="text-green-600 dark:text-green-400">
+                            {{ number_format($service->price_value, 0, ',', '.') }} {{ $service->currency }}
+                        </span>
+                        <span class="text-gray-600 dark:text-gray-400 text-sm font-normal">Negociabil</span>
 
-         <div class="text-base font-bold mb-1">
+                    @elseif(!empty($service->price_value) && $service->price_type === 'fixed')
+                        <span class="text-green-600 dark:text-green-400">
+                            {{ number_format($service->price_value, 0, ',', '.') }} {{ $service->currency }}
+                        </span>
 
-    @if(!empty($service->price_value) && $service->price_type === 'negotiable')
-        <span class="text-green-600 dark:text-green-400">
-            {{ number_format($service->price_value, 0, ',', '.') }} {{ $service->currency }}
-        </span>
-        <span class="text-gray-600 dark:text-gray-300">Negociabil</span>
+                    @else
+                        <span class="text-orange-600 dark:text-orange-400">
+                            Cere ofertă
+                        </span>
+                    @endif
+                </div>
 
-    @elseif(!empty($service->price_value) && $service->price_type === 'fixed')
-        <span class="text-green-600 dark:text-green-400">
-            {{ number_format($service->price_value, 0, ',', '.') }} {{ $service->currency }}
-        </span>
+                <div class="flex items-center gap-2 text-[11px] text-gray-500 dark:text-gray-400 transition-colors">
 
-    @else
-        <span class="text-orange-600 dark:text-orange-400">
-            Cere ofertă
-        </span>
-    @endif
-
-</div>
-
-
-
-                <!-- INFO ROW -->
-                <div class="flex items-center gap-2 text-[11px] text-gray-500">
-
-                    <!-- LOCATIE -->
                     <span class="flex items-center gap-1 truncate">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-[11px] w-[11px]" fill="none"
                             viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -175,9 +156,8 @@
                         {{ $service->city ?? $service->county->name }}
                     </span>
 
-                    <span class="text-gray-300">·</span>
+                    <span class="text-gray-300 dark:text-gray-600">·</span>
 
-                    <!-- VIZUALIZARI -->
                     <span class="flex items-center gap-1">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-[12px] w-[12px]" fill="none"
                              viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
@@ -189,9 +169,8 @@
                         {{ $service->views ?? 0 }}
                     </span>
 
-                    <span class="text-gray-300">·</span>
+                    <span class="text-gray-300 dark:text-gray-600">·</span>
 
-                    <!-- DATA -->
                     <span>
                         {{ $service->created_at->format('d.m.Y') }}
                     </span>
@@ -203,17 +182,15 @@
 
 @empty
 
-    <p class="text-gray-500 max-w-7xl mx-auto">Momentan nu există anunțuri disponibile.</p>
+    <p class="text-gray-500 dark:text-gray-400 max-w-7xl mx-auto">Momentan nu există anunțuri disponibile.</p>
 
 @endforelse
 
 </div>
 
 
-<!-- PAGINAȚIE -->
 <div class="mt-10 max-w-7xl mx-auto">
     {{ $services->links() }}
 </div>
 
 @endsection
-	
