@@ -69,11 +69,13 @@ Route::get('/anunt/{id}/{slug}', [ServiceController::class, 'show'])
 
 /*
 |--------------------------------------------------------------------------
-| ADMIN PANEL (DOAR auth)
+| ADMIN PANEL (SECURE)
 |--------------------------------------------------------------------------
-| Nu folosim middleware is_admin momentan.
+| ✅ Aici am adăugat 'admin.access' în lista de middleware.
+| Doar userii din lista AdminAccess.php (Ionuț) vor trece de acest punct.
+| Restul vor primi eroare 404.
 */
-Route::middleware(['auth'])
+Route::middleware(['auth', 'admin.access'])
     ->prefix('admin')
     ->name('admin.')
     ->group(function () {
@@ -84,7 +86,7 @@ Route::middleware(['auth'])
 
         /*
         |--------------------------------------------------------------------------
-        | ADMIN USERS (REAL ROUTES)
+        | ADMIN USERS
         |--------------------------------------------------------------------------
         */
         Route::get('/users', [\App\Http\Controllers\Admin\AdminUserController::class, 'index'])
@@ -115,7 +117,7 @@ Route::middleware(['auth'])
 
         /*
         |--------------------------------------------------------------------------
-        | ADMIN CATEGORIES (nou - înlocuiește temporarul)
+        | ADMIN CATEGORIES
         |--------------------------------------------------------------------------
         */
         Route::get('/categories', [\App\Http\Controllers\Admin\AdminCategoryController::class, 'index'])
@@ -135,11 +137,10 @@ Route::middleware(['auth'])
 
         Route::delete('/categories/{id}', [\App\Http\Controllers\Admin\AdminCategoryController::class, 'destroy'])
             ->name('categories.destroy');
-
         
         /*
         |--------------------------------------------------------------------------
-        | TEMP – Counties (rămâne temporar până îl facem)
+        | TEMP – Counties
         |--------------------------------------------------------------------------
         */
         Route::get('/counties', fn() => 'counties page')->name('counties.index');

@@ -20,32 +20,39 @@ class TrackVisit
 
         /*
          |=======================================================
-         |   EXCLUDERI
+         |   EXCLUDERI CRITICE
          |=======================================================
          */
 
-        // 1. Nu logăm admin
+        // 1. EXCLUDERE COMPLETĂ ADMIN
+        // Dacă utilizatorul e logat ȘI este admin, nu contorizăm nimic, indiferent pe ce pagină e.
+        if (Auth::check() && Auth::user()->is_admin) {
+            return $response;
+        }
+
+        // 2. Nu logăm rutele de admin (pentru siguranță, în caz că nu e logat dar încearcă URL-uri)
         if ($request->is('admin') || $request->is('admin/*')) {
             return $response;
         }
 
-        // 2. Nu logăm AJAX
+        // 3. Nu logăm AJAX
         if ($request->ajax()) {
             return $response;
         }
 
-        // 3. Nu logăm asset-uri
+        // 4. Nu logăm asset-uri sau fișiere statice
         if (
             $request->is('images/*') ||
             $request->is('storage/*') ||
             $request->is('css/*') ||
             $request->is('js/*') ||
-            $request->is('vendor/*')
+            $request->is('vendor/*') ||
+            $request->is('livewire/*')  // Excludem și request-urile Livewire dacă există
         ) {
             return $response;
         }
 
-        // 4. Nu logăm boți
+        // 5. Nu logăm boți cunoscuți
         $ua = $request->userAgent() ?? '';
         if ($this->isBot($ua)) {
             return $response;
@@ -53,11 +60,10 @@ class TrackVisit
 
         /*
          |=======================================================
-         |   COLECTARE DATE (Local - Rapid)
+         |   COLECTARE DATE
          |=======================================================
          */
 
-        // Device & Browser (procesare locală, foarte rapidă)
         $device  = $this->detectDevice($ua);
         $browser = $this->detectBrowser($ua);
 
@@ -66,32 +72,27 @@ class TrackVisit
         if ($referer) {
             $host = parse_url($referer, PHP_URL_HOST);
             $referer = $host ? str_replace('www.', '', $host) : null;
+            
+            // Opțional: Dacă referer-ul e chiar site-ul nostru, îl ignorăm (navigare internă)
+            if ($referer == $request->getHost()) {
+                $referer = null; 
+            }
         }
 
-        $ip = $request->ip();
-
-        /*
-         |=======================================================
-         |   SALVARE RAPIDĂ
-         |=======================================================
-         */
         try {
             Visit::create([
                 'url'        => '/' . ltrim($request->path(), '/'),
-                'ip'         => $ip,
+                'ip'         => $request->ip(),
                 'user_agent' => $ua,
                 'referer'    => $referer,
                 'device'     => $device,
                 'browser'    => $browser,
-                // Aici lăsăm NULL. Comanda programată le va completa peste o oră.
-                'country'    => null,
+                'country'    => null, // Se completează automat de Cron Job
                 'city'       => null,
-                // Verificăm userul
-                'user_id'    => (Auth::check() && Auth::user()->is_admin) ? null : Auth::id(),
+                'user_id'    => Auth::id(), // Salvăm ID-ul userului (dacă e logat și nu e admin)
             ]);
         } catch (\Throwable $e) {
-            // Logăm erorile silențios ca să nu deranjăm userul
-            Log::error('Visit tracking error: ' . $e->getMessage());
+            // Logăm silențios
         }
 
         return $response;
@@ -105,7 +106,7 @@ class TrackVisit
         $bots = [
             'bot', 'crawl', 'spider', 'slurp', 'curl', 'python', 'wget', 
             'scrapy', 'facebook', 'google', 'bing', 'yandex', 'ahrefs', 
-            'semrush', 'mj12', 'dotbot', 'uptime'
+            'semrush', 'mj12', 'dotbot', 'uptime', 'monitor'
         ];
 
         foreach ($bots as $bot) {
@@ -128,6 +129,7 @@ class TrackVisit
         if (strpos($ua, 'firefox') !== false) return 'Firefox';
         if (strpos($ua, 'safari') !== false && strpos($ua, 'chrome') === false) return 'Safari';
         if (strpos($ua, 'edge') !== false) return 'Edge';
+        if (strpos($ua, 'opera') !== false || strpos($ua, 'opr') !== false) return 'Opera';
         return 'Other';
     }
 }

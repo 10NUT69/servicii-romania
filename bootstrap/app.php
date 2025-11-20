@@ -10,15 +10,19 @@ return Application::configure(basePath: dirname(__DIR__))
         commands: __DIR__.'/../routes/console.php',
         health: '/up',
     )
-    ->withMiddleware(function (Middleware $middleware): void {
+    ->withMiddleware(function (Middleware $middleware) {
         
-        // ✅ AICI ESTE MODIFICAREA:
-        // Adăugăm TrackVisit la grupul de rute "web" (pagini normale)
+        // 1. Middleware-ul global de statistici (TrackVisit)
         $middleware->web(append: [
             \App\Http\Middleware\TrackVisit::class,
         ]);
 
+        // 2. Alias pentru Admin
+        $middleware->alias([
+            'admin.access' => \App\Http\Middleware\AdminAccess::class,
+        ]);
+
     })
-    ->withExceptions(function (Exceptions $exceptions): void {
+    ->withExceptions(function (Exceptions $exceptions) {
         //
     })->create();
