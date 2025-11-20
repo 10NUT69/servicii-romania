@@ -23,9 +23,20 @@ class Kernel extends HttpKernel
      */
     protected $middlewareGroups = [
         'web' => [
+
+            // COOKIES & SESSION START
             \App\Http\Middleware\EncryptCookies::class,
             \Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse::class,
             \Illuminate\Session\Middleware\StartSession::class,
+
+            /**
+             * =====================================================
+             *     TRACK VISIT  ← EXACT AICI TREBUIE PUS
+             * =====================================================
+             */
+            \App\Http\Middleware\TrackVisit::class,
+
+            // RESTUL MIDDLEWARE-URILOR WEB
             \Illuminate\Session\Middleware\AuthenticateSession::class,
             \Illuminate\View\Middleware\ShareErrorsFromSession::class,
             \App\Http\Middleware\VerifyCsrfToken::class,
@@ -52,7 +63,7 @@ class Kernel extends HttpKernel
         'throttle' => \Illuminate\Routing\Middleware\ThrottleRequests::class,
         'verified' => \Illuminate\Auth\Middleware\EnsureEmailIsVerified::class,
 
-        // ⭐ Middleware-ul tău custom
+        // middleware custom
         'is_admin' => \App\Http\Middleware\IsAdmin::class,
     ];
 }
