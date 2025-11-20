@@ -4,6 +4,8 @@ namespace App\Http\Middleware;
 
 use Closure;
 use App\Models\Visit;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 
 class TrackVisit
 {
@@ -11,123 +13,121 @@ class TrackVisit
     {
         $response = $next($request);
 
-        /* =======================================================
-         * EXCLUDERI — NU CONTORIZĂM:
-         * =======================================================
+        // 0. Nu logăm erorile de tip 500
+        if (method_exists($response, 'getStatusCode') && $response->getStatusCode() >= 500) {
+            return $response;
+        }
+
+        /*
+         |=======================================================
+         |   EXCLUDERI
+         |=======================================================
          */
 
-        // 1. Nu logăm admin (evită falsificarea statisticilor)
-        if ($request->is('admin/*')) {
+        // 1. Nu logăm admin
+        if ($request->is('admin') || $request->is('admin/*')) {
             return $response;
         }
 
-        // 2. Nu logăm bots / crawlers
-        if ($this->isBot($request->userAgent())) {
-            return $response;
-        }
-
-        // 3. Nu logăm AJAX (toggle favorite, etc.)
+        // 2. Nu logăm AJAX
         if ($request->ajax()) {
             return $response;
         }
 
-        // 4. Nu logăm asset-uri
-        if ($request->is('images/*') || $request->is('storage/*') || $request->is('css/*') || $request->is('js/*')) {
+        // 3. Nu logăm asset-uri
+        if (
+            $request->is('images/*') ||
+            $request->is('storage/*') ||
+            $request->is('css/*') ||
+            $request->is('js/*') ||
+            $request->is('vendor/*')
+        ) {
             return $response;
         }
 
+        // 4. Nu logăm boți
+        $ua = $request->userAgent() ?? '';
+        if ($this->isBot($ua)) {
+            return $response;
+        }
 
-        /* =======================================================
-         * DETECTARE DEVICE, BROWSER, GEO-IP, REFERER
-         * =======================================================
+        /*
+         |=======================================================
+         |   COLECTARE DATE (Local - Rapid)
+         |=======================================================
          */
-        $ua      = $request->userAgent();
+
+        // Device & Browser (procesare locală, foarte rapidă)
         $device  = $this->detectDevice($ua);
         $browser = $this->detectBrowser($ua);
 
-        // Procesare referer
+        // Referer clean
         $referer = $request->headers->get('referer');
         if ($referer) {
-            $referer = parse_url($referer, PHP_URL_HOST) ?: null;
-            $referer = str_replace(['www.', 'http://', 'https://'], '', $referer);
+            $host = parse_url($referer, PHP_URL_HOST);
+            $referer = $host ? str_replace('www.', '', $host) : null;
         }
 
-        // Geo-IP (nu va funcționa pe localhost → e normal)
-        $country = null;
-        $city = null;
+        $ip = $request->ip();
 
-        try {
-            if ($request->ip() && $request->ip() !== '127.0.0.1' && $request->ip() !== '::1') {
-                $geo = @json_decode(file_get_contents("http://ip-api.com/json/{$request->ip()}"), true);
-                $country = $geo['country'] ?? null;
-                $city    = $geo['city'] ?? null;
-            }
-        } catch (\Exception $e) {}
-
-        /* =======================================================
-         * SALVARE VIZITĂ
-         * =======================================================
+        /*
+         |=======================================================
+         |   SALVARE RAPIDĂ
+         |=======================================================
          */
-
-        Visit::create([
-            'url'        => '/' . ltrim($request->path(), '/'),
-            'ip'         => $request->ip(),
-            'user_agent' => $ua,
-            'referer'    => $referer,
-            'country'    => $country,
-            'city'       => $city,
-            'device'     => $device,
-            'browser'    => $browser,
-            'user_id'    => auth()->check() && auth()->user()->is_admin ? null : auth()->id(), // exclude admin
-        ]);
+        try {
+            Visit::create([
+                'url'        => '/' . ltrim($request->path(), '/'),
+                'ip'         => $ip,
+                'user_agent' => $ua,
+                'referer'    => $referer,
+                'device'     => $device,
+                'browser'    => $browser,
+                // Aici lăsăm NULL. Comanda programată le va completa peste o oră.
+                'country'    => null,
+                'city'       => null,
+                // Verificăm userul
+                'user_id'    => (Auth::check() && Auth::user()->is_admin) ? null : Auth::id(),
+            ]);
+        } catch (\Throwable $e) {
+            // Logăm erorile silențios ca să nu deranjăm userul
+            Log::error('Visit tracking error: ' . $e->getMessage());
+        }
 
         return $response;
     }
 
-    /* =======================================================
-     * DETECT BOT
-     * ======================================================= */
-    private function isBot($userAgent)
+    private function isBot(string $ua): bool
     {
-        if (!$userAgent) return true;
-
+        if (empty($ua) || $ua === '-' || $ua === 'unknown') return false;
+        
+        $ua = strtolower($ua);
         $bots = [
-            'bot', 'crawl', 'slurp', 'spider', 'curl',
-            'facebookexternalhit', 'google', 'bing', 'yandex',
-            'semrush', 'ahrefs', 'mj12bot', 'dotbot', 'uptimerobot',
-            'python-requests', 'scrapy', 'wget'
+            'bot', 'crawl', 'spider', 'slurp', 'curl', 'python', 'wget', 
+            'scrapy', 'facebook', 'google', 'bing', 'yandex', 'ahrefs', 
+            'semrush', 'mj12', 'dotbot', 'uptime'
         ];
 
-        $ua = strtolower($userAgent);
-
         foreach ($bots as $bot) {
-            if (strpos($ua, $bot) !== false) {
-                return true;
-            }
+            if (strpos($ua, $bot) !== false) return true;
         }
-
         return false;
     }
 
-    /* =======================================================
-     * DETECTARE DEVICE
-     * ======================================================= */
-    private function detectDevice($ua)
+    private function detectDevice(string $ua): string
     {
         if (preg_match('/mobile|iphone|android/i', $ua)) return 'mobile';
         if (preg_match('/tablet|ipad/i', $ua)) return 'tablet';
         return 'desktop';
     }
 
-    /* =======================================================
-     * DETECTARE BROWSER
-     * ======================================================= */
-    private function detectBrowser($ua)
+    private function detectBrowser(string $ua): string
     {
-        if (str_contains($ua, 'Chrome')) return 'Chrome';
-        if (str_contains($ua, 'Firefox')) return 'Firefox';
-        if (str_contains($ua, 'Safari')) return 'Safari';
-        if (str_contains($ua, 'Edge')) return 'Edge';
+        $ua = strtolower($ua);
+        if (strpos($ua, 'chrome') !== false && strpos($ua, 'edge') === false) return 'Chrome';
+        if (strpos($ua, 'firefox') !== false) return 'Firefox';
+        if (strpos($ua, 'safari') !== false && strpos($ua, 'chrome') === false) return 'Safari';
+        if (strpos($ua, 'edge') !== false) return 'Edge';
         return 'Other';
     }
 }

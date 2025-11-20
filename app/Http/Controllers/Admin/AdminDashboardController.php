@@ -50,7 +50,6 @@ class AdminDashboardController extends Controller
             ->orderBy('day')
             ->get();
 
-        // Returnăm TOATE datele către view
         return view('admin.dashboard', [
             'userCount'       => $userCount,
             'serviceCount'    => $serviceCount,

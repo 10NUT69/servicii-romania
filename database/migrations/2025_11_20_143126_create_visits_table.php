@@ -9,22 +9,22 @@ return new class extends Migration
     /**
      * Run the migrations.
      */
-    public function up()
-{
-    Schema::create('visits', function (Blueprint $table) {
-        $table->id();
-        $table->string('url', 500);
-        $table->string('ip', 45)->nullable();
-        $table->text('user_agent')->nullable();
-        $table->string('referer', 500)->nullable();
-        $table->string('country', 100)->nullable();
-        $table->string('city', 100)->nullable();
-        $table->string('device', 50)->nullable();
-        $table->string('browser', 50)->nullable();
-        $table->unsignedBigInteger('user_id')->nullable();
-        $table->timestamps();
-    });
-}
+    public function up(): void
+    {
+       Schema::create('visits', function (Blueprint $table) {
+    $table->id();
+    $table->string('url');
+    $table->string('ip')->nullable();
+    $table->string('user_agent')->nullable();
+    $table->string('country')->nullable(); // Important: API-ul poate eșua
+    $table->string('city')->nullable();    // Important
+    $table->string('device')->nullable();
+    $table->string('browser')->nullable();
+    $table->string('referer')->nullable();
+    $table->unsignedBigInteger('user_id')->nullable(); // Important: Vizitatorii pot fi neautentificați
+    $table->timestamps();
+});
+    }
 
     /**
      * Reverse the migrations.
