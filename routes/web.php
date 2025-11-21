@@ -5,6 +5,12 @@ use App\Http\Controllers\ServiceController;
 use App\Http\Controllers\FavoriteController;
 use App\Http\Controllers\ProfileController;
 
+// ADMIN CONTROLLERS IMPORTATE CORECT
+use App\Http\Controllers\Admin\AdminDashboardController;
+use App\Http\Controllers\Admin\AdminUserController;
+use App\Http\Controllers\Admin\AdminServiceController;
+use App\Http\Controllers\Admin\AdminCategoryController;
+
 /*
 |--------------------------------------------------------------------------
 | PUBLIC ROUTES
@@ -19,39 +25,46 @@ Route::get('/adauga-anunt', [ServiceController::class, 'create'])->name('service
 Route::post('/adauga-anunt', [ServiceController::class, 'store'])->name('services.store');
 
 // CONTUL MEU
-Route::get('/contul-meu', function () {
-    return view('account.index');
-})->middleware('auth')->name('account.index');
+Route::get('/contul-meu', fn() => view('account.index'))
+    ->middleware('auth')
+    ->name('account.index');
 
 // AJAX Update Profil
 Route::post('/profile/ajax-update', [ProfileController::class, 'ajaxUpdate'])
     ->middleware('auth')
     ->name('profile.ajaxUpdate');
 
+// AJAX Check Username Availability
+Route::post('/profile/check-name', [ProfileController::class, 'checkName'])
+    ->middleware('auth')
+    ->name('profile.checkName');
+
 
 /*
 |--------------------------------------------------------------------------
-| PROTECTED ROUTES
+| PROTECTED ROUTES (Trebuie să fii logat)
 |--------------------------------------------------------------------------
 */
 Route::middleware('auth')->group(function () {
 
     Route::get('/anunt/{id}/edit', [ServiceController::class, 'edit'])
-        ->where('id', '[0-9]+')
         ->name('services.edit');
 
     Route::put('/anunt/{id}', [ServiceController::class, 'update'])
-        ->where('id', '[0-9]+')
         ->name('services.update');
 
     Route::delete('/anunt/{id}', [ServiceController::class, 'destroy'])
-        ->where('id', '[0-9]+')
         ->name('services.destroy');
 
+    // DELETE IMAGE
+    Route::delete('/services/{id}/image', [ServiceController::class, 'deleteImage'])
+        ->name('services.deleteImage');
+
+    // RENEW
     Route::post('/anunt/{id}', [ServiceController::class, 'renew'])
-        ->where('id', '[0-9]+')
         ->name('services.renew');
 
+    // FAVORITE
     Route::post('/favorite/toggle', [FavoriteController::class, 'toggle'])
         ->name('favorite.toggle');
 });
@@ -59,11 +72,10 @@ Route::middleware('auth')->group(function () {
 
 /*
 |--------------------------------------------------------------------------
-| SHOW – last!
+| SHOW (ultimul!)
 |--------------------------------------------------------------------------
 */
 Route::get('/anunt/{id}/{slug}', [ServiceController::class, 'show'])
-    ->where('id', '[0-9]+')
     ->name('services.show');
 
 
@@ -71,9 +83,6 @@ Route::get('/anunt/{id}/{slug}', [ServiceController::class, 'show'])
 |--------------------------------------------------------------------------
 | ADMIN PANEL (SECURE)
 |--------------------------------------------------------------------------
-| ✅ Aici am adăugat 'admin.access' în lista de middleware.
-| Doar userii din lista AdminAccess.php (Ionuț) vor trece de acest punct.
-| Restul vor primi eroare 404.
 */
 Route::middleware(['auth', 'admin.access'])
     ->prefix('admin')
@@ -81,75 +90,36 @@ Route::middleware(['auth', 'admin.access'])
     ->group(function () {
 
         // DASHBOARD
-        Route::get('/', [\App\Http\Controllers\Admin\AdminDashboardController::class, 'index'])
+        Route::get('/', [AdminDashboardController::class, 'index'])
             ->name('dashboard');
 
-        /*
-        |--------------------------------------------------------------------------
-        | ADMIN USERS
-        |--------------------------------------------------------------------------
-        */
-        Route::get('/users', [\App\Http\Controllers\Admin\AdminUserController::class, 'index'])
-            ->name('users.index');
+        // USERS
+        Route::get('/users', [AdminUserController::class, 'index'])->name('users.index');
+        Route::post('/users/{id}/toggle', [AdminUserController::class, 'toggle'])->name('users.toggle');
+        Route::delete('/users/{id}', [AdminUserController::class, 'destroy'])->name('users.destroy');
 
-        Route::post('/users/{id}/toggle', [\App\Http\Controllers\Admin\AdminUserController::class, 'toggle'])
-            ->name('users.toggle');
+        // SERVICES
+        Route::get('/services', [AdminServiceController::class, 'index'])->name('services.index');
 
-        Route::delete('/users/{id}', [\App\Http\Controllers\Admin\AdminUserController::class, 'destroy'])
-            ->name('users.destroy');
-
-        /*
-        |--------------------------------------------------------------------------
-        | ADMIN SERVICES
-        |--------------------------------------------------------------------------
-        */
-        Route::get('/services', [\App\Http\Controllers\Admin\AdminServiceController::class, 'index'])
-            ->name('services.index');
-
-        Route::delete('/services/{id}', [\App\Http\Controllers\Admin\AdminServiceController::class, 'destroy'])
+        Route::delete('/services/{id}', [AdminServiceController::class, 'destroy'])
             ->name('services.destroy');
 
-        Route::post('/services/{id}/toggle', [\App\Http\Controllers\Admin\AdminServiceController::class, 'toggle'])
+        Route::post('/services/{id}/toggle', [AdminServiceController::class, 'toggle'])
             ->name('services.toggle');
 
-        Route::post('/services/bulk', [\App\Http\Controllers\Admin\AdminServiceController::class, 'bulkAction'])
+        Route::post('/services/bulk', [AdminServiceController::class, 'bulkAction'])
             ->name('services.bulk');
 
-        /*
-        |--------------------------------------------------------------------------
-        | ADMIN CATEGORIES
-        |--------------------------------------------------------------------------
-        */
-        Route::get('/categories', [\App\Http\Controllers\Admin\AdminCategoryController::class, 'index'])
-            ->name('categories.index');
+        // CATEGORIES
+        Route::get('/categories', [AdminCategoryController::class, 'index'])->name('categories.index');
+        Route::get('/categories/create', [AdminCategoryController::class, 'create'])->name('categories.create');
+        Route::post('/categories', [AdminCategoryController::class, 'store'])->name('categories.store');
+        Route::get('/categories/{id}/edit', [AdminCategoryController::class, 'edit'])->name('categories.edit');
+        Route::put('/categories/{id}', [AdminCategoryController::class, 'update'])->name('categories.update');
+        Route::delete('/categories/{id}', [AdminCategoryController::class, 'destroy'])->name('categories.destroy');
 
-        Route::get('/categories/create', [\App\Http\Controllers\Admin\AdminCategoryController::class, 'create'])
-            ->name('categories.create');
-
-        Route::post('/categories', [\App\Http\Controllers\Admin\AdminCategoryController::class, 'store'])
-            ->name('categories.store');
-
-        Route::get('/categories/{id}/edit', [\App\Http\Controllers\Admin\AdminCategoryController::class, 'edit'])
-            ->name('categories.edit');
-
-        Route::put('/categories/{id}', [\App\Http\Controllers\Admin\AdminCategoryController::class, 'update'])
-            ->name('categories.update');
-
-        Route::delete('/categories/{id}', [\App\Http\Controllers\Admin\AdminCategoryController::class, 'destroy'])
-            ->name('categories.destroy');
-        
-        /*
-        |--------------------------------------------------------------------------
-        | TEMP – Counties
-        |--------------------------------------------------------------------------
-        */
+        // COUNTIES (temporar)
         Route::get('/counties', fn() => 'counties page')->name('counties.index');
     });
 
-
-/*
-|--------------------------------------------------------------------------
-| AUTH (Laravel Breeze)
-|--------------------------------------------------------------------------
-*/
 require __DIR__.'/auth.php';
