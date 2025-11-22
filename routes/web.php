@@ -5,7 +5,7 @@ use App\Http\Controllers\ServiceController;
 use App\Http\Controllers\FavoriteController;
 use App\Http\Controllers\ProfileController;
 
-// ADMIN CONTROLLERS IMPORTATE CORECT
+// ADMIN CONTROLLERS
 use App\Http\Controllers\Admin\AdminDashboardController;
 use App\Http\Controllers\Admin\AdminUserController;
 use App\Http\Controllers\Admin\AdminServiceController;
@@ -25,50 +25,47 @@ Route::get('/adauga-anunt', [ServiceController::class, 'create'])->name('service
 Route::post('/adauga-anunt', [ServiceController::class, 'store'])->name('services.store');
 
 // CONTUL MEU
-Route::get('/contul-meu', fn() => view('account.index'))
-    ->middleware('auth')
-    ->name('account.index');
+Route::get('/contul-meu', function () {
+    return view('account.index');
+})->middleware('auth')->name('account.index');
 
-// AJAX Update Profil
-Route::post('/profile/ajax-update', [ProfileController::class, 'ajaxUpdate'])
-    ->middleware('auth')
-    ->name('profile.ajaxUpdate');
+/*
+|--------------------------------------------------------------------------
+| AJAX ROUTES – REGISTER + PROFILE
+|--------------------------------------------------------------------------
+*/
 
-// AJAX Check Username Availability
+// CHECK USERNAME – se folosește la REGISTER și PROFILE
 Route::post('/profile/check-name', [ProfileController::class, 'checkName'])
-    ->middleware('auth')
     ->name('profile.checkName');
+
+// CHECK EMAIL – se folosește la REGISTER și PROFILE
+Route::post('/profile/check-email', [ProfileController::class, 'checkEmail'])
+    ->name('profile.checkEmail');
+
+// AJAX UPDATE PROFIL
+Route::post('/profile/ajax-update', [ProfileController::class, 'ajaxUpdate'])
+    ->middleware('auth')->name('profile.ajaxUpdate');
 
 
 /*
 |--------------------------------------------------------------------------
-| PROTECTED ROUTES (Trebuie să fii logat)
+| PROTECTED ROUTES
 |--------------------------------------------------------------------------
 */
+
 Route::middleware('auth')->group(function () {
 
-    Route::get('/anunt/{id}/edit', [ServiceController::class, 'edit'])
-        ->name('services.edit');
+    Route::get('/anunt/{id}/edit', [ServiceController::class, 'edit'])->name('services.edit');
+    Route::put('/anunt/{id}', [ServiceController::class, 'update'])->name('services.update');
+    Route::delete('/anunt/{id}', [ServiceController::class, 'destroy'])->name('services.destroy');
 
-    Route::put('/anunt/{id}', [ServiceController::class, 'update'])
-        ->name('services.update');
+    Route::delete('/services/{id}/image', [ServiceController::class, 'deleteImage'])->name('services.deleteImage');
 
-    Route::delete('/anunt/{id}', [ServiceController::class, 'destroy'])
-        ->name('services.destroy');
+    Route::post('/anunt/{id}', [ServiceController::class, 'renew'])->name('services.renew');
 
-    // DELETE IMAGE
-    Route::delete('/services/{id}/image', [ServiceController::class, 'deleteImage'])
-        ->name('services.deleteImage');
-
-    // RENEW
-    Route::post('/anunt/{id}', [ServiceController::class, 'renew'])
-        ->name('services.renew');
-
-    // FAVORITE
-    Route::post('/favorite/toggle', [FavoriteController::class, 'toggle'])
-        ->name('favorite.toggle');
+    Route::post('/favorite/toggle', [FavoriteController::class, 'toggle'])->name('favorite.toggle');
 });
-
 
 /*
 |--------------------------------------------------------------------------
@@ -81,17 +78,16 @@ Route::get('/anunt/{id}/{slug}', [ServiceController::class, 'show'])
 
 /*
 |--------------------------------------------------------------------------
-| ADMIN PANEL (SECURE)
+| ADMIN PANEL
 |--------------------------------------------------------------------------
 */
+
 Route::middleware(['auth', 'admin.access'])
     ->prefix('admin')
     ->name('admin.')
     ->group(function () {
 
-        // DASHBOARD
-        Route::get('/', [AdminDashboardController::class, 'index'])
-            ->name('dashboard');
+        Route::get('/', [AdminDashboardController::class, 'index'])->name('dashboard');
 
         // USERS
         Route::get('/users', [AdminUserController::class, 'index'])->name('users.index');
@@ -100,15 +96,9 @@ Route::middleware(['auth', 'admin.access'])
 
         // SERVICES
         Route::get('/services', [AdminServiceController::class, 'index'])->name('services.index');
-
-        Route::delete('/services/{id}', [AdminServiceController::class, 'destroy'])
-            ->name('services.destroy');
-
-        Route::post('/services/{id}/toggle', [AdminServiceController::class, 'toggle'])
-            ->name('services.toggle');
-
-        Route::post('/services/bulk', [AdminServiceController::class, 'bulkAction'])
-            ->name('services.bulk');
+        Route::delete('/services/{id}', [AdminServiceController::class, 'destroy'])->name('services.destroy');
+        Route::post('/services/{id}/toggle', [AdminServiceController::class, 'toggle'])->name('services.toggle');
+        Route::post('/services/bulk', [AdminServiceController::class, 'bulkAction'])->name('services.bulk');
 
         // CATEGORIES
         Route::get('/categories', [AdminCategoryController::class, 'index'])->name('categories.index');
@@ -118,7 +108,6 @@ Route::middleware(['auth', 'admin.access'])
         Route::put('/categories/{id}', [AdminCategoryController::class, 'update'])->name('categories.update');
         Route::delete('/categories/{id}', [AdminCategoryController::class, 'destroy'])->name('categories.destroy');
 
-        // COUNTIES (temporar)
         Route::get('/counties', fn() => 'counties page')->name('counties.index');
     });
 

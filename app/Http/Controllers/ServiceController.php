@@ -31,11 +31,19 @@ class ServiceController extends Controller
         if ($request->filled('county')) {
             $query->where('county_id', $request->county);
         }
+		
+		// Filter by category (optional)
+if ($request->filled('category')) {
+    $query->where('category_id', $request->category);
+}
+
 
         return view('services.index', [
-            'services' => $query->orderBy('created_at', 'desc')->paginate(12)->withQueryString(),
-            'counties' => County::all(),
-        ]);
+    'services'   => $query->orderBy('created_at', 'desc')->paginate(12)->withQueryString(),
+    'counties'   => County::all(),
+    'categories' => Category::orderBy('sort_order', 'asc')->get(), // ← ADĂUGAT
+]);
+
     }
 
     // CREATE

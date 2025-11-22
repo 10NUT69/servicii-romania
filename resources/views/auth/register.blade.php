@@ -148,7 +148,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         timerName = setTimeout(() => {
-            fetch("{{ route('register.checkName') }}", {
+            fetch("{{ route('profile.checkName') }}", {
                 method: "POST",
                 headers: {
                     "X-CSRF-TOKEN": "{{ csrf_token() }}",
@@ -189,7 +189,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         timerEmail = setTimeout(() => {
-            fetch("{{ route('register.checkEmail') }}", {
+            fetch("{{ route('profile.checkEmail') }}", {
                 method: "POST",
                 headers: {
                     "X-CSRF-TOKEN": "{{ csrf_token() }}",
