@@ -40,7 +40,7 @@
                 <div class="flex-1 min-w-0">
                     <input type="text"
                         name="search"
-                        placeholder="Ce cauți? (ex: zugrav)"
+                        placeholder="Ce cauți? (ex: Instalator, Zugrav ...)"
                         value="{{ request('search') }}"
                         class="w-full bg-transparent border-none p-0 
                                text-gray-900 dark:text-[#F2F2F2] font-medium 
