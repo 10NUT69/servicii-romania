@@ -10,12 +10,12 @@
 
 <body class="bg-[#f6f7fb] dark:bg-[#121212] text-gray-900 dark:text-[#E5E5E5] font-inter antialiased min-h-screen flex flex-col">
 
-    {{-- HEADER "SMART" --}}
+    {{-- HEADER FIX --}}
     {{-- 
-        transition-transform: Esențial pentru ca dispariția/apariția să fie fluidă.
-        duration-300: Viteza animației (0.3 secunde).
+        Mobil: h-14 (Fix 56px)
+        Desktop: h-[72px] (echivalent h-18) -> se va face h-14 la scroll
     --}}
-    <nav id="main-nav" class="fixed top-0 left-0 w-full z-[999] h-14 md:h-16 transition-transform duration-300 ease-in-out
+    <nav id="main-nav" class="fixed top-0 left-0 w-full z-[999] h-14 md:h-[72px] transition-all duration-500 ease-in-out
                               emag-gradient text-white border-b border-transparent dark:border-gray-800 flex items-center shadow-md will-change-transform">
         
         <div class="w-full max-w-7xl mx-auto px-3 sm:px-4 flex items-center justify-between">
@@ -23,7 +23,8 @@
             {{-- 1. LOGO --}}
             <a href="{{ route('services.index') }}" class="flex items-center shrink-0 gap-1 group decoration-0">
                 <img src="/images/logo.png" alt="Logo"
-                     class="max-h-7 md:max-h-9 w-auto object-contain select-none">
+                     id="logo-img"
+                     class="max-h-7 md:max-h-9 w-auto object-contain select-none transition-all duration-500">
             </a>
 
             {{-- 2. MENIU DREAPTA --}}
@@ -44,7 +45,7 @@
                         {{ substr(auth()->user()->name, 0, 1) }}
                     </a>
 
-                    <div class="hidden md:flex items-center gap-4 text-white">
+                    <div class="hidden md:flex items-center gap-4 text-white transition-all duration-300" id="auth-links">
                         <a href="{{ route('account.index') }}" class="font-bold hover:opacity-80 transition text-sm md:text-base">
                             {{ auth()->user()->name }}
                         </a>
@@ -64,7 +65,7 @@
                         </svg>
                     </a>
 
-                    <div class="hidden md:flex items-center gap-4 font-bold text-white text-sm md:text-base">
+                    <div class="hidden md:flex items-center gap-4 font-bold text-white transition-all duration-300 text-sm md:text-base" id="guest-links">
                         <a href="{{ route('login') }}" class="hover:underline transition">Intră în cont</a>
                         <span class="opacity-50">|</span>
                         <a href="{{ route('register') }}" class="hover:underline transition">Creează cont</a>
@@ -73,8 +74,9 @@
 
                 {{-- BUTON ADAUGĂ --}}
                 <a href="{{ route('services.create') }}" 
-                   class="ml-1 bg-white text-gray-800 font-bold rounded-lg shadow hover:bg-gray-100 transition-all duration-300 active:scale-95 flex items-center gap-1
-                          px-3 py-2 text-sm md:text-base md:px-4 md:py-2">
+                   class="ml-1 bg-white text-gray-800 font-bold rounded-lg shadow hover:bg-gray-100 transition-all duration-500 active:scale-95 flex items-center gap-1
+                          px-3 py-2 text-sm md:text-base md:px-4 md:py-2"
+                   id="add-btn">
                     <span class="text-lg md:text-xl leading-none font-black">+</span>
                     <span class="hidden xs:inline">Adaugă</span>
                 </a>
@@ -84,8 +86,8 @@
     </nav>
 
     {{-- SPACER STATIC --}}
-    {{-- Ocupă locul fizic al header-ului pentru ca restul paginii să nu intre sub el. --}}
-    <div class="h-14 md:h-16 w-full shrink-0"></div>
+    {{-- Ocupă spațiul maxim inițial (h-18 desktop / h-14 mobil) --}}
+    <div class="h-14 md:h-[72px] w-full shrink-0"></div>
 
 
     {{-- MAIN CONTENT --}}
@@ -110,26 +112,62 @@
         @endif
     }
 
-    // === LOGICA "OLX STYLE" (Hide on Scroll Down / Show on Scroll Up) ===
+    // ============================================================
+    // LOGICA HIBRIDĂ (START H-18 -> SHRINK H-14)
+    // ============================================================
+    
+    // Verificăm dacă suntem pe Home, pentru că doar acolo se aplică OLX style pe mobil.
+    const isHomepage = {{ request()->routeIs('services.index') ? 'true' : 'false' }};
     let lastScrollY = window.scrollY;
     const nav = document.getElementById('main-nav');
+    const logo = document.getElementById('logo-img');
+    const threshold = 15; // Toleranță la mișcări mici
 
-    window.addEventListener('scroll', () => {
+    window.addEventListener('scroll', function() {
         const currentScrollY = window.scrollY;
+        const isMobile = window.innerWidth < 768; // Verificăm lățimea ecranului
 
-        // 1. Dacă suntem sus de tot (top < 10px), arătăm meniul oricum
-        if (currentScrollY < 10) {
-            nav.style.transform = 'translateY(0)';
-            lastScrollY = currentScrollY;
-            return;
+        // --- 1. LOGICA DE DIMENSIUNE (SHRINK: Afectează doar Desktop) ---
+        if (!isMobile) {
+            if (currentScrollY > 20) {
+                // Desktop Scroll Jos -> Compact (h-14)
+                nav.classList.remove('md:h-[72px]');
+                nav.classList.add('md:h-14', 'shadow-xl');
+                
+                if(logo) { logo.classList.remove('md:max-h-9'); logo.classList.add('md:max-h-7'); }
+            } else {
+                // Desktop Sus -> Mare (h-18)
+                nav.classList.add('md:h-[72px]');
+                nav.classList.remove('md:h-14', 'shadow-xl');
+
+                if(logo) { logo.classList.remove('md:max-h-7'); logo.classList.add('md:max-h-9'); }
+            }
         }
 
-        // 2. Verificăm direcția
-        if (currentScrollY > lastScrollY) {
-            // SCROLL JOS -> ASCUNDE (-100% îl trage în sus, în afara ecranului)
-            nav.style.transform = 'translateY(-100%)';
-        } else {
-            // SCROLL SUS -> ARATĂ (0 îl aduce înapoi)
+        // --- 2. LOGICA OLX (ASCUNDE/ARATĂ) ---
+        if (isHomepage && isMobile) {
+            // Aplicăm transform doar pe mobil + homepage
+            
+            // Verificăm toleranța
+            if (Math.abs(currentScrollY - lastScrollY) < threshold) return;
+
+            // Zona de siguranță sus
+            if (currentScrollY < 10) {
+                nav.style.transform = 'translateY(0)';
+                lastScrollY = currentScrollY;
+                return;
+            }
+
+            // Direcția scroll-ului
+            if (currentScrollY > lastScrollY) {
+                // Scroll JOS -> ASCUNDE
+                nav.style.transform = 'translateY(-100%)';
+            } else {
+                // Scroll SUS -> ARATĂ
+                nav.style.transform = 'translateY(0)';
+            }
+        } else if (isHomepage && !isMobile) {
+            // Pe Desktop Home, resetăm transform-ul ca să nu fie ascuns
             nav.style.transform = 'translateY(0)';
         }
 
