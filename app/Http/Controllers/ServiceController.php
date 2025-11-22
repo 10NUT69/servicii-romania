@@ -12,6 +12,7 @@ use Intervention\Image\ImageManager;
 use Intervention\Image\Drivers\Gd\Driver;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 
 class ServiceController extends Controller
 {
@@ -31,19 +32,16 @@ class ServiceController extends Controller
         if ($request->filled('county')) {
             $query->where('county_id', $request->county);
         }
-		
-		// Filter by category (optional)
-if ($request->filled('category')) {
-    $query->where('category_id', $request->category);
-}
-
+        
+        if ($request->filled('category')) {
+            $query->where('category_id', $request->category);
+        }
 
         return view('services.index', [
-    'services'   => $query->orderBy('created_at', 'desc')->paginate(12)->withQueryString(),
-    'counties'   => County::all(),
-    'categories' => Category::orderBy('sort_order', 'asc')->get(), // ← ADĂUGAT
-]);
-
+            'services'   => $query->orderBy('created_at', 'desc')->paginate(24)->withQueryString(),
+            'counties'   => County::all(),
+            'categories' => Category::orderBy('sort_order', 'asc')->get(),
+        ]);
     }
 
     // CREATE
@@ -55,7 +53,7 @@ if ($request->filled('category')) {
         ]);
     }
 
-    // STORE
+    // STORE (ADĂUGARE + SEO RENAME)
     public function store(Request $request)
     {
         $rules = [
@@ -67,8 +65,8 @@ if ($request->filled('category')) {
             'price_value' => 'nullable|numeric',
             'price_type'  => 'required|in:fixed,negotiable',
             'currency'    => 'required|in:RON,EUR',
-            'images.*'    => 'image|max:4096',
             'name'        => 'nullable|string|max:255',
+            'images.*'    => 'image|mimes:jpeg,png,jpg,webp|max:15360', // Max 15MB
         ];
 
         if (!Auth::check() && $request->filled('email') && $request->filled('password')) {
@@ -76,10 +74,16 @@ if ($request->filled('category')) {
             $rules['password'] = 'required|string|min:6';
         }
 
-        $validated = $request->validate($rules);
+        $messages = [
+            'images.*.max' => 'Una dintre imagini este prea mare (max 15MB).',
+            'images.*.uploaded' => 'Eroare la încărcare server.',
+        ];
+
+        $validated = $request->validate($rules, $messages);
 
         $userId = null;
 
+        // Logică User
         if (Auth::check()) {
             $userId = Auth::id();
         } 
@@ -117,7 +121,7 @@ if ($request->filled('category')) {
             $service->email = $request->email;
         }
 
-        // Slug
+        // Slug URL
         $baseSlug = Str::slug($validated['title']);
         $uniqueSlug = $baseSlug;
         $i = 2;
@@ -129,19 +133,33 @@ if ($request->filled('category')) {
         $service->status = 'active';
         $service->save();
 
-        // Imagini
+        // --- LOGICĂ IMAGINI SEO ---
         $manager = new ImageManager(new Driver());
         $savedImages = [];
+
+        // 1. Găsim numele județului pentru SEO
+        $countyName = County::find($validated['county_id'])->name ?? 'romania';
+        
+        // 2. Generăm baza numelui: "titlu-judet"
+        $seoBaseName = Str::slug($validated['title'] . '-' . $countyName);
 
         if ($request->hasFile('images')) {
             foreach ($request->file('images') as $image) {
                 if (count($savedImages) >= 10) break;
-                $name = uniqid() . '.jpg';
+                
+                // 3. Nume final: "titlu-judet-random.jpg"
+                // Random string (6 caractere) e necesar pt a evita duplicatele și caching-ul
+                $name = $seoBaseName . '-' . Str::random(6) . '.jpg';
+                
                 $path = storage_path('app/public/services/' . $name);
                 
                 if (!file_exists(dirname($path))) mkdir(dirname($path), 0755, true);
 
-                $manager->read($image->getRealPath())->scaleDown(1600)->toJpeg(75)->save($path);
+                $manager->read($image->getRealPath())
+                        ->scaleDown(1600)
+                        ->toJpeg(75)
+                        ->save($path);
+                        
                 $savedImages[] = $name;
             }
         }
@@ -172,7 +190,7 @@ if ($request->filled('category')) {
         ]);
     }
 
-    // UPDATE (AICI AM REZOLVAT PROBLEMA DE ÎNLOCUIRE POZE)
+    // UPDATE (MODIFICARE + SEO RENAME)
     public function update(Request $request, $id)
     {
         $service = Service::where('id', $id)
@@ -189,33 +207,31 @@ if ($request->filled('category')) {
             'price_value' => 'nullable|numeric',
             'price_type'  => 'required|in:fixed,negotiable',
             'currency'    => 'required|in:RON,EUR',
-            'images.*'    => 'image|max:4096', 
+            'images.*'    => 'image|mimes:jpeg,png,jpg,webp|max:15360', 
         ]);
 
-        // 1. SALVĂM IMAGINILE VECHI ÎNTR-O VARIABILĂ SEPARATĂ
-        // Le luăm direct din DB înainte să atingem modelul cu 'fill'
+        // Păstrăm imaginile vechi
         $finalImages = $service->images;
-
-        // Safety check: Asigurăm că e array
         if (is_string($finalImages)) $finalImages = json_decode($finalImages, true);
         if (!is_array($finalImages)) $finalImages = [];
 
-        // 2. SCOATEM 'images' DIN DATELE VALIDATE
-        // Asta previne ca $service->fill() să suprascrie lista de imagini cu obiectele UploadedFile
         unset($validated['images']);
-
-        // 3. ACTUALIZĂM TEXTELE
         $service->fill($validated);
 
-        // 4. PROCESĂM IMAGINILE NOI ȘI LE ADĂUGĂM LA LISTĂ
+        // --- LOGICĂ IMAGINI SEO (UPDATE) ---
         $manager = new ImageManager(new Driver());
+        
+        // 1. Găsim numele județului (nou sau vechi)
+        $countyName = County::find($validated['county_id'])->name ?? 'romania';
+        // 2. Generăm baza numelui SEO
+        $seoBaseName = Str::slug($validated['title'] . '-' . $countyName);
 
         if ($request->hasFile('images')) {
             foreach ($request->file('images') as $image) {
-                // Verificăm limita totală (vechi + noi)
                 if (count($finalImages) >= 10) break;
 
-                $name = uniqid() . '.jpg';
+                // 3. Nume SEO
+                $name = $seoBaseName . '-' . Str::random(6) . '.jpg';
                 $path = storage_path('app/public/services/' . $name);
 
                 if (!file_exists(dirname($path))) {
@@ -227,12 +243,10 @@ if ($request->filled('category')) {
                     ->toJpeg(75)
                     ->save($path);
 
-                // APPEND: Adăugăm la array-ul existent
                 $finalImages[] = $name;
             }
         }
 
-        // 5. SALVĂM LISTA FINALĂ (VECHI + NOI)
         $service->images = $finalImages;
         $service->save();
 
@@ -240,16 +254,12 @@ if ($request->filled('category')) {
             ->with('success', 'Modificat cu succes!');
     }
 
-    // DELETE IMAGE (SINGLE)
+    // DELETE IMAGE
     public function deleteImage(Request $request, $id)
     {
-        $service = Service::where('id', $id)
-            ->where('user_id', auth()->id())
-            ->firstOrFail();
-        
+        $service = Service::where('id', $id)->where('user_id', auth()->id())->firstOrFail();
         $imageName = $request->input('image');
         
-        // Recuperăm imaginile curente
         $currentImages = $service->images;
         if (is_string($currentImages)) $currentImages = json_decode($currentImages, true);
         if (!is_array($currentImages)) $currentImages = [];
@@ -257,61 +267,44 @@ if ($request->filled('category')) {
         $key = array_search($imageName, $currentImages);
 
         if ($key !== false) {
-            // Ștergem fizic
             $path = storage_path('app/public/services/' . $imageName);
             if (file_exists($path)) unlink($path);
 
-            // Scoatem din array
             unset($currentImages[$key]);
-            
-            // Reindexăm și salvăm
             $service->images = array_values($currentImages);
             $service->save();
 
             return response()->json(['success' => true]);
         }
-
         return response()->json(['success' => false], 404);
     }
 
     // DELETE SERVICE
-   public function destroy($id)
-{
-    $service = Service::where('id', $id)
-        ->where('user_id', auth()->id())
-        ->firstOrFail();
+    public function destroy($id)
+    {
+        $service = Service::where('id', $id)->where('user_id', auth()->id())->firstOrFail();
+        $images = $service->images;
+        if (!is_array($images)) $images = json_decode($images, true) ?? [];
 
-    // Asigură-te că images este array
-    $images = $service->images;
-    if (!is_array($images)) {
-        $images = json_decode($images, true) ?? [];
-    }
-
-    // Ștergem imaginile în siguranță
-    foreach ($images as $img) {
-        if (!$img) continue; // skip dacă e gol
-
-        $path = storage_path("app/public/services/" . $img);
-
-        try {
-            if (file_exists($path)) {
-                @unlink($path); // @ oprește warning-urile
+        foreach ($images as $img) {
+            if (!$img) continue;
+            $path = storage_path("app/public/services/" . $img);
+            try {
+                if (file_exists($path)) @unlink($path); 
+            } catch (\Throwable $e) {
+                Log::error("Delete error: " . $e->getMessage());
             }
-        } catch (\Throwable $e) {
-            // logăm, dar nu întrerupem ștergerea
-            \Log::error("Eroare la ștergerea imaginii: " . $e->getMessage());
         }
+        $service->delete();
+        return response()->json(['status' => 'deleted']);
     }
 
-    $service->delete();
-
-    return response()->json(['status' => 'deleted']);
-}
     // RENEW
     public function renew($id)
     {
         $service = Service::where('id', $id)->where('user_id', auth()->id())->firstOrFail();
         $service->status = 'active';
+        $service->created_at = now();
         $service->save();
         return back()->with('success', 'Reînnoit!');
     }

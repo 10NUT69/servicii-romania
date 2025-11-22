@@ -294,14 +294,49 @@ select.form-select, select {
 <script>
 document.getElementById('imageInput').addEventListener('change', function (e) {
     const container = document.getElementById('previewContainer');
-    container.innerHTML = "";
-    [...e.target.files].forEach((file) => {
+    // Transformăm FileList în Array ca să putem itera ușor
+    const files = [...e.target.files];
+
+    // --- 1. CONFIGURARE LIMITĂ (15MB) ---
+    const LIMITA_MB = 15; 
+    const maxBytes = LIMITA_MB * 1024 * 1024;
+    // ------------------------------------
+
+    let hasError = false;
+
+    // --- 2. VALIDARE PREVENTIVĂ ---
+    // Verificăm mărimea ÎNAINTE de a genera preview-uri
+    files.forEach(file => {
+        if (file.size > maxBytes) {
+            alert(`STOP: Imaginea "${file.name}" este prea mare!\nAre ${(file.size/1024/1024).toFixed(2)} MB.\nLimita acceptată este de ${LIMITA_MB} MB.`);
+            hasError = true;
+        }
+    });
+
+    // Dacă am găsit o imagine uriașă, oprim totul instant
+    if (hasError) {
+        this.value = ""; // Golește inputul (resetează selecția)
+        container.innerHTML = ""; // Golește preview-urile
+        return; // Oprește execuția funcției aici
+    }
+
+    // --- 3. GENERARE PREVIEW (Doar dacă imaginile sunt OK) ---
+    container.innerHTML = ""; // Curățăm containerul vechi
+    
+    files.forEach((file) => {
         const reader = new FileReader();
         reader.onload = function (event) {
+            // Construim HTML-ul pentru preview
+            // Am adăugat și un mic badge negru care arată mărimea fișierului
             container.innerHTML += `
                 <div class="relative group animate-fade-in aspect-square">
                     <img src="${event.target.result}" class="w-full h-full object-cover rounded-xl shadow border border-gray-200 dark:border-[#404040]">
-                    <button type="button" onclick="this.parentElement.remove()" class="absolute top-2 right-2 bg-black/60 hover:bg-red-600 text-white text-xs p-1.5 rounded-full transition backdrop-blur-sm">
+                    
+                    <div class="absolute bottom-1 left-1 bg-black/60 text-white text-[10px] px-2 py-0.5 rounded backdrop-blur-sm font-mono">
+                        ${(file.size / 1024 / 1024).toFixed(2)} MB
+                    </div>
+
+                    <button type="button" onclick="this.parentElement.remove()" class="absolute top-2 right-2 bg-black/60 hover:bg-red-600 text-white text-xs p-1.5 rounded-full transition backdrop-blur-sm shadow-md">
                         <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
                     </button>
                 </div>`;

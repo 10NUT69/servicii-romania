@@ -261,7 +261,10 @@
             <div class="relative w-full aspect-[4/3] bg-gray-100 dark:bg-[#121212] overflow-hidden">
                 <img src="{{ asset('storage/services/' . $cover) }}"
                      class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-                     alt="{{ $service->title }}">
+                     {{-- SEO: Text alternativ complet pentru Google --}}
+                     alt="{{ $service->title }} - {{ $service->county->name }} - {{ $service->category->name }}"
+                     {{-- Performanță: Nu încarcă poza până nu ajungi cu scroll la ea --}}
+                     loading="lazy">
 
                 {{-- Badge Categorie --}}
                 <span class="absolute bottom-3 left-3 bg-black/70 text-white text-xs px-2.5 py-1 rounded-md font-bold uppercase backdrop-blur-md border border-white/10 shadow-lg">
