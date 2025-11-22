@@ -5,11 +5,11 @@
 @section('content')
 
 {{-- 
-    NOTA: Asigură-te că ai setat în Controller: ->paginate(24) pentru a afișa 24 carduri.
+    MODIFICARE FIXĂ: 
+    Am schimbat z-50 în z-30 aici. 
+    Acum Search-ul stă PESTE carduri (z-0), dar SUB Header (care are z-999).
 --}}
-
-{{-- SEARCH CONTAINER --}}
-<div class="max-w-7xl mx-auto mt-8 mb-12 px-4 md:px-0 relative z-50">
+<div class="max-w-7xl mx-auto mt-8 mb-12 px-4 md:px-0 relative z-30">
 
     <form method="GET" action="{{ route('services.index') }}"
         class="relative w-full transition-all duration-300
@@ -230,7 +230,7 @@
         $isFav = auth()->check() && $service->favorites()->where('user_id', auth()->id())->exists();
     @endphp
 
-    {{-- CARD INDIVIDUAL (cu animație waterfall) --}}
+    {{-- CARD INDIVIDUAL --}}
     <div class="card-animate relative bg-white dark:bg-[#1E1E1E] rounded-2xl border border-gray-200 dark:border-[#333333] shadow-sm 
                 hover:shadow-xl dark:hover:shadow-none dark:hover:border-[#555555] 
                 transition-all duration-300 overflow-hidden group flex flex-col h-full">
@@ -272,7 +272,7 @@
             {{-- Card Content --}}
             <div class="p-4 flex flex-col flex-grow">
 
-                {{-- TITLU CU ÎNĂLȚIME FIXĂ --}}
+                {{-- TITLU --}}
                 <h3 class="text-base md:text-lg font-bold text-gray-900 dark:text-[#F2F2F2] mb-2 line-clamp-2 leading-tight min-h-[3.5rem] group-hover:text-[#CC2E2E] transition-colors" 
                     title="{{ $service->title }}">
                     {{ $service->title }}
@@ -294,7 +294,7 @@
                     @endif
                 </div>
 
-                {{-- META INFO (Locație + Vizualizări + Dată) --}}
+                {{-- META INFO --}}
                 <div class="mt-auto pt-3 flex items-center justify-between text-xs md:text-sm text-gray-500 dark:text-[#A1A1AA] border-t border-gray-100 dark:border-[#333333]">
                     
                     {{-- Stânga: Locație --}}
@@ -348,21 +348,21 @@
 </div>
 
 {{-- Pagination --}}
-<div class="mt-4 mb-16 max-w-7xl mx-auto px-4 md:px-0">
-    {{ $services->links() }}
-</div>
+@if($services->hasPages())
+    <div class="mt-4 mb-16 max-w-7xl mx-auto px-4 md:px-0">
+        {{ $services->links() }}
+    </div>
+@endif
 
 
 {{-- STILURI CUSTOM + ANIMAȚII --}}
 <style>
-    /* Custom Scrollbar */
     .custom-scrollbar::-webkit-scrollbar { width: 6px; }
     .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
     .custom-scrollbar::-webkit-scrollbar-thumb { background-color: #e5e7eb; border-radius: 20px; }
     .dark .custom-scrollbar::-webkit-scrollbar-thumb { background-color: #4b5563; }
     .custom-scrollbar::-webkit-scrollbar-thumb:hover { background-color: #d1d5db; }
 
-    /* Waterfall Animation */
     @keyframes fadeInUp {
         from { opacity: 0; transform: translateY(20px); }
         to { opacity: 1; transform: translateY(0); }
@@ -389,7 +389,6 @@
 
 {{-- SCRIPTS --}}
 <script>
-// 1. DROPDOWN LOGIC
 function toggleCountyDropdown() {
     const list = document.getElementById('county-list');
     const arrow = document.getElementById('county-arrow');
@@ -432,7 +431,6 @@ function selectCategory(id, name) {
     toggleCategoryDropdown();
 }
 
-// Close on Click Outside
 document.addEventListener('click', function(event) {
     const countyWrap = document.getElementById('county-wrapper');
     const categoryWrap = document.getElementById('category-wrapper');
@@ -441,13 +439,13 @@ document.addEventListener('click', function(event) {
         document.getElementById('county-list').classList.add('hidden');
         document.getElementById('county-arrow').style.transform = 'rotate(0deg)';
     }
+    
     if (categoryWrap && !categoryWrap.contains(event.target)) {
         document.getElementById('category-list').classList.add('hidden');
         document.getElementById('category-arrow').style.transform = 'rotate(0deg)';
     }
 });
 
-// 2. HEART FAVORITE LOGIC
 function toggleHeart(btn, serviceId) {
     const icon = btn.querySelector('svg');
     const isLiked = icon.classList.contains('text-[#CC2E2E]');
