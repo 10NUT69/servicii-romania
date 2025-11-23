@@ -22,9 +22,10 @@
 
             {{-- 1. LOGO --}}
             <a href="{{ route('services.index') }}" class="flex items-center shrink-0 gap-1 group decoration-0">
-                <img src="/images/logo.png" alt="Logo"
-                     id="logo-img"
-                     class="max-h-7 md:max-h-9 w-auto object-contain select-none transition-all duration-500">
+             <img src="/images/logo.png" alt="Logo"
+     id="logo-img"
+     class="max-h-10 md:max-h-14 w-auto object-contain select-none transition-all duration-500">
+
             </a>
 
             {{-- 2. MENIU DREAPTA --}}
@@ -128,21 +129,30 @@
         const isMobile = window.innerWidth < 768; // Verificăm lățimea ecranului
 
         // --- 1. LOGICA DE DIMENSIUNE (SHRINK: Afectează doar Desktop) ---
-        if (!isMobile) {
-            if (currentScrollY > 20) {
-                // Desktop Scroll Jos -> Compact (h-14)
-                nav.classList.remove('md:h-[72px]');
-                nav.classList.add('md:h-14', 'shadow-xl');
-                
-                if(logo) { logo.classList.remove('md:max-h-9'); logo.classList.add('md:max-h-7'); }
-            } else {
-                // Desktop Sus -> Mare (h-18)
-                nav.classList.add('md:h-[72px]');
-                nav.classList.remove('md:h-14', 'shadow-xl');
-
-                if(logo) { logo.classList.remove('md:max-h-7'); logo.classList.add('md:max-h-9'); }
-            }
+if (!isMobile) {
+    if (currentScrollY > 20) {
+        // Desktop Scroll Jos -> Compact (h-14)
+        nav.classList.remove('md:h-[72px]');
+        nav.classList.add('md:h-14', 'shadow-xl');
+        
+        // Logo micșorat (dar nu prea mic)
+        if (logo) {
+            logo.classList.remove('md:max-h-14');
+            logo.classList.add('md:max-h-10');
         }
+    } else {
+        // Desktop Sus -> Mare (h-18)
+        nav.classList.add('md:h-[72px]');
+        nav.classList.remove('md:h-14', 'shadow-xl');
+
+        // Logo mare (starea normală)
+        if (logo) {
+            logo.classList.remove('md:max-h-10');
+            logo.classList.add('md:max-h-14');
+        }
+    }
+}
+
 
         // --- 2. LOGICA OLX (ASCUNDE/ARATĂ) ---
         if (isHomepage && isMobile) {
