@@ -11,21 +11,16 @@
 <body class="bg-[#f6f7fb] dark:bg-[#121212] text-gray-900 dark:text-[#E5E5E5] font-inter antialiased min-h-screen flex flex-col">
 
     {{-- HEADER FIX --}}
-    {{-- 
-        Mobil: h-14 (Fix 56px)
-        Desktop: h-[72px] (echivalent h-18) -> se va face h-14 la scroll
-    --}}
     <nav id="main-nav" class="fixed top-0 left-0 w-full z-[999] h-14 md:h-[72px] transition-all duration-500 ease-in-out
                               emag-gradient text-white border-b border-transparent dark:border-gray-800 flex items-center shadow-md will-change-transform">
         
         <div class="w-full max-w-7xl mx-auto px-3 sm:px-4 flex items-center justify-between">
 
-            {{-- 1. LOGO --}}
+            {{-- 1. LOGO (MODIFICAT: max-h-8 și md:max-h-11) --}}
             <a href="{{ route('services.index') }}" class="flex items-center shrink-0 gap-1 group decoration-0">
-             <img src="/images/logo.png" alt="Logo"
-     id="logo-img"
-     class="max-h-10 md:max-h-14 w-auto object-contain select-none transition-all duration-500">
-
+                <img src="/images/logo.png" alt="Logo"
+                     id="logo-img"
+                     class="max-h-8 md:max-h-11 w-auto object-contain select-none transition-all duration-500">
             </a>
 
             {{-- 2. MENIU DREAPTA --}}
@@ -87,7 +82,6 @@
     </nav>
 
     {{-- SPACER STATIC --}}
-    {{-- Ocupă spațiul maxim inițial (h-18 desktop / h-14 mobil) --}}
     <div class="h-14 md:h-[72px] w-full shrink-0"></div>
 
 
@@ -117,67 +111,58 @@
     // LOGICA HIBRIDĂ (START H-18 -> SHRINK H-14)
     // ============================================================
     
-    // Verificăm dacă suntem pe Home, pentru că doar acolo se aplică OLX style pe mobil.
     const isHomepage = {{ request()->routeIs('services.index') ? 'true' : 'false' }};
     let lastScrollY = window.scrollY;
     const nav = document.getElementById('main-nav');
     const logo = document.getElementById('logo-img');
-    const threshold = 15; // Toleranță la mișcări mici
+    const threshold = 15; 
 
     window.addEventListener('scroll', function() {
         const currentScrollY = window.scrollY;
-        const isMobile = window.innerWidth < 768; // Verificăm lățimea ecranului
+        const isMobile = window.innerWidth < 768; 
 
         // --- 1. LOGICA DE DIMENSIUNE (SHRINK: Afectează doar Desktop) ---
-if (!isMobile) {
-    if (currentScrollY > 20) {
-        // Desktop Scroll Jos -> Compact (h-14)
-        nav.classList.remove('md:h-[72px]');
-        nav.classList.add('md:h-14', 'shadow-xl');
-        
-        // Logo micșorat (dar nu prea mic)
-        if (logo) {
-            logo.classList.remove('md:max-h-14');
-            logo.classList.add('md:max-h-10');
-        }
-    } else {
-        // Desktop Sus -> Mare (h-18)
-        nav.classList.add('md:h-[72px]');
-        nav.classList.remove('md:h-14', 'shadow-xl');
+        if (!isMobile) {
+            if (currentScrollY > 20) {
+                // Desktop Scroll Jos -> Compact (h-14)
+                nav.classList.remove('md:h-[72px]');
+                nav.classList.add('md:h-14', 'shadow-xl');
+                
+                // MODIFICAT: Logo devine și mai mic (md:max-h-9)
+                if (logo) {
+                    logo.classList.remove('md:max-h-11');
+                    logo.classList.add('md:max-h-9');
+                }
+            } else {
+                // Desktop Sus -> Mare (h-18)
+                nav.classList.add('md:h-[72px]');
+                nav.classList.remove('md:h-14', 'shadow-xl');
 
-        // Logo mare (starea normală)
-        if (logo) {
-            logo.classList.remove('md:max-h-10');
-            logo.classList.add('md:max-h-14');
+                // MODIFICAT: Logo revine la mărimea medie (md:max-h-11)
+                if (logo) {
+                    logo.classList.remove('md:max-h-9');
+                    logo.classList.add('md:max-h-11');
+                }
+            }
         }
-    }
-}
-
 
         // --- 2. LOGICA OLX (ASCUNDE/ARATĂ) ---
         if (isHomepage && isMobile) {
-            // Aplicăm transform doar pe mobil + homepage
             
-            // Verificăm toleranța
             if (Math.abs(currentScrollY - lastScrollY) < threshold) return;
 
-            // Zona de siguranță sus
             if (currentScrollY < 10) {
                 nav.style.transform = 'translateY(0)';
                 lastScrollY = currentScrollY;
                 return;
             }
 
-            // Direcția scroll-ului
             if (currentScrollY > lastScrollY) {
-                // Scroll JOS -> ASCUNDE
                 nav.style.transform = 'translateY(-100%)';
             } else {
-                // Scroll SUS -> ARATĂ
                 nav.style.transform = 'translateY(0)';
             }
         } else if (isHomepage && !isMobile) {
-            // Pe Desktop Home, resetăm transform-ul ca să nu fie ascuns
             nav.style.transform = 'translateY(0)';
         }
 
