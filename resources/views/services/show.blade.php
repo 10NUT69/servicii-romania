@@ -239,19 +239,20 @@
 </div>
 
 @endsection
+
 @section('schema')
 <script type="application/ld+json">
-{
-  "@context": "https://schema.org",
-  "@type": "Service",
-  "name": "{{ $service->title }}",
-  "description": "{{ $seoDescription }}",
-  "image": "{{ $seoImage }}",
-  "areaServed": "{{ $seoLocation }}",
-  "provider": {
-      "@type": "Person",
-      "name": "{{ $service->user->name ?? 'Meserias' }}"
-  }
-}
+{!! json_encode([
+    "@context" => "https://schema.org",
+    "@type" => "Service",
+    "name" => $service->title,
+    "description" => $seoDescription,
+    "image" => $seoImage,
+    "areaServed" => $seoLocation,
+    "provider" => [
+        "@type" => "Person",
+        "name" => $service->user->name ?? 'Meserias'
+    ]
+], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) !!}
 </script>
 @endsection
