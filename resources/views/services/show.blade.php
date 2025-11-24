@@ -93,11 +93,14 @@
         @if(count($images) > 0)
             
             {{-- Imagine Principală Mare (Fără Click/Lightbox) --}}
+           {{-- Imagine Principală Mare (Fără Click/Lightbox) --}}
             <div class="mb-4 relative overflow-hidden rounded-2xl shadow-lg border border-gray-100 dark:border-[#333333] aspect-[16/10]">
                 <img id="mainImage"
                      src="{{ asset('storage/services/' . $images[0]) }}" 
                      class="w-full h-full object-cover transition duration-500"
-                     alt="{{ $service->title }}">
+                     alt="{{ $service->title }}"
+                     fetchpriority="high"
+                     loading="eager">
             </div>
 
             {{-- Thumbnails --}}
