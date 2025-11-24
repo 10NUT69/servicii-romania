@@ -1,21 +1,35 @@
 @extends('layouts.app')
 
 @php
-    // Titlu scurt SEO
+    // 1. Titlu scurt SEO
     $seoTitle = Str::limit($service->title, 40);
 
-    // Locația (oraș dacă există, altfel județul)
+    // 2. Locația (oraș dacă există, altfel județul)
     $seoLocation = $service->city ?: $service->county->name;
 
-    // Meta description (modelul ales)
+    // 3. Meta description
     $seoDescription = "Cauti {$service->category->name} in {$seoLocation}? ".
                       "Gaseste rapid meseriasul potrivit, disponibil cand ai nevoie. ".
                       "Verifica detalii si contacteaza direct pe MeseriasBun.ro.";
 
-    // Poză principală
+    // 4. Poză principală
     $seoImage = isset($service->images[0]) 
                 ? asset('storage/services/' . $service->images[0])
                 : asset('images/default-service.jpg');
+
+    // 5. PREGĂTIRE DATE SCHEMA.ORG (Definite aici pentru a evita erori de sintaxă jos)
+    $schemaData = [
+        "@context" => "https://schema.org",
+        "@type" => "Service",
+        "name" => $service->title,
+        "description" => $seoDescription,
+        "image" => $seoImage,
+        "areaServed" => $seoLocation,
+        "provider" => [
+            "@type" => "Person",
+            "name" => $service->user->name ?? 'Meserias'
+        ]
+    ];
 @endphp
 
 @section('title', $seoTitle . ' | ' . $service->category->name . ' in ' . $seoLocation . ' | MeseriasBun.ro')
@@ -90,8 +104,7 @@
                          onclick="document.getElementById('mainImage').src='{{ asset('storage/services/' . $image) }}'">
                         <img src="{{ asset('storage/services/' . $image) }}" 
                              class="w-full h-full object-cover hover:opacity-90 transition"
-                             alt="{{ $service->title }} – fotografie {{ $key + 1 }}"
->
+                             alt="{{ $service->title }} – fotografie {{ $key + 1 }}">
                     </div>
                 @endforeach
             </div>
@@ -240,3 +253,8 @@
 
 @endsection
 
+@section('schema')
+<script type="application/ld+json">
+{!! json_encode($schemaData, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) !!}
+</script>
+@endsection
