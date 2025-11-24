@@ -3,10 +3,33 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
     <title>@yield('title', 'Servicii România')</title>
     <meta name="csrf-token" content="{{ csrf_token() }}">
+
+    <!-- 🔥 SEO TAGS -->
+    <meta name="description" content="@yield('meta_description')">
+
+    <link rel="canonical" href="{{ url()->current() }}">
+
+    <!-- OpenGraph -->
+    <meta property="og:title" content="@yield('meta_title', trim($__env->yieldContent('title')))">
+    <meta property="og:description" content="@yield('meta_description')">
+    <meta property="og:image" content="@yield('meta_image')">
+    <meta property="og:url" content="{{ url()->current() }}">
+    <meta property="og:type" content="article">
+
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="@yield('meta_title', trim($__env->yieldContent('title')))">
+    <meta name="twitter:description" content="@yield('meta_description')">
+    <meta name="twitter:image" content="@yield('meta_image')">
+
+    @yield('schema')
+
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
+
 
 <body class="bg-[#f6f7fb] dark:bg-[#121212] text-gray-900 dark:text-[#E5E5E5] font-inter antialiased min-h-screen flex flex-col">
 

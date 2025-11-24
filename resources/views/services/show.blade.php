@@ -1,6 +1,28 @@
 @extends('layouts.app')
 
-@section('title', $service->title)
+@php
+    // Titlu scurt SEO
+    $seoTitle = Str::limit($service->title, 40);
+
+    // Locația (oraș dacă există, altfel județul)
+    $seoLocation = $service->city ?: $service->county->name;
+
+    // Meta description (modelul ales)
+    $seoDescription = "Cauti {$service->category->name} in {$seoLocation}? ".
+                      "Gaseste rapid meseriasul potrivit, disponibil cand ai nevoie. ".
+                      "Verifica detalii si contacteaza direct pe MeseriasBun.ro.";
+
+    // Poză principală
+    $seoImage = isset($service->images[0]) 
+                ? asset('storage/services/' . $service->images[0])
+                : asset('images/default-service.jpg');
+@endphp
+
+@section('title', $seoTitle . ' | ' . $service->category->name . ' in ' . $seoLocation . ' | MeseriasBun.ro')
+
+@section('meta_description', $seoDescription)
+@section('meta_title', $seoTitle . ' | ' . $service->category->name . ' in ' . $seoLocation)
+@section('meta_image', $seoImage)
 
 @section('content')
 
@@ -68,7 +90,8 @@
                          onclick="document.getElementById('mainImage').src='{{ asset('storage/services/' . $image) }}'">
                         <img src="{{ asset('storage/services/' . $image) }}" 
                              class="w-full h-full object-cover hover:opacity-90 transition"
-                             alt="Foto {{ $key + 1 }}">
+                             alt="{{ $service->title }} – fotografie {{ $key + 1 }}"
+>
                     </div>
                 @endforeach
             </div>
@@ -215,4 +238,20 @@
 
 </div>
 
+@endsection
+@section('schema')
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Service",
+  "name": "{{ $service->title }}",
+  "description": "{{ $seoDescription }}",
+  "image": "{{ $seoImage }}",
+  "areaServed": "{{ $seoLocation }}",
+  "provider": {
+      "@type": "Person",
+      "name": "{{ $service->user->name ?? 'Meserias' }}"
+  }
+}
+</script>
 @endsection
