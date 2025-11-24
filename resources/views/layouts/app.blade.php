@@ -2,24 +2,22 @@
 <html lang="ro">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    {{-- FIX 1: Viewport corect (fără user-scalable=no) --}}
+    <meta name="viewport" content="width=device-width, initial-scale=1">
 
     <title>@yield('title', 'Servicii România')</title>
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
-    <!-- 🔥 SEO TAGS -->
     <meta name="description" content="@yield('meta_description')">
 
     <link rel="canonical" href="{{ url()->current() }}">
 
-    <!-- OpenGraph -->
     <meta property="og:title" content="@yield('meta_title', trim($__env->yieldContent('title')))">
     <meta property="og:description" content="@yield('meta_description')">
     <meta property="og:image" content="@yield('meta_image')">
     <meta property="og:url" content="{{ url()->current() }}">
     <meta property="og:type" content="article">
 
-    <!-- Twitter -->
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="@yield('meta_title', trim($__env->yieldContent('title')))">
     <meta name="twitter:description" content="@yield('meta_description')">
@@ -39,9 +37,12 @@
         
         <div class="w-full max-w-7xl mx-auto px-3 sm:px-4 flex items-center justify-between">
 
-            {{-- 1. LOGO (MODIFICAT: max-h-8 și md:max-h-11) --}}
+            {{-- 1. LOGO (MODIFICAT: Adăugat width și height pentru CLS) --}}
             <a href="{{ route('services.index') }}" class="flex items-center shrink-0 gap-1 group decoration-0">
-                <img src="/images/logo.png" alt="Logo"
+                <img src="/images/logo.png" 
+                     alt="Logo MeseriasBun"
+                     width="150" 
+                     height="44"
                      id="logo-img"
                      class="max-h-8 md:max-h-11 w-auto object-contain select-none transition-all duration-500">
             </a>
@@ -49,8 +50,9 @@
             {{-- 2. MENIU DREAPTA --}}
             <div class="flex items-center gap-2 sm:gap-5">
 
-                {{-- Favorite --}}
+                {{-- Favorite (FIX: Adăugat aria-label) --}}
                 <button onclick="goToFavorites()" 
+                        aria-label="Vezi favorite"
                         class="transition-all duration-300 flex items-center justify-center h-9 w-9 rounded-full hover:bg-white/10 shrink-0 text-white">
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-6 h-6">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733C11.285 4.876 9.623 3.75 7.688 3.75 5.099 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z" />
@@ -60,6 +62,7 @@
                 @auth
                     {{-- LOGAT --}}
                     <a href="{{ route('account.index') }}" 
+                       aria-label="Contul meu"
                        class="md:hidden flex items-center justify-center w-8 h-8 rounded-full bg-white/20 border border-white/30 text-sm font-bold text-white">
                         {{ substr(auth()->user()->name, 0, 1) }}
                     </a>
@@ -77,8 +80,10 @@
                     </div>
 
                 @else
-                    {{-- NE-LOGAT --}}
-                    <a href="{{ route('login') }}" class="md:hidden p-2 hover:bg-white/10 rounded-full transition text-white">
+                    {{-- NE-LOGAT (FIX: Adăugat aria-label la butonul mobil) --}}
+                    <a href="{{ route('login') }}" 
+                       aria-label="Autentificare"
+                       class="md:hidden p-2 hover:bg-white/10 rounded-full transition text-white">
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-7 h-7">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M17.982 18.725A7.488 7.488 0 0012 15.75a7.488 7.488 0 00-5.982 2.975m11.963 0a9 9 0 10-11.963 0m11.963 0A8.966 8.966 0 0112 21a8.966 8.966 0 01-5.982-2.275M15 9.75a3 3 0 11-6 0 3 3 0 016 0z" />
                         </svg>
