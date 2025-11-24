@@ -39,7 +39,7 @@
 
             {{-- 1. LOGO (MODIFICAT: Adăugat width și height pentru CLS) --}}
             <a href="{{ route('services.index') }}" class="flex items-center shrink-0 gap-1 group decoration-0">
-                <img src="/images/logo.png" 
+                <img src="/images/logo.webp" 
                      alt="Logo MeseriasBun"
                      width="150" 
                      height="44"
