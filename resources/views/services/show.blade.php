@@ -251,7 +251,7 @@
     "areaServed" => $seoLocation,
     "provider" => [
         "@type" => "Person",
-        "name" => $service->user->name ?? 'Meserias'
+        "name" => ($service->user->name ?? 'Meserias')
     ]
 ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) !!}
 </script>
