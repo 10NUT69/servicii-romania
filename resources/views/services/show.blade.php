@@ -242,8 +242,7 @@
 
 @section('schema')
 <script type="application/ld+json">
-{!! json_encode([
-    "@context" => "https://schema.org",
+{!! json_encode(["@context" => "https://schema.org",
     "@type" => "Service",
     "name" => $service->title,
     "description" => $seoDescription,
@@ -251,7 +250,7 @@
     "areaServed" => $seoLocation,
     "provider" => [
         "@type" => "Person",
-        "name" => ($service->user->name ?? 'Meserias')
+        "name" => $service->user->name ?? 'Meserias'
     ]
 ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) !!}
 </script>
