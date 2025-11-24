@@ -1,23 +1,24 @@
 @extends('layouts.app')
 
 @php
-    // 1. Titlu scurt SEO
-    $seoTitle = Str::limit($service->title, 40);
+    // 1. Titlu scurt SEO = PRIMELE 3 CUVINTE (nu mai folosim limitare la 40 caractere)
+    $words = preg_split('/\s+/', trim($service->title));
+    $seoTitle = implode(' ', array_slice($words, 0, 3));
 
     // 2. Locația (oraș dacă există, altfel județul)
     $seoLocation = $service->city ?: $service->county->name;
 
     // 3. Meta description
-    $seoDescription = "Cauti {$service->category->name} in {$seoLocation}? ".
-                      "Gaseste rapid meseriasul potrivit, disponibil cand ai nevoie. ".
-                      "Verifica detalii si contacteaza direct pe MeseriasBun.ro.";
+    $seoDescription = "Cauti {$service->category->name} în {$seoLocation}? ".
+                      "Găsește rapid meseriașul potrivit, disponibil când ai nevoie. ".
+                      "Verifică detalii și contactează direct pe MeseriasBun.ro.";
 
     // 4. Poză principală
     $seoImage = isset($service->images[0]) 
                 ? asset('storage/services/' . $service->images[0])
                 : asset('images/default-service.jpg');
 
-    // 5. PREGĂTIRE DATE SCHEMA.ORG (Definite aici pentru a evita erori de sintaxă jos)
+    // 5. PREGĂTIRE DATE SCHEMA.ORG (definite aici — safe pentru json_encode)
     $schemaData = [
         "@context" => "https://schema.org",
         "@type" => "Service",
@@ -27,15 +28,17 @@
         "areaServed" => $seoLocation,
         "provider" => [
             "@type" => "Person",
-            "name" => $service->user->name ?? 'Meserias'
+            "name" => $service->user->name ?? 'Meseriaș'
         ]
     ];
+
+    // 6. Titlu complet SEO
+    $fullSeoTitle = $seoTitle . ' | ' . $service->category->name . ' în ' . $seoLocation . ' | MeseriasBun.ro';
 @endphp
 
-@section('title', $seoTitle . ' | ' . $service->category->name . ' in ' . $seoLocation . ' | MeseriasBun.ro')
-
+@section('title', $fullSeoTitle)
 @section('meta_description', $seoDescription)
-@section('meta_title', $seoTitle . ' | ' . $service->category->name . ' in ' . $seoLocation)
+@section('meta_title', $fullSeoTitle)
 @section('meta_image', $seoImage)
 
 @section('content')

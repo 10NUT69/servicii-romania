@@ -1,31 +1,34 @@
 <!DOCTYPE html>
 <html lang="ro">
 <head>
-    <meta charset="UTF-8">
-    {{-- FIX 1: Viewport corect (fără user-scalable=no) --}}
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+   <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 
-    <title>@yield('title', 'Servicii România')</title>
-    <meta name="csrf-token" content="{{ csrf_token() }}">
+<title>@yield('title', 'Servicii România')</title>
+<meta name="csrf-token" content="{{ csrf_token() }}">
 
-    <meta name="description" content="@yield('meta_description')">
+<meta name="description" content="@yield('meta_description')">
 
-    <link rel="canonical" href="{{ url()->current() }}">
+<link rel="canonical" href="{{ url()->current() }}">
 
-    <meta property="og:title" content="@yield('meta_title', trim($__env->yieldContent('title')))">
-    <meta property="og:description" content="@yield('meta_description')">
-    <meta property="og:image" content="@yield('meta_image')">
-    <meta property="og:url" content="{{ url()->current() }}">
-    <meta property="og:type" content="article">
+{{-- OPEN GRAPH --}}
+<meta property="og:title" content="@yield('meta_title')">
+<meta property="og:description" content="@yield('meta_description')">
+<meta property="og:image" content="@yield('meta_image')">
+<meta property="og:url" content="{{ url()->current() }}">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="MeseriasBun.ro">
 
-    <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="@yield('meta_title', trim($__env->yieldContent('title')))">
-    <meta name="twitter:description" content="@yield('meta_description')">
-    <meta name="twitter:image" content="@yield('meta_image')">
+{{-- TWITTER --}}
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="@yield('meta_title')">
+<meta name="twitter:description" content="@yield('meta_description')">
+<meta name="twitter:image" content="@yield('meta_image')">
 
-    @yield('schema')
+@yield('schema')
 
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
+@vite(['resources/css/app.css', 'resources/js/app.js'])
+
 </head>
 
 
