@@ -1,10 +1,10 @@
 @extends('layouts.app')
 
-@section('title', 'Contul meu')
+@section('title', 'Contul meu - Servicii România')
 
 @section('content')
 
-<div class="max-w-7xl mx-auto mt-10 mb-20">
+<div class="max-w-7xl mx-auto mt-10 mb-20 px-4 md:px-0">
 
     <div class="flex flex-col md:flex-row items-start md:items-center justify-between mb-10 gap-4">
         <div>
@@ -27,7 +27,7 @@
     </div>
 
     <div class="border-b border-gray-200 dark:border-[#333333] mb-8">
-        <ul class="flex gap-8 text-lg font-medium overflow-x-auto">
+        <ul class="flex gap-8 text-lg font-medium overflow-x-auto no-scrollbar">
             <li>
                 <a href="?tab=anunturi"
                    class="pb-3 inline-block transition-colors whitespace-nowrap
@@ -58,6 +58,7 @@
         </ul>
     </div>
 
+    {{-- TAB 1: ANUNȚURILE MELE --}}
     @if(request('tab') === 'anunturi' || !request('tab'))
 
         @php
@@ -79,19 +80,12 @@
                  id="service-{{ $service->id }}">
 
                 <a href="{{ route('services.show', [$service->id, $service->slug]) }}" class="block relative overflow-hidden">
-                    @php
-                        $images = $service->images;
-                        if (is_string($images)) $images = json_decode($images, true);
-                        if (!is_array($images)) $images = [];
-                        $images = array_values(array_filter($images));
-                        $coverImage = count($images) > 0 ? $images[0] : 'no-image.jpg';
-                    @endphp
-
-                    <img src="{{ asset('storage/services/' . $coverImage) }}"
+                    {{-- 🔥 MODIFICARE: Folosim main_image_url --}}
+                    <img src="{{ $service->main_image_url }}"
                          class="w-full h-48 object-cover transition-transform duration-500 group-hover:scale-105"
                          alt="{{ $service->title }}">
                     
-                    <span class="absolute top-2 right-2 px-2 py-1 text-xs font-bold rounded-md
+                    <span class="absolute top-2 right-2 px-2 py-1 text-xs font-bold rounded-md shadow-sm
                         {{ $service->status === 'active' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600' }}">
                         {{ ucfirst($service->status ?? 'Activ') }}
                     </span>
@@ -115,7 +109,8 @@
 
                     <div class="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400 border-t border-gray-100 dark:border-[#333333] pt-3 mb-4">
                         <span class="flex items-center gap-1">
-                            👁️ {{ $service->views }}
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-1.274 4.057-5.065 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+                            {{ $service->views }}
                         </span>
                         <span>{{ $service->created_at->format('d.m.Y') }}</span>
                     </div>
@@ -142,6 +137,7 @@
     @endif
 
 
+    {{-- TAB 2: FAVORITE --}}
     @if(request('tab') === 'favorite')
 
         @php
@@ -154,31 +150,24 @@
         @endphp
 
         @if($favorites->isEmpty())
-            <div id="favoriteEmptyMsg" class="text-center py-16">
+            <div id="favoriteEmptyMsg" class="text-center py-16 bg-gray-50 dark:bg-[#1E1E1E] rounded-2xl border border-dashed border-gray-300 dark:border-[#333333]">
                 <p class="text-gray-500 dark:text-gray-400 text-lg">Nu ai niciun anunț salvat la favorite.</p>
             </div>
         @else
 
-        <div id="favoriteEmptyMsg" class="hidden text-center py-16">
+        <div id="favoriteEmptyMsg" class="hidden text-center py-16 bg-gray-50 dark:bg-[#1E1E1E] rounded-2xl border border-dashed border-gray-300 dark:border-[#333333]">
             <p class="text-gray-500 dark:text-gray-400 text-lg">Nu ai niciun anunț salvat la favorite.</p>
         </div>
 
         <div id="favoriteList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             @foreach($favorites as $service)
-            <div class="bg-white dark:bg-[#1E1E1E] rounded-2xl shadow-sm border border-gray-200 dark:border-[#333333] p-4 favorite-card transition-colors" 
+            <div class="bg-white dark:bg-[#1E1E1E] rounded-2xl shadow-sm border border-gray-200 dark:border-[#333333] p-4 favorite-card transition-colors group" 
                  id="favorite-{{ $service->id }}">
 
                 <a href="{{ route('services.show', [$service->id, $service->slug]) }}">
-                    @php
-                        $images = $service->images;
-                        if (is_string($images)) $images = json_decode($images, true);
-                        if (!is_array($images)) $images = [];
-                        $images = array_values(array_filter($images));
-                        $coverImage = count($images) > 0 ? $images[0] : 'no-image.jpg';
-                    @endphp
-
-                    <img src="{{ asset('storage/services/' . $coverImage) }}"
-                         class="w-full h-40 object-cover rounded-xl mb-3 bg-gray-100 dark:bg-[#2C2C2C]">
+                    {{-- 🔥 MODIFICARE: Folosim main_image_url --}}
+                    <img src="{{ $service->main_image_url }}"
+                         class="w-full h-40 object-cover rounded-xl mb-3 bg-gray-100 dark:bg-[#2C2C2C] group-hover:scale-[1.02] transition-transform duration-300">
                 </a>
 
                 <h3 class="font-bold text-lg text-gray-900 dark:text-white truncate">{{ $service->title }}</h3>
@@ -193,6 +182,7 @@
 
                 <button onclick="toggleFavorite({{ $service->id }}, this)"
                         class="mt-4 w-full px-3 py-2.5 text-sm font-medium bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-lg hover:bg-red-200 dark:hover:bg-red-900/50 transition flex items-center justify-center gap-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                     Scoate din favorite
                 </button>
             </div>
@@ -202,15 +192,15 @@
     @endif
 
 
+   {{-- TAB 3: PROFIL (A rămas neschimbat, dar inclus pentru completitudine) --}}
    @if(request('tab') === 'profil')
 
-   {{-- Container aliniat la STÂNGA, nu centrat, pentru un flow natural --}}
    <div class="max-w-5xl mr-auto">
        
        <div class="bg-white dark:bg-[#1E1E1E] border border-gray-200 dark:border-[#333333] shadow-xl rounded-2xl overflow-hidden flex flex-col md:flex-row transition-colors">
            
            <div class="w-full md:w-1/4 bg-gray-50 dark:bg-[#181818] p-6 border-b md:border-b-0 md:border-r border-gray-200 dark:border-[#333333] flex flex-col items-center text-center justify-center">
-                
+               
                 <div class="relative">
                     <div class="w-20 h-20 rounded-full bg-gradient-to-br from-[#CC2E2E] to-[#801010] text-white flex items-center justify-center text-2xl font-bold shadow-lg mb-3 select-none">
                         {{ strtoupper(substr(auth()->user()->name, 0, 1)) }}
@@ -228,7 +218,7 @@
            </div>
 
            <div class="w-full md:w-3/4 p-8">
-                
+               
                 <div class="flex items-center justify-between mb-8">
                     <div>
                         <h3 class="text-xl font-bold text-gray-900 dark:text-white">Setări Cont</h3>
@@ -414,7 +404,6 @@ function updateProfile() {
 
         let msg = document.getElementById("profileSavedMsg");
 
-        // 🔥 Dacă avem erori de validare (nume/email existente)
         if (data.errors) {
             msg.classList.remove("hidden");
             msg.classList.remove("bg-green-100", "text-green-700");
@@ -430,17 +419,15 @@ function updateProfile() {
 
             msg.style.opacity = 1;
 
-            // ascundem după 3 secunde
             setTimeout(() => {
                 msg.style.transition = "0.4s";
                 msg.style.opacity = 0;
                 setTimeout(() => msg.classList.add("hidden"), 400);
             }, 3000);
 
-            return; // stop aici
+            return; 
         }
 
-        // 🔥 UPDATE REUȘIT
         if (data.success) {
             msg.classList.remove("hidden");
             msg.classList.remove("bg-red-100", "text-red-700");
@@ -460,7 +447,7 @@ function updateProfile() {
     .catch(err => console.error(err));
 }
 
-// --- LIVE USERNAME CHECK ---
+// Live Check
 document.addEventListener("DOMContentLoaded", function () {
     const nameInput = document.getElementById("editName");
     const msgEl = document.getElementById("nameCheckMsg");

@@ -1,36 +1,46 @@
 <!DOCTYPE html>
 <html lang="ro">
 <head>
-   <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
 
-<title>@yield('title', 'Servicii România')</title>
-<meta name="csrf-token" content="{{ csrf_token() }}">
+    {{-- 
+       1. TITLU DINAMIC
+       Verificăm întâi dacă există 'meta_title' (din show.blade.php), 
+       apoi 'title' (din create.blade.php), apoi fallback default.
+    --}}
+    <title>@yield('meta_title', view()->hasSection('title') ? view()->getSection('title') : 'Servicii România - MeseriasBun.ro')</title>
+    
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    
+    {{-- DESCRIERE --}}
+    <meta name="description" content="@yield('meta_description', 'Găsește rapid meseriașul potrivit în zona ta. Electricieni, instalatori, constructori și multe altele pe MeseriasBun.ro')">
 
-<meta name="description" content="@yield('meta_description')">
+    <link rel="canonical" href="{{ url()->current() }}">
 
-<link rel="canonical" href="{{ url()->current() }}">
+    {{-- 
+       2. OPEN GRAPH (Facebook / WhatsApp) 
+       Folosim aceleași reguli de fallback ca la titlu.
+       La imagine, dacă nu avem una specifică, punem logo-ul site-ului.
+    --}}
+    <meta property="og:title" content="@yield('meta_title', view()->hasSection('title') ? view()->getSection('title') : 'Servicii România')">
+    <meta property="og:description" content="@yield('meta_description', 'Găsește meseriași verificați în zona ta.')">
+    <meta property="og:image" content="@yield('meta_image', asset('images/logo.webp'))">
+    <meta property="og:url" content="{{ url()->current() }}">
+    <meta property="og:type" content="article">
+    <meta property="og:site_name" content="MeseriasBun.ro">
 
-{{-- OPEN GRAPH --}}
-<meta property="og:title" content="@yield('meta_title')">
-<meta property="og:description" content="@yield('meta_description')">
-<meta property="og:image" content="@yield('meta_image')">
-<meta property="og:url" content="{{ url()->current() }}">
-<meta property="og:type" content="article">
-<meta property="og:site_name" content="MeseriasBun.ro">
+    {{-- 3. TWITTER CARDS --}}
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="@yield('meta_title', view()->hasSection('title') ? view()->getSection('title') : 'Servicii România')">
+    <meta name="twitter:description" content="@yield('meta_description', 'Găsește meseriași verificați în zona ta.')">
+    <meta name="twitter:image" content="@yield('meta_image', asset('images/logo.webp'))">
 
-{{-- TWITTER --}}
-<meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="@yield('meta_title')">
-<meta name="twitter:description" content="@yield('meta_description')">
-<meta name="twitter:image" content="@yield('meta_image')">
+    {{-- 4. SCHEMA.ORG (JSON-LD) --}}
+    @yield('schema')
 
-@yield('schema')
-
-@vite(['resources/css/app.css', 'resources/js/app.js'])
-
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
-
 
 <body class="bg-[#f6f7fb] dark:bg-[#121212] text-gray-900 dark:text-[#E5E5E5] font-inter antialiased min-h-screen flex flex-col">
 
@@ -40,7 +50,7 @@
         
         <div class="w-full max-w-7xl mx-auto px-3 sm:px-4 flex items-center justify-between">
 
-            {{-- 1. LOGO (MODIFICAT: Adăugat width și height pentru CLS) --}}
+            {{-- 1. LOGO --}}
             <a href="{{ route('services.index') }}" class="flex items-center shrink-0 gap-1 group decoration-0">
                 <img src="/images/logo.webp" 
                      alt="Logo MeseriasBun"
@@ -53,7 +63,7 @@
             {{-- 2. MENIU DREAPTA --}}
             <div class="flex items-center gap-2 sm:gap-5">
 
-                {{-- Favorite (FIX: Adăugat aria-label) --}}
+                {{-- Favorite --}}
                 <button onclick="goToFavorites()" 
                         aria-label="Vezi favorite"
                         class="transition-all duration-300 flex items-center justify-center h-9 w-9 rounded-full hover:bg-white/10 shrink-0 text-white">
@@ -83,7 +93,7 @@
                     </div>
 
                 @else
-                    {{-- NE-LOGAT (FIX: Adăugat aria-label la butonul mobil) --}}
+                    {{-- NE-LOGAT --}}
                     <a href="{{ route('login') }}" 
                        aria-label="Autentificare"
                        class="md:hidden p-2 hover:bg-white/10 rounded-full transition text-white">
@@ -159,7 +169,7 @@
                 nav.classList.remove('md:h-[72px]');
                 nav.classList.add('md:h-14', 'shadow-xl');
                 
-                // MODIFICAT: Logo devine și mai mic (md:max-h-9)
+                // Logo devine și mai mic (md:max-h-9)
                 if (logo) {
                     logo.classList.remove('md:max-h-11');
                     logo.classList.add('md:max-h-9');
@@ -169,7 +179,7 @@
                 nav.classList.add('md:h-[72px]');
                 nav.classList.remove('md:h-14', 'shadow-xl');
 
-                // MODIFICAT: Logo revine la mărimea medie (md:max-h-11)
+                // Logo revine la mărimea medie (md:max-h-11)
                 if (logo) {
                     logo.classList.remove('md:max-h-9');
                     logo.classList.add('md:max-h-11');

@@ -4,11 +4,6 @@
 
 @section('content')
 
-{{-- 
-    MODIFICARE FIXĂ: 
-    Am schimbat z-50 în z-30 aici. 
-    Acum Search-ul stă PESTE carduri (z-0), dar SUB Header (care are z-999).
---}}
 <div class="max-w-7xl mx-auto mt-8 mb-12 px-4 md:px-0 relative z-30">
 
     <form method="GET" action="{{ route('services.index') }}"
@@ -219,14 +214,10 @@
 @forelse($services as $service)
 
     @php
-        // LOGICĂ IMAGINI
-        $images = $service->images;
-        if (is_string($images)) $images = json_decode($images, true);
-        if (!is_array($images)) $images = [];
-        $images = array_values(array_filter($images)); 
-        $cover = count($images) > 0 ? $images[0] : 'no-image.jpg';
+        // AICI AM MODIFICAT:
+        // Am șters logica veche pentru imagini pentru că acum avem Modelul inteligent.
         
-        // Logică Favorite
+        // Logică Favorite (păstrată)
         $isFav = auth()->check() && $service->favorites()->where('user_id', auth()->id())->exists();
     @endphp
 
@@ -259,11 +250,15 @@
 
             {{-- Image Area --}}
             <div class="relative w-full aspect-[4/3] bg-gray-100 dark:bg-[#121212] overflow-hidden">
-                <img src="{{ asset('storage/services/' . $cover) }}"
+                
+                {{-- 
+                   🔥 MODIFICARE IMPORTANTĂ AICI 🔥 
+                   Folosim $service->main_image_url
+                   Asta verifică automat: Poză User -> Poză Categorie -> Placeholder
+                --}}
+                <img src="{{ $service->main_image_url }}"
                      class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-                     {{-- SEO: Text alternativ complet pentru Google --}}
                      alt="{{ $service->title }} - {{ $service->county->name }} - {{ $service->category->name }}"
-                     {{-- Performanță: Nu încarcă poza până nu ajungi cu scroll la ea --}}
                      loading="lazy">
 
                 {{-- Badge Categorie --}}

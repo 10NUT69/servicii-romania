@@ -53,7 +53,7 @@ class ServiceController extends Controller
         ]);
     }
 
-    // STORE (ADĂUGARE + SEO RENAME)
+    // STORE (ADĂUGARE)
     public function store(Request $request)
     {
         $rules = [
@@ -66,7 +66,7 @@ class ServiceController extends Controller
             'price_type'  => 'required|in:fixed,negotiable',
             'currency'    => 'required|in:RON,EUR',
             'name'        => 'nullable|string|max:255',
-            'images.*'    => 'image|mimes:jpeg,png,jpg,webp|max:15360', // Max 15MB
+            'images.*'    => 'image|mimes:jpeg,png,jpg,webp|max:15360', 
         ];
 
         if (!Auth::check() && $request->filled('email') && $request->filled('password')) {
@@ -82,12 +82,10 @@ class ServiceController extends Controller
         $validated = $request->validate($rules, $messages);
 
         $userId = null;
-
-        // Logică User
         if (Auth::check()) {
             $userId = Auth::id();
-        } 
-        elseif ($request->filled('email') && $request->filled('password')) {
+        } elseif ($request->filled('email') && $request->filled('password')) {
+            // Logică creare user (identică cu ce aveai)
             if ($request->filled('name')) {
                 $finalName = $request->name;
             } else {
@@ -95,13 +93,11 @@ class ServiceController extends Controller
                 $cleanName = preg_replace('/[^A-Za-z0-9]/', '', $rawName);
                 $finalName = ucfirst(strtolower($cleanName));
             }
-
             $user = User::create([
                 'name'     => $finalName,
                 'email'    => $request->email,
                 'password' => Hash::make($request->password),
             ]);
-
             Auth::login($user);
             $userId = $user->id;
         }
@@ -121,8 +117,23 @@ class ServiceController extends Controller
             $service->email = $request->email;
         }
 
-        // Slug URL
-        $baseSlug = Str::slug($validated['title']);
+        // =========================================================
+        // 🔥 ARTIFICIU SEO: GENERARE LINK (SLUG) COMPLEX 🔥
+        // Structură: "primele-3-cuvinte-titlu-categoria-judet"
+        // =========================================================
+        
+        // 1. Luăm primele 3 cuvinte din titlu
+        $words = Str::of($validated['title'])->explode(' ')->take(3)->implode(' ');
+        
+        // 2. Luăm numele categoriei și al județului
+        $categoryName = Category::find($validated['category_id'])->name;
+        $countyName = County::find($validated['county_id'])->name;
+
+        // 3. Generăm slug-ul de bază
+        $seoString = $words . ' ' . $categoryName . ' ' . $countyName;
+        $baseSlug = Str::slug($seoString);
+        
+        // 4. Verificăm unicitatea
         $uniqueSlug = $baseSlug;
         $i = 2;
         while (Service::where('slug', $uniqueSlug)->exists()) {
@@ -130,27 +141,20 @@ class ServiceController extends Controller
             $i++;
         }
         $service->slug = $uniqueSlug;
-        $service->status = 'active';
-        $service->save();
-
-        // --- LOGICĂ IMAGINI SEO ---
-        $manager = new ImageManager(new Driver());
-        $savedImages = [];
-
-        // 1. Găsim numele județului pentru SEO
-        $countyName = County::find($validated['county_id'])->name ?? 'romania';
         
-        // 2. Generăm baza numelui: "titlu-judet"
-        $seoBaseName = Str::slug($validated['title'] . '-' . $countyName);
-
+        $service->status = 'active';
+        
+        // --- LOGICĂ IMAGINI (Rămâne neschimbată) ---
+        $savedImages = [];
         if ($request->hasFile('images')) {
+            $manager = new ImageManager(new Driver());
+            // Folosim același string SEO și pentru numele imaginilor
+            $seoBaseName = $baseSlug; 
+
             foreach ($request->file('images') as $image) {
                 if (count($savedImages) >= 10) break;
                 
-                // 3. Nume final: "titlu-judet-random.jpg"
-                // Random string (6 caractere) e necesar pt a evita duplicatele și caching-ul
                 $name = $seoBaseName . '-' . Str::random(6) . '.jpg';
-                
                 $path = storage_path('app/public/services/' . $name);
                 
                 if (!file_exists(dirname($path))) mkdir(dirname($path), 0755, true);
@@ -164,13 +168,12 @@ class ServiceController extends Controller
             }
         }
 
-        $service->images = $savedImages;
+        $service->images = $savedImages; 
         $service->save();
 
         return redirect()->route('services.show', [$service->id, $service->slug])
                          ->with('success', 'Anunțul a fost publicat!');
     }
-
     // SHOW
     public function show($id, $slug)
     {
@@ -190,7 +193,7 @@ class ServiceController extends Controller
         ]);
     }
 
-    // UPDATE (MODIFICARE + SEO RENAME)
+    // UPDATE
     public function update(Request $request, $id)
     {
         $service = Service::where('id', $id)
@@ -212,25 +215,21 @@ class ServiceController extends Controller
 
         // Păstrăm imaginile vechi
         $finalImages = $service->images;
+        // Asigurăm compatibilitatea dacă vine ca string sau array
         if (is_string($finalImages)) $finalImages = json_decode($finalImages, true);
         if (!is_array($finalImages)) $finalImages = [];
 
         unset($validated['images']);
         $service->fill($validated);
 
-        // --- LOGICĂ IMAGINI SEO (UPDATE) ---
-        $manager = new ImageManager(new Driver());
-        
-        // 1. Găsim numele județului (nou sau vechi)
-        $countyName = County::find($validated['county_id'])->name ?? 'romania';
-        // 2. Generăm baza numelui SEO
-        $seoBaseName = Str::slug($validated['title'] . '-' . $countyName);
-
         if ($request->hasFile('images')) {
+            $manager = new ImageManager(new Driver());
+            $countyName = County::find($validated['county_id'])->name ?? 'romania';
+            $seoBaseName = Str::slug($validated['title'] . '-' . $countyName);
+
             foreach ($request->file('images') as $image) {
                 if (count($finalImages) >= 10) break;
 
-                // 3. Nume SEO
                 $name = $seoBaseName . '-' . Str::random(6) . '.jpg';
                 $path = storage_path('app/public/services/' . $name);
 
@@ -271,6 +270,7 @@ class ServiceController extends Controller
             if (file_exists($path)) unlink($path);
 
             unset($currentImages[$key]);
+            // Reindexăm array-ul
             $service->images = array_values($currentImages);
             $service->save();
 
@@ -283,9 +283,13 @@ class ServiceController extends Controller
     public function destroy($id)
     {
         $service = Service::where('id', $id)->where('user_id', auth()->id())->firstOrFail();
+        
+        // Decodare sigură
         $images = $service->images;
-        if (!is_array($images)) $images = json_decode($images, true) ?? [];
+        if (is_string($images)) $images = json_decode($images, true);
+        if (!is_array($images)) $images = [];
 
+        // Ștergem fișierele fizice
         foreach ($images as $img) {
             if (!$img) continue;
             $path = storage_path("app/public/services/" . $img);
@@ -295,6 +299,7 @@ class ServiceController extends Controller
                 Log::error("Delete error: " . $e->getMessage());
             }
         }
+        
         $service->delete();
         return response()->json(['status' => 'deleted']);
     }

@@ -1,28 +1,30 @@
 @extends('layouts.app')
 
-@section('title', 'Editează anunț')
+@section('title', 'Editează anunț - ' . $service->title)
 
 @section('content')
 
-<div class="max-w-3xl mx-auto mt-8 mb-16">
+<div class="max-w-3xl mx-auto mt-8 mb-16 px-4 md:px-0">
 
     <div class="text-center mb-10">
         <h1 class="text-3xl font-bold text-gray-900 dark:text-white tracking-tight transition-colors">
-            Editează anunțul
+            Modifică anunțul
         </h1>
         <p class="text-gray-500 dark:text-gray-400 mt-2 text-lg transition-colors">
-            Actualizează detaliile pentru a menține anunțul relevant.
+            Actualizează detaliile pentru a atrage mai mulți clienți.
         </p>
     </div>
 
     <form action="{{ route('services.update', $service->id) }}" 
           method="POST" 
           enctype="multipart/form-data"
-          class="space-y-8">
+          class="space-y-8"
+          id="editForm">
 
         @csrf
         @method('PUT')
 
+        {{-- SECȚIUNEA 1: DETALII DE BAZĂ --}}
         <div class="bg-white dark:bg-[#1E1E1E] p-6 md:p-8 rounded-2xl shadow-lg border border-gray-100 dark:border-[#333333] transition-colors">
             <h2 class="text-xl font-bold mb-6 text-gray-900 dark:text-white flex items-center gap-2">
                 <span class="bg-blue-100 dark:bg-blue-900/30 text-blue-600 p-1.5 rounded-lg">📝</span>
@@ -30,38 +32,29 @@
             </h2>
             
             <div class="space-y-6">
+                {{-- TITLU --}}
                 <div>
                     <label class="block mb-2 font-semibold text-gray-700 dark:text-gray-300">Titlul anunțului</label>
-                    <div class="relative">
-                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                            <svg class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                            </svg>
-                        </div>
-                        <input type="text" name="title" 
-                            value="{{ old('title', $service->title) }}"
-                            class="w-full pl-10 pr-4 py-3.5 rounded-xl border @error('title') border-red-500 @else border-gray-300 dark:border-[#404040] @enderror
-                                   bg-gray-50 dark:bg-[#2C2C2C] text-gray-900 dark:text-white 
-                                   focus:ring-2 focus:ring-primary-end focus:bg-white dark:focus:bg-[#252525]
-                                   outline-none transition placeholder-gray-400"
-                            required>
-                    </div>
+                    <input type="text" name="title" value="{{ old('title', $service->title) }}"
+                        class="w-full pl-4 pr-4 py-3.5 rounded-xl border border-gray-300 dark:border-[#404040]
+                               bg-gray-50 dark:bg-[#2C2C2C] text-gray-900 dark:text-white 
+                               focus:ring-2 focus:ring-primary-end outline-none transition placeholder-gray-400"
+                        required>
                     @error('title') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
                 </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                    {{-- CATEGORIE --}}
                     <div>
                         <label class="block mb-2 font-semibold text-gray-700 dark:text-gray-300">Categoria</label>
                         <div class="relative">
                             <select name="category_id"
-                                    class="w-full pl-4 pr-10 py-3.5 rounded-xl border @error('category_id') border-red-500 @else border-gray-300 dark:border-[#404040] @enderror
-                                           bg-gray-50 dark:bg-[#2C2C2C] text-gray-900 dark:text-white appearance-none
-                                           focus:ring-2 focus:ring-primary-end outline-none transition cursor-pointer form-select"
+                                    class="w-full pl-4 pr-10 py-3.5 rounded-xl border border-gray-300 dark:border-[#404040]
+                                           bg-gray-50 dark:bg-[#2C2C2C] text-gray-900 dark:text-white 
+                                           focus:ring-2 focus:ring-primary-end outline-none appearance-none form-select cursor-pointer"
                                     required>
                                 @foreach ($categories as $category)
-                                    <option value="{{ $category->id }}" 
-                                        {{ old('category_id', $service->category_id) == $category->id ? 'selected' : '' }} 
-                                        class="dark:bg-[#1E1E1E]">
+                                    <option value="{{ $category->id }}" {{ old('category_id', $service->category_id) == $category->id ? 'selected' : '' }} class="dark:bg-[#1E1E1E]">
                                         {{ $category->name }}
                                     </option>
                                 @endforeach
@@ -72,18 +65,17 @@
                         </div>
                     </div>
 
+                    {{-- JUDEȚ --}}
                     <div>
                         <label class="block mb-2 font-semibold text-gray-700 dark:text-gray-300">Județ</label>
                         <div class="relative">
                             <select name="county_id"
-                                    class="w-full pl-4 pr-10 py-3.5 rounded-xl border @error('county_id') border-red-500 @else border-gray-300 dark:border-[#404040] @enderror
-                                           bg-gray-50 dark:bg-[#2C2C2C] text-gray-900 dark:text-white appearance-none
-                                           focus:ring-2 focus:ring-primary-end outline-none transition cursor-pointer form-select"
+                                    class="w-full pl-4 pr-10 py-3.5 rounded-xl border border-gray-300 dark:border-[#404040]
+                                           bg-gray-50 dark:bg-[#2C2C2C] text-gray-900 dark:text-white 
+                                           focus:ring-2 focus:ring-primary-end outline-none appearance-none form-select cursor-pointer"
                                     required>
                                 @foreach ($counties as $county)
-                                    <option value="{{ $county->id }}" 
-                                        {{ old('county_id', $service->county_id) == $county->id ? 'selected' : '' }} 
-                                        class="dark:bg-[#1E1E1E]">
+                                    <option value="{{ $county->id }}" {{ old('county_id', $service->county_id) == $county->id ? 'selected' : '' }} class="dark:bg-[#1E1E1E]">
                                         {{ $county->name }}
                                     </option>
                                 @endforeach
@@ -95,10 +87,11 @@
                     </div>
                 </div>
 
+                {{-- DESCRIERE --}}
                 <div>
                     <label class="block mb-2 font-semibold text-gray-700 dark:text-gray-300">Descriere</label>
-                    <textarea name="description" rows="5"
-                              class="w-full px-4 py-3 rounded-xl border @error('description') border-red-500 @else border-gray-300 dark:border-[#404040] @enderror
+                    <textarea name="description" rows="6"
+                              class="w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-[#404040]
                                      bg-gray-50 dark:bg-[#2C2C2C] text-gray-900 dark:text-white
                                      focus:ring-2 focus:ring-primary-end outline-none transition resize-y placeholder-gray-400"
                               required>{{ old('description', $service->description) }}</textarea>
@@ -107,6 +100,7 @@
             </div>
         </div>
 
+        {{-- SECȚIUNEA 2: PREȚ ȘI IMAGINI --}}
         <div class="bg-white dark:bg-[#1E1E1E] p-6 md:p-8 rounded-2xl shadow-lg border border-gray-100 dark:border-[#333333] transition-colors">
             <h2 class="text-xl font-bold mb-6 text-gray-900 dark:text-white flex items-center gap-2">
                 <span class="bg-green-100 dark:bg-green-900/30 text-green-600 p-1.5 rounded-lg">💰</span>
@@ -114,17 +108,15 @@
             </h2>
 
             <div class="mb-8">
-                <label class="block mb-2 font-semibold text-gray-700 dark:text-gray-300">Prețul estimativ</label>
+                <label class="block mb-2 font-semibold text-gray-700 dark:text-gray-300">Preț</label>
                 <div class="flex flex-col sm:flex-row gap-4">
                     <div class="flex-1 relative">
-                        <input type="number" name="price_value" step="0.01" 
-                               value="{{ old('price_value', $service->price_value) }}"
-                               placeholder="0.00"
+                        <input type="number" name="price_value" step="0.01" value="{{ old('price_value', $service->price_value) }}"
                                class="w-full pl-4 pr-20 py-3.5 rounded-xl border border-gray-300 dark:border-[#404040] 
                                       bg-gray-50 dark:bg-[#2C2C2C] text-gray-900 dark:text-white font-bold text-lg
-                                      focus:ring-2 focus:ring-primary-end outline-none transition no-spinner placeholder-gray-400">
+                                      focus:ring-2 focus:ring-primary-end outline-none no-spinner">
                         <div class="absolute inset-y-0 right-0 flex items-center">
-                            <select name="currency" class="h-full py-0 pl-2 pr-7 bg-transparent text-gray-500 dark:text-gray-300 font-semibold border-none focus:ring-0 cursor-pointer">
+                            <select name="currency" class="h-full py-0 pl-2 pr-7 bg-transparent text-gray-500 dark:text-gray-300 font-bold border-none cursor-pointer focus:ring-0">
                                 <option value="RON" {{ old('currency', $service->currency) == 'RON' ? 'selected' : '' }} class="dark:bg-[#1E1E1E]">RON</option>
                                 <option value="EUR" {{ old('currency', $service->currency) == 'EUR' ? 'selected' : '' }} class="dark:bg-[#1E1E1E]">EUR</option>
                             </select>
@@ -133,81 +125,91 @@
                     
                     <div class="flex bg-gray-100 dark:bg-[#2C2C2C] p-1 rounded-xl w-full sm:w-auto shrink-0">
                         <label class="flex-1 sm:flex-none cursor-pointer">
-                            <input type="radio" name="price_type" value="fixed" 
-                                   {{ old('price_type', $service->price_type) == 'fixed' ? 'checked' : '' }} 
-                                   class="peer sr-only">
-                            <span class="flex items-center justify-center w-full sm:w-32 py-2.5 rounded-lg text-sm font-semibold text-gray-500 dark:text-gray-400 transition-all peer-checked:bg-white dark:peer-checked:bg-[#404040] peer-checked:text-gray-900 dark:peer-checked:text-white peer-checked:shadow-sm">
-                                Preț Fix
-                            </span>
+                            <input type="radio" name="price_type" value="fixed" {{ old('price_type', $service->price_type) == 'fixed' ? 'checked' : '' }} class="peer sr-only">
+                            <span class="flex items-center justify-center w-full sm:w-32 py-2.5 rounded-lg text-sm font-semibold text-gray-500 dark:text-gray-400 peer-checked:bg-white dark:peer-checked:bg-[#404040] peer-checked:text-gray-900 dark:peer-checked:text-white peer-checked:shadow-sm transition-all">Preț Fix</span>
                         </label>
                         <label class="flex-1 sm:flex-none cursor-pointer">
-                            <input type="radio" name="price_type" value="negotiable" 
-                                   {{ old('price_type', $service->price_type) == 'negotiable' ? 'checked' : '' }} 
-                                   class="peer sr-only">
-                            <span class="flex items-center justify-center w-full sm:w-32 py-2.5 rounded-lg text-sm font-semibold text-gray-500 dark:text-gray-400 transition-all peer-checked:bg-white dark:peer-checked:bg-[#404040] peer-checked:text-gray-900 dark:peer-checked:text-white peer-checked:shadow-sm">
-                                Negociabil
-                            </span>
+                            <input type="radio" name="price_type" value="negotiable" {{ old('price_type', $service->price_type) == 'negotiable' ? 'checked' : '' }} class="peer sr-only">
+                            <span class="flex items-center justify-center w-full sm:w-32 py-2.5 rounded-lg text-sm font-semibold text-gray-500 dark:text-gray-400 peer-checked:bg-white dark:peer-checked:bg-[#404040] peer-checked:text-gray-900 dark:peer-checked:text-white peer-checked:shadow-sm transition-all">Negociabil</span>
                         </label>
                     </div>
                 </div>
             </div>
 
-            {{-- SECȚIUNEA BLINDATĂ PENTRU IMAGINI --}}
-            @php
-                $gallery = $service->images;
-                if (is_null($gallery)) $gallery = [];
-                if (is_string($gallery)) $gallery = json_decode($gallery, true) ?? [];
-                // Ne asigurăm că e array și eliminăm elementele invalide
-                if (is_array($gallery)) {
-                    $gallery = array_filter($gallery, function($item) { return is_string($item) && !empty($item); });
-                } else {
-                    $gallery = [];
-                }
-            @endphp
-
-            @if(count($gallery) > 0)
-            <div class="mb-8">
-                <label class="block mb-3 font-semibold text-gray-700 dark:text-gray-300">
-                    Imagini actuale ({{ count($gallery) }})
+            {{-- ZONA UNIFICATĂ PENTRU IMAGINI (EXISTENTE + NOI) --}}
+            <div class="space-y-4">
+                <label class="block font-semibold text-gray-700 dark:text-gray-300 flex justify-between items-center">
+                    Galerie Foto
+                    <span class="text-xs font-normal text-gray-400 bg-gray-100 dark:bg-[#2C2C2C] px-2 py-1 rounded-lg">
+                        Adaugă imagini noi sau șterge-le pe cele vechi
+                    </span>
                 </label>
-                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    @foreach($gallery as $img)
-                        <div class="relative group aspect-square" id="image-container-{{ $loop->index }}">
-                            <img src="{{ asset('storage/services/' . $img) }}" 
-                                 class="w-full h-full object-cover rounded-xl shadow border border-gray-200 dark:border-[#404040]">
-                            
-                            <button type="button" 
-                                    onclick="deleteServerImage('{{ $img }}', {{ $service->id }}, 'image-container-{{ $loop->index }}')"
-                                    class="absolute top-2 right-2 bg-red-600 hover:bg-red-700 text-white p-1.5 rounded-full 
-                                           shadow-md opacity-90 group-hover:opacity-100 transition transform active:scale-90"
-                                    title="Șterge imaginea definitiv">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                </svg>
-                            </button>
-                        </div>
-                    @endforeach
-                </div>
-            </div>
-            @endif
 
-            <div>
-                <label class="block mb-2 font-semibold text-gray-700 dark:text-gray-300">Adaugă imagini noi</label>
-                <div class="relative w-full group">
+                {{-- 1. Input Upload --}}
+                <div class="relative w-full group mb-6">
                     <input type="file" id="imageInput" name="images[]" multiple accept="image/*"
                            class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10">
-                    <div class="flex flex-col items-center justify-center w-full h-48 border-2 border-dashed border-gray-300 dark:border-[#404040] rounded-2xl bg-gray-50 dark:bg-[#2C2C2C] group-hover:bg-gray-100 dark:group-hover:bg-[#333333] transition-colors">
-                        <div class="p-3 bg-white dark:bg-[#404040] rounded-full shadow-sm mb-3">
-                            <svg class="h-8 w-8 text-[#CC2E2E]" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                    
+                    <div class="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-gray-300 dark:border-[#404040] rounded-2xl bg-gray-50 dark:bg-[#2C2C2C] group-hover:bg-gray-100 dark:group-hover:bg-[#333333] transition-colors">
+                        <div class="flex items-center gap-3">
+                            <div class="p-2 bg-white dark:bg-[#404040] rounded-full shadow-sm">
+                                <svg class="h-6 w-6 text-[#CC2E2E]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                </svg>
+                            </div>
+                            <div class="text-left">
+                                <p class="text-sm text-gray-600 dark:text-gray-300 font-medium">Click sau Drag & Drop</p>
+                                <p class="text-[10px] text-gray-400">Max 15MB / imagine</p>
+                            </div>
                         </div>
-                        <p class="text-sm text-gray-500 dark:text-gray-300 font-medium"><span class="text-[#CC2E2E]">Încarcă imagini</span> sau trage-le aici</p>
-                        <p class="text-xs text-gray-400 mt-1">Noile imagini se adaugă la cele existente (max 10 total).</p>
                     </div>
                 </div>
-                <div id="previewContainer" class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6"></div>
+
+                {{-- 2. Grid Imagini (Mixat: Vechi + Noi) --}}
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    
+                    {{-- A. IMAGINI DEJA SALVATE PE SERVER --}}
+                    @php
+                        $gallery = $service->images;
+                        if (is_null($gallery)) $gallery = [];
+                        if (is_string($gallery)) $gallery = json_decode($gallery, true) ?? [];
+                        if (!is_array($gallery)) $gallery = [];
+                        // Curățăm array-ul de valori nule
+                        $gallery = array_values(array_filter($gallery));
+                    @endphp
+
+                    @foreach($gallery as $img)
+                        <div class="relative group aspect-square rounded-xl overflow-hidden border border-gray-200 dark:border-[#404040] bg-white dark:bg-[#2C2C2C]" 
+                             id="server-img-{{ $loop->index }}">
+                            
+                            {{-- Imagine --}}
+                            <img src="{{ asset('storage/services/' . $img) }}" class="w-full h-full object-cover">
+                            
+                            {{-- Badge --}}
+                            <div class="absolute top-2 left-2 bg-gray-900/60 backdrop-blur-sm text-white text-[10px] px-2 py-0.5 rounded pointer-events-none">
+                                Existent
+                            </div>
+
+                            {{-- Overlay Ștergere --}}
+                            <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                <button type="button" 
+                                        onclick="deleteServerImage('{{ $img }}', {{ $service->id }}, 'server-img-{{ $loop->index }}')"
+                                        class="bg-red-600 hover:bg-red-700 text-white px-3 py-1.5 rounded-lg shadow-lg transform translate-y-2 group-hover:translate-y-0 transition-all flex items-center gap-1 text-xs font-bold">
+                                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                                    Șterge
+                                </button>
+                            </div>
+                        </div>
+                    @endforeach
+
+                    {{-- B. AICI VOR APĂREA IMAGINILE NOI (PREVIEW) --}}
+                    <div id="previewContainer" class="contents"></div>
+
+                </div>
             </div>
         </div>
 
+        {{-- SECȚIUNEA 3: CONTACT --}}
         <div class="bg-white dark:bg-[#1E1E1E] p-6 md:p-8 rounded-2xl shadow-lg border border-gray-100 dark:border-[#333333] transition-colors">
             <h2 class="text-xl font-bold mb-6 text-gray-900 dark:text-white flex items-center gap-2">
                 <span class="bg-purple-100 dark:bg-purple-900/30 text-purple-600 p-1.5 rounded-lg">📞</span>
@@ -217,32 +219,18 @@
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                     <label class="block mb-2 font-semibold text-gray-700 dark:text-gray-300">Telefon</label>
-                    <div class="relative">
-                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                            <svg class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" /></svg>
-                        </div>
-                        <input type="text" name="phone" 
-                            value="{{ old('phone', $service->phone) }}"
-                            class="w-full pl-10 pr-4 py-3.5 rounded-xl border @error('phone') border-red-500 @else border-gray-300 dark:border-[#404040] @enderror
-                                   bg-gray-50 dark:bg-[#2C2C2C] text-gray-900 dark:text-white 
-                                   focus:ring-2 focus:ring-primary-end focus:bg-white dark:focus:bg-[#252525] transition outline-none placeholder-gray-400"
-                            required>
-                    </div>
-                    @error('phone') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
+                    <input type="text" name="phone" value="{{ old('phone', $service->phone) }}"
+                        class="w-full pl-4 pr-4 py-3.5 rounded-xl border border-gray-300 dark:border-[#404040]
+                               bg-gray-50 dark:bg-[#2C2C2C] text-gray-900 dark:text-white 
+                               focus:ring-2 focus:ring-primary-end outline-none transition"
+                        required>
                 </div>
-
                 <div>
-                    <label class="block mb-2 font-semibold text-gray-700 dark:text-gray-300">Email</label>
-                    <div class="relative">
-                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                            <svg class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
-                        </div>
-                        <input type="email" name="email" 
-                            value="{{ old('email', $service->email) }}"
-                            class="w-full pl-10 pr-4 py-3.5 rounded-xl border @error('email') border-red-500 @else border-gray-300 dark:border-[#404040] @enderror
-                                   bg-gray-50 dark:bg-[#2C2C2C] text-gray-900 dark:text-white 
-                                   focus:ring-2 focus:ring-primary-end focus:bg-white dark:focus:bg-[#252525] transition outline-none placeholder-gray-400">
-                    </div>
+                    <label class="block mb-2 font-semibold text-gray-700 dark:text-gray-300">Email (Opțional)</label>
+                    <input type="email" name="email" value="{{ old('email', $service->email) }}"
+                        class="w-full pl-4 pr-4 py-3.5 rounded-xl border border-gray-300 dark:border-[#404040]
+                               bg-gray-50 dark:bg-[#2C2C2C] text-gray-900 dark:text-white 
+                               focus:ring-2 focus:ring-primary-end outline-none transition">
                 </div>
             </div>
         </div>
@@ -267,50 +255,106 @@
     </form>
 </div>
 
+{{-- CSS --}}
 <style>
 .no-spinner::-webkit-inner-spin-button,
-.no-spinner::-webkit-outer-spin-button {
-    -webkit-appearance: none;
-    margin: 0;
-}
+.no-spinner::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
 .no-spinner { -moz-appearance: textfield; }
-
-select.form-select, select {
-    -webkit-appearance: none !important;
-    -moz-appearance: none !important;
-    appearance: none !important;
-    background-image: none !important;
-    background-color: transparent;
+select.form-select {
+    -webkit-appearance: none; -moz-appearance: none; appearance: none;
+    background-image: none; background-color: transparent;
 }
+.contents { display: contents; } /* Hack pentru Grid */
 </style>
 
+{{-- JAVASCRIPT --}}
 <script>
-document.getElementById('imageInput').addEventListener('change', function (e) {
-    const container = document.getElementById('previewContainer');
-    container.innerHTML = "";
-    [...e.target.files].forEach((file) => {
+// === 1. LOGICĂ IMAGINI NOI (UPLOAD) ===
+let uploadedFiles = [];
+const imageInput = document.getElementById('imageInput');
+const previewContainer = document.getElementById('previewContainer');
+const LIMITA_MB = 15;
+
+imageInput.addEventListener('change', function (e) {
+    const newFiles = Array.from(e.target.files);
+    let hasError = false;
+
+    newFiles.forEach(file => {
+        if (file.size > LIMITA_MB * 1024 * 1024) {
+            alert(`Imaginea "${file.name}" este prea mare!`);
+            hasError = true;
+        }
+    });
+
+    if (hasError) { updateInputFiles(); return; }
+
+    uploadedFiles = uploadedFiles.concat(newFiles);
+    // Limita totală (ex: 10) e greu de verificat mixt cu serverul, 
+    // așa că limităm doar upload-ul curent la 10
+    if (uploadedFiles.length > 10) uploadedFiles = uploadedFiles.slice(0, 10);
+
+    renderPreviews();
+    updateInputFiles();
+});
+
+function renderPreviews() {
+    previewContainer.innerHTML = ""; // Golim doar preview-urile noi
+
+    uploadedFiles.forEach((file, index) => {
         const reader = new FileReader();
-        reader.onload = function (event) {
-            container.innerHTML += `
-                <div class="relative group animate-fade-in aspect-square">
-                    <img src="${event.target.result}" class="w-full h-full object-cover rounded-xl shadow border border-gray-200 dark:border-[#404040]">
-                    <button type="button" onclick="this.parentElement.remove()" class="absolute top-2 right-2 bg-black/60 hover:bg-red-600 text-white text-xs p-1.5 rounded-full transition backdrop-blur-sm">
-                        <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+        reader.onload = function (e) {
+            const isFirstNew = index === 0; 
+            
+            const div = document.createElement('div');
+            // Chenar verde pt imagini noi
+            div.className = `relative group aspect-square rounded-xl overflow-hidden shadow-sm border-2 border-dashed border-green-500/50 bg-green-50 dark:bg-[#1E2A20]`;
+            
+            div.innerHTML = `
+                <img src="${e.target.result}" class="w-full h-full object-cover opacity-90">
+                
+                <div class="absolute top-2 left-2 bg-green-600 text-white text-[10px] px-2 py-0.5 rounded shadow z-10">
+                    Nou
+                </div>
+
+                <div class="absolute bottom-1 left-1 bg-black/60 text-white text-[10px] px-2 py-0.5 rounded backdrop-blur-sm font-mono z-10">
+                    ${(file.size / 1024 / 1024).toFixed(2)} MB
+                </div>
+
+                <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-2 p-4">
+                    <button type="button" onclick="removePhoto(${index})" 
+                            class="px-3 py-1.5 bg-red-600 text-white text-xs font-bold rounded-lg hover:bg-red-700 transition shadow-lg w-full flex items-center justify-center gap-1">
+                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                        Anulează
                     </button>
-                </div>`;
+                </div>
+            `;
+            previewContainer.appendChild(div);
         };
         reader.readAsDataURL(file);
     });
-});
+}
 
-function deleteServerImage(imageName, serviceId, containerId) {
-    if (!confirm('Sigur vrei să ștergi această imagine?')) return;
+window.removePhoto = function(index) {
+    uploadedFiles.splice(index, 1);
+    renderPreviews();
+    updateInputFiles();
+}
+
+function updateInputFiles() {
+    const dataTransfer = new DataTransfer();
+    uploadedFiles.forEach(file => { dataTransfer.items.add(file); });
+    imageInput.files = dataTransfer.files;
+}
+
+// === 2. LOGICĂ ȘTERGERE IMAGINI VECHI (AJAX) ===
+window.deleteServerImage = function(imageName, serviceId, containerId) {
+    if (!confirm('Ești sigur că vrei să ștergi această imagine? Nu se poate anula.')) return;
 
     fetch(`/services/${serviceId}/image`, {
         method: 'DELETE',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': '{{ csrf_token() }}'
+        headers: { 
+            'Content-Type': 'application/json', 
+            'X-CSRF-TOKEN': '{{ csrf_token() }}' 
         },
         body: JSON.stringify({ image: imageName })
     })
@@ -318,9 +362,9 @@ function deleteServerImage(imageName, serviceId, containerId) {
     .then(data => {
         if (data.success) {
             const el = document.getElementById(containerId);
-            el.style.transition = "all 0.3s ease";
-            el.style.opacity = "0";
-            el.style.transform = "scale(0.9)";
+            // Animație de ștergere
+            el.style.transform = 'scale(0.9)';
+            el.style.opacity = '0';
             setTimeout(() => el.remove(), 300);
         } else {
             alert('Eroare la ștergere: ' + (data.message || 'Necunoscută'));
@@ -328,7 +372,7 @@ function deleteServerImage(imageName, serviceId, containerId) {
     })
     .catch(error => {
         console.error('Error:', error);
-        alert('A apărut o eroare de conexiune.');
+        alert('Eroare de rețea.');
     });
 }
 </script>

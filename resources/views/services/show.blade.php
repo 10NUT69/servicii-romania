@@ -1,11 +1,11 @@
 @extends('layouts.app')
 
 @php
-    // 1. Titlu scurt SEO = PRIMELE 3 CUVINTE (nu mai folosim limitare la 40 caractere)
+    // 1. Titlu scurt SEO
     $words = preg_split('/\s+/', trim($service->title));
     $seoTitle = implode(' ', array_slice($words, 0, 3));
 
-    // 2. Locația (oraș dacă există, altfel județul)
+    // 2. Locația
     $seoLocation = $service->city ?: $service->county->name;
 
     // 3. Meta description
@@ -13,12 +13,11 @@
                       "Găsește rapid meseriașul potrivit, disponibil când ai nevoie. ".
                       "Verifică detalii și contactează direct pe MeseriasBun.ro.";
 
-    // 4. Poză principală
-    $seoImage = isset($service->images[0]) 
-                ? asset('storage/services/' . $service->images[0])
-                : asset('images/default-service.jpg');
+    // 4. Poză principală (FOLOSIM NOUL MODEL INTELIGENT)
+    // Aceasta va returna automat: Poza User SAU Poza Categorie SAU Placeholder
+    $seoImage = $service->main_image_url;
 
-    // 5. PREGĂTIRE DATE SCHEMA.ORG (definite aici — safe pentru json_encode)
+    // 5. Schema.org
     $schemaData = [
         "@context" => "https://schema.org",
         "@type" => "Service",
@@ -32,7 +31,6 @@
         ]
     ];
 
-    // 6. Titlu complet SEO
     $fullSeoTitle = $seoTitle . ' | ' . $service->category->name . ' în ' . $seoLocation . ' | MeseriasBun.ro';
 @endphp
 
@@ -83,30 +81,36 @@
 
         {{-- LOGICĂ IMAGINI --}}
         @php
-            $images = $service->images ?: [];
-            if (is_string($images)) $images = json_decode($images, true);
-            if (!is_array($images)) $images = [];
-            $images = array_values(array_filter($images));
+            // Obținem array-ul real de imagini DOAR dacă userul a încărcat ceva
+            $userImages = $service->images;
+            if (is_string($userImages)) $userImages = json_decode($userImages, true);
+            if (!is_array($userImages)) $userImages = [];
+            $userImages = array_values(array_filter($userImages));
         @endphp
 
-        {{-- ZONA IMAGINI --}}
-        @if(count($images) > 0)
-            
-            {{-- Imagine Principală Mare (Fără Click/Lightbox) --}}
-           {{-- Imagine Principală Mare (Fără Click/Lightbox) --}}
-            <div class="mb-4 relative overflow-hidden rounded-2xl shadow-lg border border-gray-100 dark:border-[#333333] aspect-[16/10]">
-                <img id="mainImage"
-                     src="{{ asset('storage/services/' . $images[0]) }}" 
-                     class="w-full h-full object-cover transition duration-500"
-                     alt="{{ $service->title }}"
-                     fetchpriority="high"
-                     loading="eager">
-            </div>
+        {{-- 
+            ZONA IMAGINI PRINCIPALĂ 
+            Aici folosim $service->main_image_url pentru a garanta că avem o poză (User sau Categorie)
+        --}}
+        <div class="mb-4 relative overflow-hidden rounded-2xl shadow-lg border border-gray-100 dark:border-[#333333] aspect-[16/10]">
+            <img id="mainImage"
+                 src="{{ $service->main_image_url }}" 
+                 class="w-full h-full object-cover transition duration-500"
+                 alt="{{ $service->title }}"
+                 fetchpriority="high"
+                 loading="eager">
+        </div>
 
-            {{-- Thumbnails --}}
+        {{-- 
+            ZONA THUMBNAILS (Galerie mică)
+            O afișăm DOAR dacă userul a încărcat efectiv poze ($userImages nu e gol).
+            Dacă e poza default de categorie, nu vrem thumbnails.
+        --}}
+        @if(count($userImages) > 0)
             <div class="grid grid-cols-5 gap-2 md:gap-3 mb-10">
-                @foreach($images as $key => $image)
+                @foreach($userImages as $key => $image)
                     <div class="aspect-square relative rounded-xl overflow-hidden cursor-pointer border-2 border-transparent hover:border-[#CC2E2E] transition-all"
+                         {{-- Aici folosim asset storage/services pentru că iterăm fișierele reale --}}
                          onclick="document.getElementById('mainImage').src='{{ asset('storage/services/' . $image) }}'">
                         <img src="{{ asset('storage/services/' . $image) }}" 
                              class="w-full h-full object-cover hover:opacity-90 transition"
@@ -114,13 +118,9 @@
                     </div>
                 @endforeach
             </div>
-
         @else
-            {{-- Placeholder fără imagini --}}
-            <div class="w-full h-64 bg-gray-50 dark:bg-[#1E1E1E] border-2 border-dashed border-gray-200 dark:border-[#333333] rounded-2xl flex flex-col items-center justify-center mb-10">
-                <svg class="h-12 w-12 text-gray-300 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
-                <span class="text-gray-400 font-medium">Fără imagini încărcate</span>
-            </div>
+            {{-- Spatiator dacă nu sunt thumbnails --}}
+            <div class="mb-8"></div>
         @endif
 
         {{-- DESCRIERE --}}
@@ -211,7 +211,7 @@
                                   bg-[#CC2E2E] text-white font-bold text-lg shadow-lg shadow-red-500/30
                                   hover:bg-[#B72626] hover:shadow-red-500/50 hover:-translate-y-0.5 
                                   active:translate-y-0 transition-all duration-200 overflow-hidden">
-                            
+                           
                             {{-- Shimmer Effect --}}
                             <div class="absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:animate-[shimmer_1.5s_infinite]"></div>
 

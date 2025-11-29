@@ -1,10 +1,11 @@
 @extends('layouts.app')
 
-@section('title', 'Adaugă anunț')
+@section('title', 'Adaugă anunț gratuit - Servicii România')
+@section('meta_description', 'Publică rapid anunțul tău. Formular simplu pentru meseriași și prestatori de servicii.')
 
 @section('content')
 
-<div class="max-w-3xl mx-auto mt-8 mb-16">
+<div class="max-w-3xl mx-auto mt-8 mb-16 px-4 md:px-0">
 
     <div class="text-center mb-10">
         <h1 class="text-3xl font-bold text-gray-900 dark:text-white tracking-tight transition-colors">
@@ -18,10 +19,12 @@
     <form action="{{ route('services.store') }}" 
           method="POST" 
           enctype="multipart/form-data"
-          class="space-y-8">
+          class="space-y-8"
+          id="serviceForm">
 
         @csrf
 
+        {{-- SECȚIUNEA 1: DETALII DE BAZĂ --}}
         <div class="bg-white dark:bg-[#1E1E1E] p-6 md:p-8 rounded-2xl shadow-lg border border-gray-100 dark:border-[#333333] transition-colors">
             <h2 class="text-xl font-bold mb-6 text-gray-900 dark:text-white flex items-center gap-2">
                 <span class="bg-blue-100 dark:bg-blue-900/30 text-blue-600 p-1.5 rounded-lg">📝</span>
@@ -105,6 +108,7 @@
             </div>
         </div>
 
+        {{-- SECȚIUNEA 2: PREȚ ȘI IMAGINI --}}
         <div class="bg-white dark:bg-[#1E1E1E] p-6 md:p-8 rounded-2xl shadow-lg border border-gray-100 dark:border-[#333333] transition-colors">
             <h2 class="text-xl font-bold mb-6 text-gray-900 dark:text-white flex items-center gap-2">
                 <span class="bg-green-100 dark:bg-green-900/30 text-green-600 p-1.5 rounded-lg">💰</span>
@@ -145,7 +149,11 @@
             </div>
 
             <div>
-                <label class="block mb-2 font-semibold text-gray-700 dark:text-gray-300">Galerie Foto</label>
+                <label class="block mb-2 font-semibold text-gray-700 dark:text-gray-300 flex justify-between items-center">
+                    <span>Galerie Foto <span class="text-gray-400 font-normal ml-1">(Opțional)</span></span>
+                    <span class="text-xs font-normal text-gray-400">Poți publica și fără poze (se va folosi una generică)</span>
+                </label>
+                
                 <div class="relative w-full group">
                     <input type="file" id="imageInput" name="images[]" multiple accept="image/*"
                            class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10">
@@ -154,13 +162,16 @@
                             <svg class="h-8 w-8 text-[#CC2E2E]" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
                         </div>
                         <p class="text-sm text-gray-500 dark:text-gray-300 font-medium"><span class="text-[#CC2E2E]">Încarcă imagini</span> sau trage-le aici</p>
-                        <p class="text-xs text-gray-400 mt-1">PNG, JPG (max 10 imagini)</p>
+                        <p class="text-xs text-gray-400 mt-1">PNG, JPG (max 10 imagini, max 15MB)</p>
                     </div>
                 </div>
-                <div id="previewContainer" class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6"></div>
+
+                <div id="previewContainer" class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
+                </div>
             </div>
         </div>
 
+        {{-- SECȚIUNEA 3: DATE CONTACT --}}
         <div class="bg-white dark:bg-[#1E1E1E] p-6 md:p-8 rounded-2xl shadow-lg border border-gray-100 dark:border-[#333333] transition-colors">
             <h2 class="text-xl font-bold mb-6 text-gray-900 dark:text-white flex items-center gap-2">
                 <span class="bg-purple-100 dark:bg-purple-900/30 text-purple-600 p-1.5 rounded-lg">📞</span>
@@ -192,7 +203,6 @@
                 @endauth
             </div>
 
-            {{-- SECȚIUNE VIZITATORI (GUEST) --}}
             @guest
             <div class="mt-6 pt-6 border-t border-gray-100 dark:border-[#2C2C2C]">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
@@ -208,8 +218,8 @@
                             <input type="text" name="name" value="{{ old('name') }}"
                                 placeholder="Numele tău complet"
                                 class="w-full pl-10 pr-4 py-3.5 rounded-xl border border-gray-300 dark:border-[#404040]
-                                    bg-gray-50 dark:bg-[#2C2C2C] text-gray-900 dark:text-white 
-                                    focus:ring-2 focus:ring-primary-end focus:bg-white dark:focus:bg-[#252525] transition outline-none placeholder-gray-400">
+                                   bg-gray-50 dark:bg-[#2C2C2C] text-gray-900 dark:text-white 
+                                   focus:ring-2 focus:ring-primary-end focus:bg-white dark:focus:bg-[#252525] transition outline-none placeholder-gray-400">
                         </div>
                     </div>
 
@@ -224,8 +234,8 @@
                             <input type="email" name="email" value="{{ old('email') }}"
                                 placeholder="Adaugă email dacă vrei cont"
                                 class="w-full pl-10 pr-4 py-3.5 rounded-xl border @error('email') border-red-500 @else border-gray-300 dark:border-[#404040] @enderror
-                                    bg-gray-50 dark:bg-[#2C2C2C] text-gray-900 dark:text-white 
-                                    focus:ring-2 focus:ring-primary-end focus:bg-white dark:focus:bg-[#252525] transition outline-none placeholder-gray-400">
+                                   bg-gray-50 dark:bg-[#2C2C2C] text-gray-900 dark:text-white 
+                                   focus:ring-2 focus:ring-primary-end focus:bg-white dark:focus:bg-[#252525] transition outline-none placeholder-gray-400">
                         </div>
                         @error('email') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
                     </div>
@@ -259,7 +269,7 @@
         </div>
 
         <div class="pt-4 pb-12">
-            <button type="submit"
+            <button type="submit" 
                 class="w-full py-4 rounded-xl text-white text-lg font-bold
                        bg-gradient-to-r from-[#CC2E2E] to-red-600 
                        hover:from-[#B72626] hover:to-red-700 
@@ -281,69 +291,124 @@
 }
 .no-spinner { -moz-appearance: textfield; }
 
-/* FORȚARE ASCUNDERE SĂGEATĂ STANDARD BROWSER */
 select.form-select, select {
     -webkit-appearance: none !important;
     -moz-appearance: none !important;
     appearance: none !important;
-    background-image: none !important; /* Ascunde săgeata SVG default din Tailwind Forms */
+    background-image: none !important;
     background-color: transparent;
 }
 </style>
 
 <script>
-document.getElementById('imageInput').addEventListener('change', function (e) {
-    const container = document.getElementById('previewContainer');
-    // Transformăm FileList în Array ca să putem itera ușor
-    const files = [...e.target.files];
+// Array global pentru stocarea fișierelor
+let uploadedFiles = [];
+const imageInput = document.getElementById('imageInput');
+const previewContainer = document.getElementById('previewContainer');
+const LIMITA_MB = 15;
 
-    // --- 1. CONFIGURARE LIMITĂ (15MB) ---
-    const LIMITA_MB = 15; 
-    const maxBytes = LIMITA_MB * 1024 * 1024;
-    // ------------------------------------
-
+imageInput.addEventListener('change', function (e) {
+    const newFiles = Array.from(e.target.files);
     let hasError = false;
 
-    // --- 2. VALIDARE PREVENTIVĂ ---
-    // Verificăm mărimea ÎNAINTE de a genera preview-uri
-    files.forEach(file => {
-        if (file.size > maxBytes) {
-            alert(`STOP: Imaginea "${file.name}" este prea mare!\nAre ${(file.size/1024/1024).toFixed(2)} MB.\nLimita acceptată este de ${LIMITA_MB} MB.`);
+    // 1. Validare
+    newFiles.forEach(file => {
+        if (file.size > LIMITA_MB * 1024 * 1024) {
+            alert(`STOP: Imaginea "${file.name}" este prea mare!\nLimita acceptată este de ${LIMITA_MB} MB.`);
             hasError = true;
         }
     });
 
-    // Dacă am găsit o imagine uriașă, oprim totul instant
     if (hasError) {
-        this.value = ""; // Golește inputul (resetează selecția)
-        container.innerHTML = ""; // Golește preview-urile
-        return; // Oprește execuția funcției aici
+        updateInputFiles(); // Resetează input-ul la starea validă anterioară
+        return;
     }
 
-    // --- 3. GENERARE PREVIEW (Doar dacă imaginile sunt OK) ---
-    container.innerHTML = ""; // Curățăm containerul vechi
-    
-    files.forEach((file) => {
-        const reader = new FileReader();
-        reader.onload = function (event) {
-            // Construim HTML-ul pentru preview
-            // Am adăugat și un mic badge negru care arată mărimea fișierului
-            container.innerHTML += `
-                <div class="relative group animate-fade-in aspect-square">
-                    <img src="${event.target.result}" class="w-full h-full object-cover rounded-xl shadow border border-gray-200 dark:border-[#404040]">
-                    
-                    <div class="absolute bottom-1 left-1 bg-black/60 text-white text-[10px] px-2 py-0.5 rounded backdrop-blur-sm font-mono">
-                        ${(file.size / 1024 / 1024).toFixed(2)} MB
-                    </div>
+    // 2. Adăugăm fișierele noi la cele vechi
+    uploadedFiles = uploadedFiles.concat(newFiles);
 
-                    <button type="button" onclick="this.parentElement.remove()" class="absolute top-2 right-2 bg-black/60 hover:bg-red-600 text-white text-xs p-1.5 rounded-full transition backdrop-blur-sm shadow-md">
-                        <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+    // Limităm la 10 fișiere
+    if (uploadedFiles.length > 10) {
+        alert("Poți încărca maxim 10 imagini.");
+        uploadedFiles = uploadedFiles.slice(0, 10);
+    }
+
+    // 3. Regenerăm UI-ul și input-ul
+    renderPreviews();
+    updateInputFiles();
+});
+
+function renderPreviews() {
+    previewContainer.innerHTML = "";
+
+    uploadedFiles.forEach((file, index) => {
+        const reader = new FileReader();
+        reader.onload = function (e) {
+            const isMain = index === 0; // Prima imagine este principală
+            
+            const div = document.createElement('div');
+            // Stiluri dinamice: bordură verde pentru Main
+            div.className = `relative group animate-fade-in aspect-square rounded-xl overflow-hidden shadow-sm border-2 ${isMain ? 'border-green-500 ring-2 ring-green-500/30' : 'border-gray-200 dark:border-[#404040]'}`;
+            
+            div.innerHTML = `
+                <img src="${e.target.result}" class="w-full h-full object-cover bg-gray-100">
+                
+                ${isMain ? `
+                    <div class="absolute top-0 left-0 w-full bg-green-500 text-white text-[10px] font-bold py-1 text-center shadow-lg z-10">
+                        PRINCIPALĂ
+                    </div>
+                ` : ''}
+
+                <div class="absolute bottom-1 left-1 bg-black/60 text-white text-[10px] px-2 py-0.5 rounded backdrop-blur-sm font-mono z-10">
+                    ${(file.size / 1024 / 1024).toFixed(2)} MB
+                </div>
+
+                <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-2 p-4">
+                    
+                    ${!isMain ? `
+                    <button type="button" onclick="setMainPhoto(${index})" 
+                            class="px-3 py-1.5 bg-white text-gray-900 text-xs font-bold rounded-lg hover:bg-green-50 hover:text-green-600 transition shadow-lg w-full">
+                        Setează Principală
                     </button>
-                </div>`;
+                    ` : ''}
+
+                    <button type="button" onclick="removePhoto(${index})" 
+                            class="px-3 py-1.5 bg-red-600 text-white text-xs font-bold rounded-lg hover:bg-red-700 transition shadow-lg w-full flex items-center justify-center gap-1">
+                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                        Șterge
+                    </button>
+                </div>
+            `;
+            previewContainer.appendChild(div);
         };
         reader.readAsDataURL(file);
     });
-});
+}
+
+// Mută imaginea de la index pe poziția 0
+window.setMainPhoto = function(index) {
+    if (index === 0) return;
+    const fileToMove = uploadedFiles.splice(index, 1)[0];
+    uploadedFiles.unshift(fileToMove);
+    renderPreviews();
+    updateInputFiles();
+}
+
+// Șterge imaginea
+window.removePhoto = function(index) {
+    uploadedFiles.splice(index, 1);
+    renderPreviews();
+    updateInputFiles();
+}
+
+// Sincronizează array-ul JS cu input-ul HTML care pleacă spre server
+function updateInputFiles() {
+    const dataTransfer = new DataTransfer();
+    uploadedFiles.forEach(file => {
+        dataTransfer.items.add(file);
+    });
+    imageInput.files = dataTransfer.files;
+}
 </script>
 
 @endsection
