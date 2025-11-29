@@ -1,163 +1,278 @@
 @extends('admin.layout')
 
 @section('content')
-<!-- Adăugăm CSS pentru steaguri dacă API-ul returnează coduri de țară (ex: RO, US) -->
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/flag-icon-css/6.6.6/css/flag-icons.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/jsvectormap/dist/css/jsvectormap.min.css" />
 
-<div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8 bg-gray-50 min-h-screen">
+@php
+    // --- PREGĂTIRE DATE PENTRU GRAFICE (PHP -> JS) ---
+    
+    // 1. Labels pentru Graficul Mare (Ore sau Zile)
+    // Dacă utilizatorul a ales "Azi" sau "Ieri", controllerul trimite ore (14:00). Altfel, trimite date (2023-11-29).
+    $chartLabels = $dailyStats->pluck('date')->map(function($val) {
+        // Verificăm dacă e oră (conține :) sau dată
+        return str_contains($val, ':') ? $val : \Carbon\Carbon::parse($val)->format('d M');
+    });
+    
+    $visitsData = $dailyStats->pluck('visits');
+    $uniqueData = $dailyStats->pluck('unique_ips');
 
-    <!-- HEADER -->
-    <div class="flex flex-col md:flex-row justify-between items-center mb-6">
-        <div>
-            <h1 class="text-2xl font-bold text-gray-800 tracking-tight">Overview Analitic</h1>
-            <p class="text-sm text-gray-500">Raport detaliat pentru {{ config('app.name') }}</p>
-        </div>
-        <div class="mt-4 md:mt-0 flex items-center gap-3">
-            <span class="bg-white px-4 py-2 rounded-lg shadow-sm text-sm text-gray-600 font-medium border border-gray-200">
-                <i class="far fa-clock mr-2"></i> {{ now()->format('d M Y, H:i') }}
-            </span>
-        </div>
-    </div>
+    // 2. Date pentru Harta Lumii (Format: { "RO": 150, "IT": 40 })
+    $mapData = $topCountries->pluck('total', 'country')->toArray();
+@endphp
 
-    <!-- ========================= -->
-    <!-- ROW 1: KPI WIDGETS (Densitate mare) -->
-    <!-- ========================= -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+<div class="max-w-[1600px] mx-auto py-6 px-4 sm:px-6 lg:px-8 bg-[#F8FAFC] min-h-screen font-sans text-slate-600">
+
+    <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 mb-6 flex flex-col md:flex-row justify-between items-center gap-4">
         
-        <!-- Widget 1: Vizite Azi -->
-        <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-200 flex items-start justify-between relative overflow-hidden">
-            <div class="relative z-10">
-                <p class="text-xs font-bold text-gray-400 uppercase tracking-wider">Vizite Astăzi</p>
-                <h3 class="text-3xl font-extrabold text-gray-800 mt-1">{{ number_format($todayVisits) }}</h3>
-                <div class="mt-1 flex items-center text-xs">
-                    <span class="{{ $todayVisits >= $yesterdayVisits ? 'text-green-500' : 'text-red-500' }} font-bold flex items-center">
-                        @if($todayVisits >= $yesterdayVisits)
-                            <i class="fas fa-arrow-up mr-1"></i>
-                        @else
-                            <i class="fas fa-arrow-down mr-1"></i>
-                        @endif
-                        vs Ieri ({{ $yesterdayVisits }})
+        <div class="flex items-center gap-4">
+            <div class="h-12 w-12 rounded-xl bg-blue-600 text-white flex items-center justify-center shadow-lg shadow-blue-500/30">
+                <i class="fas fa-chart-pie text-xl"></i>
+            </div>
+            <div>
+                <h1 class="text-xl font-bold text-slate-800 leading-tight">Statistici Vizitatori</h1>
+                <p class="text-xs text-slate-500 font-medium">
+                    Raport pentru: 
+                    <span class="text-blue-600 bg-blue-50 px-2 py-0.5 rounded">
+                        {{ match(request('range', 'today')) {
+                            'today' => 'Astăzi',
+                            'yesterday' => 'Ieri',
+                            '7days' => 'Ultimele 7 zile',
+                            '30days' => 'Ultimele 30 zile',
+                            'this_month' => 'Luna aceasta',
+                            default => 'Personalizat'
+                        } }}
                     </span>
+                </p>
+            </div>
+        </div>
+
+        <form method="GET" action="{{ url()->current() }}" class="flex items-center gap-3 bg-slate-50 p-1 rounded-lg border border-slate-200">
+            <div class="relative group">
+                <select name="range" onchange="this.form.submit()" 
+                        class="appearance-none bg-transparent border-none text-slate-700 text-sm font-semibold py-2 pl-4 pr-8 rounded-md focus:ring-0 cursor-pointer hover:text-blue-600 transition-colors">
+                    <option value="today" {{ request('range') == 'today' ? 'selected' : '' }}>Astăzi</option>
+                    <option value="yesterday" {{ request('range') == 'yesterday' ? 'selected' : '' }}>Ieri</option>
+                    <option value="7days" {{ request('range') == '7days' ? 'selected' : '' }}>Ultimele 7 zile</option>
+                    <option value="30days" {{ request('range') == '30days' ? 'selected' : '' }}>Ultimele 30 zile</option>
+                    <option value="this_month" {{ request('range') == 'this_month' ? 'selected' : '' }}>Luna aceasta</option>
+                </select>
+                <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-slate-400">
+                    <i class="fas fa-chevron-down text-[10px]"></i>
                 </div>
             </div>
-            <div class="p-2 bg-blue-50 rounded-lg text-blue-600">
-                <i class="fas fa-chart-line text-xl"></i>
+            
+            <div class="w-px h-6 bg-slate-200"></div>
+
+            <button type="button" onclick="window.location.reload();" 
+                    class="p-2 text-slate-500 hover:text-blue-600 hover:bg-white rounded-md transition-all shadow-sm" 
+                    title="Actualizează Datele">
+                <i class="fas fa-sync-alt"></i>
+            </button>
+        </form>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+        
+        <div class="bg-slate-800 rounded-xl shadow-lg border border-slate-700 p-5 relative overflow-hidden group">
+            <div class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                <i class="fas fa-wifi text-6xl text-white transform rotate-12"></i>
+            </div>
+            <div class="relative z-10 text-white">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">Online Acum</p>
+                        <h3 class="text-3xl font-bold mt-1 flex items-center gap-3">
+                            {{ $onlineNow }}
+                            <span class="relative flex h-3 w-3">
+                              <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                              <span class="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
+                            </span>
+                        </h3>
+                    </div>
+                </div>
+                <div class="mt-4 pt-4 border-t border-slate-700/50">
+                    <p class="text-xs text-slate-300">
+                        {{ $onlineNow == 1 ? 'Ești singurul pe site.' : 'Utilizatori activi (5 min)' }}
+                    </p>
+                </div>
             </div>
         </div>
 
-        <!-- Widget 2: Vizitatori Unici -->
-        <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-200 flex items-start justify-between">
-            <div>
-                <p class="text-xs font-bold text-gray-400 uppercase tracking-wider">IP-uri Unice</p>
-                <h3 class="text-3xl font-extrabold text-gray-800 mt-1">{{ number_format($uniqueVisitors) }}</h3>
-                <p class="text-xs text-gray-400 mt-1">Total All-Time</p>
+        <div class="bg-white rounded-xl shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)] border border-slate-100 p-5">
+            <div class="flex justify-between items-start mb-4">
+                <div>
+                    <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">Vizite Totale</p>
+                    <h3 class="text-2xl font-bold text-slate-800 mt-1">{{ number_format($totalVisits) }}</h3>
+                </div>
+                <div class="p-2 bg-blue-50 text-blue-600 rounded-lg">
+                    <i class="fas fa-users text-lg"></i>
+                </div>
             </div>
-            <div class="p-2 bg-purple-50 rounded-lg text-purple-600">
-                <i class="fas fa-fingerprint text-xl"></i>
+            <div class="flex items-center text-xs font-medium">
+                @if($todayVisits >= $yesterdayVisits)
+                    <span class="text-green-600 bg-green-50 px-2 py-0.5 rounded flex items-center gap-1">
+                        <i class="fas fa-arrow-up"></i> {{ $todayVisits }} Azi
+                    </span>
+                @else
+                    <span class="text-red-500 bg-red-50 px-2 py-0.5 rounded flex items-center gap-1">
+                        <i class="fas fa-arrow-down"></i> {{ $todayVisits }} Azi
+                    </span>
+                @endif
+                <span class="text-slate-400 ml-2">vs Ieri ({{ $yesterdayVisits }})</span>
             </div>
         </div>
 
-        <!-- Widget 3: Total Pagini Văzute -->
-        <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-200 flex items-start justify-between">
-            <div>
-                <p class="text-xs font-bold text-gray-400 uppercase tracking-wider">Total Afișări</p>
-                <h3 class="text-3xl font-extrabold text-gray-800 mt-1">{{ number_format($totalVisits) }}</h3>
-                <p class="text-xs text-gray-400 mt-1">Hits</p>
+        <div class="bg-white rounded-xl shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)] border border-slate-100 p-5">
+            <div class="flex justify-between items-start mb-4">
+                <div>
+                    <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">Unici</p>
+                    <h3 class="text-2xl font-bold text-slate-800 mt-1">{{ number_format($uniqueVisitors) }}</h3>
+                </div>
+                <div class="p-2 bg-purple-50 text-purple-600 rounded-lg">
+                    <i class="fas fa-fingerprint text-lg"></i>
+                </div>
             </div>
-            <div class="p-2 bg-emerald-50 rounded-lg text-emerald-600">
-                <i class="fas fa-eye text-xl"></i>
+            <div class="w-full bg-slate-100 rounded-full h-1.5 mt-2">
+                @php $ratio = $totalVisits > 0 ? ($uniqueVisitors / $totalVisits) * 100 : 0; @endphp
+                <div class="bg-purple-500 h-1.5 rounded-full" style="width: {{ $ratio }}%"></div>
             </div>
+            <p class="text-xs text-slate-400 mt-2">{{ round($ratio) }}% vizitatori noi</p>
         </div>
 
-        <!-- Widget 4: Utilizatori & Servicii -->
-        <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-200 flex flex-col justify-between">
-            <div class="flex justify-between items-center border-b border-gray-100 pb-2 mb-2">
-                <span class="text-xs text-gray-500 font-semibold">UTILIZATORI</span>
-                <span class="text-lg font-bold text-indigo-600">{{ number_format($userCount) }}</span>
-            </div>
-            <div class="flex justify-between items-center">
-                <span class="text-xs text-gray-500 font-semibold">ANUNȚURI</span>
-                <span class="text-lg font-bold text-orange-600">{{ number_format($serviceCount) }}</span>
+        <div class="bg-gradient-to-br from-indigo-500 to-indigo-700 rounded-xl shadow-lg p-5 text-white">
+            <div class="flex justify-between items-center h-full">
+                <div class="flex flex-col">
+                    <span class="text-indigo-200 text-xs font-bold uppercase">Utilizatori</span>
+                    <span class="text-2xl font-bold">{{ number_format($userCount) }}</span>
+                </div>
+                <div class="h-8 w-px bg-white/20"></div>
+                <div class="flex flex-col text-right">
+                    <span class="text-indigo-200 text-xs font-bold uppercase">Anunțuri</span>
+                    <span class="text-2xl font-bold">{{ number_format($serviceCount) }}</span>
+                </div>
             </div>
         </div>
     </div>
 
-    <!-- ========================= -->
-    <!-- ROW 2: GRAFIC PRINCIPAL & DEVICES -->
-    <!-- ========================= -->
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
         
-        <!-- Main Chart (2/3 width) -->
-        <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-200 lg:col-span-2">
-            <h3 class="text-base font-bold text-gray-800 mb-4 flex items-center">
-                <i class="fas fa-chart-area text-blue-500 mr-2"></i> Trafic ultimele 30 zile
-            </h3>
-            <div class="relative h-72 w-full">
-                <canvas id="mainChart"></canvas>
+        <div class="bg-white rounded-xl shadow-sm border border-slate-200 lg:col-span-2 overflow-hidden flex flex-col">
+            <div class="px-5 py-4 border-b border-slate-100 bg-slate-50 flex justify-between items-center">
+                <h3 class="font-bold text-slate-700 flex items-center gap-2">
+                    <i class="fas fa-globe-americas text-blue-500"></i> Distribuție Geografică
+                </h3>
+            </div>
+            <div class="p-0 relative flex-1 min-h-[400px]">
+                <div id="world-map" style="width: 100%; height: 100%; min-height: 400px;"></div>
             </div>
         </div>
 
-        <!-- Devices & Systems (1/3 width) -->
-        <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-200 flex flex-col">
-            <h3 class="text-base font-bold text-gray-800 mb-4">Dispozitive</h3>
-            
-            <div class="flex-1 flex items-center justify-center relative h-48 mb-4">
-                <canvas id="deviceChart"></canvas>
+        <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden flex flex-col">
+            <div class="px-5 py-4 border-b border-slate-100 bg-slate-50">
+                <h3 class="font-bold text-slate-700 flex items-center gap-2">
+                    <i class="fas fa-chart-area text-purple-500"></i> Trafic {{ request('range') == 'today' ? 'Orar' : 'Zilnic' }}
+                </h3>
             </div>
+            <div class="p-4 flex-1 flex flex-col justify-end">
+                <div class="h-64 w-full">
+                    <canvas id="mainChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
 
-            <!-- Custom Legend -->
-            <div class="space-y-3 mt-auto">
-                @foreach($devices as $dev)
-                <div class="flex items-center justify-between text-sm">
-                    <div class="flex items-center">
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+
+        <div class="bg-white rounded-xl shadow-sm border border-slate-200 flex flex-col h-full">
+            <div class="px-5 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+                <h3 class="font-bold text-sm text-slate-700 uppercase">Top Pagini</h3>
+                <i class="fas fa-link text-slate-300"></i>
+            </div>
+            <div class="flex-1 overflow-auto max-h-[350px] custom-scrollbar">
+                <table class="w-full text-xs text-left">
+                    <tbody class="divide-y divide-slate-50">
+                        @foreach($topPages as $page)
+                        <tr class="hover:bg-slate-50 transition">
+                            <td class="px-4 py-3">
+                                <a href="{{ url($page->url) }}" target="_blank" class="text-blue-600 font-medium truncate block max-w-[220px] hover:underline" title="{{ $page->url }}">
+                                    {{ Str::limit($page->url, 40) }}
+                                </a>
+                                <div class="w-full bg-slate-100 rounded-full h-1 mt-1.5">
+                                    <div class="bg-blue-500 h-1 rounded-full" style="width: {{ ($page->total / $totalVisits) * 100 }}%"></div>
+                                </div>
+                            </td>
+                            <td class="px-4 py-3 text-right font-bold text-slate-700">
+                                {{ number_format($page->total) }}
+                            </td>
+                        </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-xl shadow-sm border border-slate-200 flex flex-col h-full">
+            <div class="px-5 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+                <h3 class="font-bold text-sm text-slate-700 uppercase">Surse Trafic</h3>
+                <i class="fas fa-share-alt text-slate-300"></i>
+            </div>
+            <div class="flex-1 overflow-auto max-h-[350px] custom-scrollbar">
+                <table class="w-full text-xs text-left">
+                    <tbody class="divide-y divide-slate-50">
+                        @foreach($trafficSources as $source)
+                        <tr class="hover:bg-slate-50 transition">
+                            <td class="px-4 py-3">
+                                <span class="font-medium text-slate-700 block mb-1">
+                                    @if($source->source == 'Google Search') <i class="fab fa-google text-red-500 mr-1"></i>
+                                    @elseif($source->source == 'Facebook') <i class="fab fa-facebook text-blue-600 mr-1"></i>
+                                    @else <i class="fas fa-globe text-slate-400 mr-1"></i>
+                                    @endif
+                                    {{ $source->source }}
+                                </span>
+                                <div class="w-full bg-slate-100 rounded-full h-1">
+                                    <div class="bg-green-500 h-1 rounded-full" style="width: {{ ($source->total / $totalVisits) * 100 }}%"></div>
+                                </div>
+                            </td>
+                            <td class="px-4 py-3 text-right font-bold text-slate-700">
+                                {{ $source->total }}
+                            </td>
+                        </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-xl shadow-sm border border-slate-200 flex flex-col h-full">
+            <div class="px-5 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+                <h3 class="font-bold text-sm text-slate-700 uppercase">Browsere</h3>
+                <i class="fas fa-laptop text-slate-300"></i>
+            </div>
+            <div class="flex-1 overflow-auto max-h-[350px] custom-scrollbar">
+                <table class="w-full text-xs text-left">
+                    <tbody class="divide-y divide-slate-50">
+                        @foreach($browsers as $browser)
                         @php
-                            $icon = match(strtolower($dev->device)) {
-                                'desktop' => 'fa-desktop',
-                                'mobile' => 'fa-mobile-alt',
-                                'tablet' => 'fa-tablet-alt',
-                                default => 'fa-laptop'
+                            $icon = match(strtolower($browser->browser)) {
+                                'chrome' => 'fa-chrome', 'firefox' => 'fa-firefox', 'safari' => 'fa-safari', 'edge' => 'fa-edge', default => 'fa-globe'
+                            };
+                            $color = match(strtolower($browser->browser)) {
+                                'chrome' => 'text-red-500', 'firefox' => 'text-orange-500', 'safari' => 'text-blue-400', 'edge' => 'text-blue-600', default => 'text-slate-400'
                             };
                         @endphp
-                        <i class="fas {{ $icon }} text-gray-400 w-6"></i>
-                        <span class="text-gray-600 capitalize">{{ $dev->device }}</span>
-                    </div>
-                    <span class="font-bold text-gray-800">{{ $dev->total }}</span>
-                </div>
-                <!-- Progress Bar mic -->
-                <div class="w-full bg-gray-100 rounded-full h-1.5 mt-1">
-                    <div class="bg-indigo-500 h-1.5 rounded-full" style="width: {{ ($dev->total / $totalVisits) * 100 }}%"></div>
-                </div>
-                @endforeach
-            </div>
-        </div>
-    </div>
-
-    <!-- ========================= -->
-    <!-- ROW 3: TABELE DETALIATE -->
-    <!-- ========================= -->
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-
-        <!-- 1. TOP PAGINI -->
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-            <div class="p-4 border-b border-gray-100 bg-gray-50 flex justify-between items-center">
-                <h3 class="text-sm font-bold text-gray-700">Top Pagini</h3>
-                <i class="fas fa-link text-gray-400"></i>
-            </div>
-            <div class="overflow-x-auto">
-                <table class="w-full text-sm text-left">
-                    <tbody class="divide-y divide-gray-100">
-                        @foreach($topPages as $page)
-                        <tr class="hover:bg-gray-50 transition">
-                            <td class="px-4 py-3">
-                                <div class="flex justify-between mb-1">
-                                    <span class="text-gray-700 font-medium truncate max-w-[200px]" title="{{ $page->url }}">{{ $page->url }}</span>
-                                    <span class="text-gray-900 font-bold">{{ $page->total }}</span>
+                        <tr class="hover:bg-slate-50 transition">
+                            <td class="px-4 py-3 flex items-center gap-3">
+                                <i class="fab {{ $icon }} {{ $color }} text-lg w-5 text-center"></i>
+                                <div>
+                                    <span class="font-medium text-slate-700 block">{{ $browser->browser }}</span>
+                                    <div class="w-24 bg-slate-100 rounded-full h-1 mt-1">
+                                        <div class="bg-slate-400 h-1 rounded-full" style="width: {{ ($browser->total / $totalVisits) * 100 }}%"></div>
+                                    </div>
                                 </div>
-                                <!-- Visual Bar -->
-                                @php $percent = ($page->total / $totalVisits) * 100; @endphp
-                                <div class="w-full bg-gray-100 rounded-full h-1.5">
-                                    <div class="bg-blue-500 h-1.5 rounded-full" style="width: {{ $percent }}%"></div>
-                                </div>
+                            </td>
+                            <td class="px-4 py-3 text-right font-bold text-slate-700">
+                                {{ $browser->total }}
                             </td>
                         </tr>
                         @endforeach
@@ -166,121 +281,47 @@
             </div>
         </div>
 
-        <!-- 2. TOP ȚĂRI -->
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-            <div class="p-4 border-b border-gray-100 bg-gray-50 flex justify-between items-center">
-                <h3 class="text-sm font-bold text-gray-700">Geolocație</h3>
-                <i class="fas fa-globe-europe text-gray-400"></i>
-            </div>
-            <div class="overflow-x-auto">
-                <table class="w-full text-sm text-left">
-                    <tbody class="divide-y divide-gray-100">
-                        @foreach($topCountries as $country)
-                        <tr class="hover:bg-gray-50 transition">
-                            <td class="px-4 py-3 flex items-center justify-between">
-                                <div class="flex items-center gap-3">
-                                    <!-- Încercăm să afișăm steagul dacă country e cod ISO (ex: RO) -->
-                                    <!-- Dacă e nume complet, va arăta doar iconița default -->
-                                    @if(strlen($country->country) == 2)
-                                        <span class="fi fi-{{ strtolower($country->country) }} rounded shadow-sm"></span>
-                                    @else
-                                        <i class="fas fa-map-marker-alt text-gray-300"></i>
-                                    @endif
-                                    <span class="text-gray-700 font-medium">{{ $country->country ?: 'Unknown' }}</span>
-                                </div>
-                                <span class="bg-gray-100 text-gray-700 py-1 px-2 rounded text-xs font-bold">
-                                    {{ $country->total }}
-                                </span>
-                            </td>
-                        </tr>
-                        @endforeach
-                        @if($topCountries->isEmpty())
-                        <tr><td class="p-4 text-center text-gray-400">Nu sunt date de localizare încă.</td></tr>
-                        @endif
-                    </tbody>
-                </table>
-            </div>
-        </div>
-
-        <!-- 3. BROWSERS & REFERRERS -->
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden flex flex-col">
-            <!-- Browsers Section -->
-            <div class="p-4 border-b border-gray-100 bg-gray-50">
-                <h3 class="text-sm font-bold text-gray-700">Browsere</h3>
-            </div>
-            <div class="p-4 flex-1 border-b border-gray-100">
-                <div class="relative h-32 w-full flex justify-center">
-                    <canvas id="browserChart"></canvas>
-                </div>
-                <div class="mt-4 grid grid-cols-2 gap-2 text-xs">
-                    @foreach($browsers as $browser)
-                    <div class="flex items-center">
-                        <span class="w-2 h-2 rounded-full bg-gray-400 mr-2"></span>
-                        <span class="text-gray-600 truncate">{{ $browser->browser }}</span>
-                    </div>
-                    @endforeach
-                </div>
-            </div>
-
-            <!-- Referrers Section (Mini List) -->
-            <div class="p-4 bg-gray-50 border-b border-gray-100">
-                <h3 class="text-sm font-bold text-gray-700">Top Surse</h3>
-            </div>
-            <div class="p-0">
-                @foreach($trafficSources->take(4) as $source)
-                <div class="px-4 py-2 border-b border-gray-50 flex justify-between items-center text-sm">
-                    <span class="text-gray-600 truncate w-32">{{ $source->source }}</span>
-                    <span class="font-bold text-gray-800">{{ $source->total }}</span>
-                </div>
-                @endforeach
-            </div>
-        </div>
-
     </div>
 
-    <!-- ========================= -->
-    <!-- ROW 4: ULTIMII VIZITATORI (Live Feed) -->
-    <!-- ========================= -->
-    <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden mb-10">
-        <div class="p-5 border-b border-gray-100 flex justify-between items-center">
-            <h3 class="text-base font-bold text-gray-800">Jurnal Vizite Recente</h3>
-            <span class="bg-green-100 text-green-700 text-xs px-2 py-1 rounded animate-pulse">● Live</span>
+    <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden mb-10">
+        <div class="px-5 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+            <h3 class="font-bold text-slate-700 flex items-center gap-2">
+                <i class="far fa-clock text-slate-400"></i> Jurnal Vizite
+            </h3>
+            <span class="text-xs font-mono bg-white border border-slate-200 px-2 py-1 rounded text-slate-500">Live Feed</span>
         </div>
         <div class="overflow-x-auto">
-            <table class="w-full text-sm text-left">
-                <thead class="text-xs text-gray-500 uppercase bg-gray-50">
+            <table class="w-full text-xs text-left">
+                <thead class="bg-slate-50 text-slate-500 uppercase font-bold border-b border-slate-200">
                     <tr>
-                        <th class="px-6 py-3">Data</th>
-                        <th class="px-6 py-3">Vizitator</th>
+                        <th class="px-6 py-3">Timp</th>
+                        <th class="px-6 py-3">IP / Locație</th>
                         <th class="px-6 py-3">Pagină</th>
-                        <th class="px-6 py-3">Sursă</th>
-                        <th class="px-6 py-3 text-right">Acțiune</th>
+                        <th class="px-6 py-3">Referrer</th>
                     </tr>
                 </thead>
-                <tbody class="divide-y divide-gray-100">
+                <tbody class="divide-y divide-slate-100">
                     @foreach($recentVisits as $visit)
-                    <tr class="hover:bg-gray-50">
-                        <td class="px-6 py-4 whitespace-nowrap text-gray-500">
-                            {{ $visit->created_at->diffForHumans() }}
+                    <tr class="hover:bg-blue-50/30 transition">
+                        <td class="px-6 py-3 whitespace-nowrap text-slate-500 font-mono">
+                            {{ $visit->created_at->format('H:i:s') }}
+                            <span class="text-slate-300 ml-1 text-[10px]">{{ $visit->created_at->format('d M') }}</span>
                         </td>
-                        <td class="px-6 py-4">
-                            <div class="flex flex-col">
-                                <span class="font-medium text-gray-900">{{ $visit->ip }}</span>
-                                <span class="text-xs text-gray-400">
-                                    {{ $visit->city ?? '-' }}, {{ $visit->country ?? 'Unknown' }}
-                                </span>
+                        <td class="px-6 py-3">
+                            <div class="flex items-center gap-2">
+                                <span class="bg-slate-100 text-slate-600 px-2 py-0.5 rounded font-mono border border-slate-200">{{ $visit->ip }}</span>
+                                @if($visit->country)
+                                    <span class="fi fi-{{ strtolower($visit->country) }} shadow-sm rounded-sm" title="{{ $visit->country }}"></span>
+                                @endif
                             </div>
                         </td>
-                        <td class="px-6 py-4">
-                            <span class="bg-blue-50 text-blue-700 py-1 px-2 rounded text-xs font-medium truncate max-w-[150px] inline-block">
-                                {{ $visit->url }}
+                        <td class="px-6 py-3">
+                            <span class="text-slate-600 truncate max-w-[250px] block" title="{{ $visit->url }}">
+                                {{ Str::limit($visit->url, 50) }}
                             </span>
                         </td>
-                        <td class="px-6 py-4 text-gray-500 truncate max-w-[150px]">
-                            {{ $visit->referer ?? 'Direct' }}
-                        </td>
-                        <td class="px-6 py-4 text-right">
-                            <a href="#" class="text-gray-400 hover:text-blue-600"><i class="fas fa-ellipsis-h"></i></a>
+                        <td class="px-6 py-3 text-slate-500 truncate max-w-[150px]">
+                            {{ $visit->referer ? parse_url($visit->referer, PHP_URL_HOST) : '-' }}
                         </td>
                     </tr>
                     @endforeach
@@ -291,104 +332,108 @@
 
 </div>
 
-<!-- SCRIPTS -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/js/all.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
-@php
-    // Pregătire date pentru charts
-    $dates = $dailyStats->pluck('date')->map(fn($d) => \Carbon\Carbon::parse($d)->format('d M'));
-    $visits = $dailyStats->pluck('visits');
-    $unique = $dailyStats->pluck('unique_ips');
-
-    $deviceLabels = $devices->pluck('device');
-    $deviceData = $devices->pluck('total');
-
-    $browserLabels = $browsers->pluck('browser');
-    $browserData = $browsers->pluck('total');
-@endphp
+<script src="https://cdn.jsdelivr.net/npm/jsvectormap/dist/js/jsvectormap.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jsvectormap/dist/maps/world.js"></script>
 
 <script>
-    Chart.defaults.font.family = "'Inter', 'Segoe UI', sans-serif";
-    Chart.defaults.color = '#64748b';
+    // --- 1. HARTA ---
+    const mapData = @json($mapData);
+    const normalizedMapData = {};
+    Object.keys(mapData).forEach(key => { normalizedMapData[key.toUpperCase()] = mapData[key]; });
 
-    // 1. MAIN CHART (Line - Visits vs Unique)
-    const ctxMain = document.getElementById('mainChart').getContext('2d');
-    new Chart(ctxMain, {
+    new jsVectorMap({
+        selector: '#world-map',
+        map: 'world',
+        zoomButtons: true,
+        zoomOnScroll: false,
+        regionStyle: {
+            initial: { fill: '#e2e8f0', stroke: '#cbd5e1', strokeWidth: 0.5, fillOpacity: 1 },
+            hover: { fill: '#3b82f6' }
+        },
+        series: {
+            regions: [{
+                attribute: 'fill',
+                legend: { title: 'Vizite' },
+                scale: ['#bfdbfe', '#1e40af'],
+                values: normalizedMapData,
+            }]
+        },
+        onRegionTooltipShow(event, tooltip, code) {
+            const count = normalizedMapData[code] || 0;
+            tooltip.text(
+                `<div class="text-center font-sans">
+                    <strong class="block text-sm mb-1 text-slate-800">${tooltip.text()}</strong>
+                    <span class="text-xs bg-blue-600 text-white px-2 py-0.5 rounded shadow">${count} vizite</span>
+                 </div>`, true
+            );
+        }
+    });
+
+    // --- 2. GRAFIC (LINE) ---
+    Chart.defaults.font.family = "'Inter', sans-serif";
+    Chart.defaults.color = '#94a3b8';
+    
+    const ctx = document.getElementById('mainChart').getContext('2d');
+    const gradient = ctx.createLinearGradient(0, 0, 0, 300);
+    gradient.addColorStop(0, 'rgba(59, 130, 246, 0.2)');
+    gradient.addColorStop(1, 'rgba(59, 130, 246, 0.0)');
+
+    new Chart(ctx, {
         type: 'line',
         data: {
-            labels: @json($dates),
-            datasets: [
-                {
-                    label: 'Vizite',
-                    data: @json($visits),
-                    borderColor: '#3b82f6',
-                    backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                    borderWidth: 2,
-                    tension: 0.4,
-                    fill: true
-                },
-                {
-                    label: 'IP-uri Unice',
-                    data: @json($unique),
-                    borderColor: '#8b5cf6',
-                    backgroundColor: 'transparent',
-                    borderWidth: 2,
-                    borderDash: [5, 5],
-                    tension: 0.4,
-                    fill: false
-                }
-            ]
+            labels: @json($chartLabels),
+            datasets: [{
+                label: 'Vizite',
+                data: @json($visitsData),
+                borderColor: '#3b82f6',
+                backgroundColor: gradient,
+                borderWidth: 2,
+                tension: 0.3,
+                fill: true,
+                pointRadius: 3,
+                pointHoverRadius: 6
+            }, {
+                label: 'Unici',
+                data: @json($uniqueData),
+                borderColor: '#10b981',
+                backgroundColor: 'transparent',
+                borderWidth: 2,
+                borderDash: [4, 4],
+                tension: 0.3,
+                pointRadius: 0
+            }]
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
             interaction: { mode: 'index', intersect: false },
             plugins: {
-                legend: { position: 'top', align: 'end', labels: { usePointStyle: true, boxWidth: 8 } }
+                legend: { display: false },
+                tooltip: {
+                    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                    titleColor: '#1e293b',
+                    bodyColor: '#475569',
+                    borderColor: '#e2e8f0',
+                    borderWidth: 1,
+                    padding: 10,
+                    displayColors: true,
+                    usePointStyle: true
+                }
             },
             scales: {
-                y: { beginAtZero: true, grid: { color: '#f1f5f9' } },
-                x: { grid: { display: false } }
+                x: { grid: { display: false } },
+                y: { border: { display: false }, grid: { borderDash: [4, 4] }, beginAtZero: true }
             }
         }
     });
-
-    // 2. DEVICES CHART (Pie)
-    new Chart(document.getElementById('deviceChart'), {
-        type: 'pie',
-        data: {
-            labels: @json($deviceLabels),
-            datasets: [{
-                data: @json($deviceData),
-                backgroundColor: ['#6366f1', '#10b981', '#f59e0b', '#ef4444'],
-                borderWidth: 0
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: { legend: { display: false } }
-        }
-    });
-
-    // 3. BROWSER CHART (Doughnut)
-    new Chart(document.getElementById('browserChart'), {
-        type: 'doughnut',
-        data: {
-            labels: @json($browserLabels),
-            datasets: [{
-                data: @json($browserData),
-                backgroundColor: ['#3b82f6', '#0ea5e9', '#f43f5e', '#eab308', '#64748b'],
-                borderWidth: 0,
-                cutout: '70%'
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: { legend: { display: false } }
-        }
-    });
 </script>
+
+<style>
+/* Scrollbar Subțire pentru Tabele */
+.custom-scrollbar::-webkit-scrollbar { width: 4px; }
+.custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+.custom-scrollbar::-webkit-scrollbar-thumb { background-color: #cbd5e1; border-radius: 20px; }
+</style>
 @endsection
