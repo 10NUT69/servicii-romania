@@ -2,17 +2,14 @@
 
 @php
     // =========================================================
-    // 1. LOGICA STRICTĂ: 3 CUVINTE REALE
+    // 1. LOGICA: 3 CUVINTE REALE + CURĂȚARE
     // =========================================================
+    $brand = 'MeseriasBun.ro';
     
-    // Eliminăm orice caracter care nu e literă sau cifră (scoatem -, |, etc)
-    // Astfel "Instalator - Autorizat" devine "Instalator Autorizat"
+    // Curățăm simbolurile (cratime, bare) ca să nu le numere drept cuvinte
     $cleanTitleString = preg_replace('/[^\p{L}\p{N}\s]/u', '', $service->title);
-    
-    // Eliminăm spațiile multiple
     $cleanTitleString = trim(preg_replace('/\s+/', ' ', $cleanTitleString));
     
-    // Spargem în cuvinte
     $words = explode(' ', $cleanTitleString);
     
     // Luăm primele 3 cuvinte
@@ -24,12 +21,12 @@
     $categoryName = $service->category->name;
     $seoLocation = $service->city ?: $service->county->name;
     
-    // Titlul Final: [3 Cuvinte] – [Categorie] în [Oraș]
+    // Structura: [3 Cuvinte] – [Categorie] în [Oraș]
     $fullSeoTitle = $shortUserTitle . ' – ' . $categoryName . ' în ' . $seoLocation;
     
-    // Branding la final (dacă e loc)
-    if (mb_strlen($fullSeoTitle) + 17 <= 60) {
-        $fullSeoTitle .= ' | MeseriasBun.ro';
+    // 🔥 MODIFICARE AICI: Am relaxat limita la 70 ca să încapă Brandul
+    if (mb_strlen($fullSeoTitle) + mb_strlen(" | " . $brand) <= 70) {
+        $fullSeoTitle .= " | " . $brand;
     }
 
     // Descrierea
