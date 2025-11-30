@@ -203,7 +203,7 @@
 
 {{-- TITLE --}}
 <h2 class="text-2xl md:text-3xl font-bold mb-8 text-gray-900 dark:text-[#F2F2F2] max-w-7xl mx-auto px-4 md:px-0 flex items-center gap-3">
-    <span class="w-1.5 h-8 bg-[#CC2E2E] rounded-full"></span>    
+    <span class="w-1.5 h-8 bg-[#CC2E2E] rounded-full"></span>     
     Anunțuri recente
 </h2>
 
@@ -252,9 +252,9 @@
             <div class="relative w-full aspect-[4/3] bg-gray-100 dark:bg-[#121212] overflow-hidden">
                 
                 {{-- 
-                   🔥 MODIFICARE IMPORTANTĂ AICI 🔥 
-                   Folosim $service->main_image_url
-                   Asta verifică automat: Poză User -> Poză Categorie -> Placeholder
+                    🔥 MODIFICARE IMPORTANTĂ AICI 🔥 
+                    Folosim $service->main_image_url
+                    Asta verifică automat: Poză User -> Poză Categorie -> Placeholder
                 --}}
                 <img src="{{ $service->main_image_url }}"
                      class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
@@ -316,9 +316,17 @@
                             <span class="font-medium">{{ $service->views ?? 0 }}</span>
                         </div>
 
-                        {{-- Dată --}}
+                        {{-- Dată (MODIFICATĂ AICI) --}}
                         <span class="opacity-60 text-gray-300 dark:text-gray-600">|</span>
-                        <span class="opacity-80 whitespace-nowrap">{{ $service->created_at->diffForHumans(null, true, true) }}</span>
+                        <span class="opacity-80 whitespace-nowrap text-xs">
+                            @if($service->created_at->isToday())
+                                <span class="text-green-600 dark:text-green-400 font-bold">Azi</span>
+                            @elseif($service->created_at->isYesterday())
+                                <span>Ieri</span>
+                            @else
+                                {{ $service->created_at->format('d.m.Y') }}
+                            @endif
+                        </span>
                     </div>
 
                 </div>
