@@ -203,7 +203,7 @@
 
 {{-- TITLE --}}
 <h2 class="text-2xl md:text-3xl font-bold mb-8 text-gray-900 dark:text-[#F2F2F2] max-w-7xl mx-auto px-4 md:px-0 flex items-center gap-3">
-    <span class="w-1.5 h-8 bg-[#CC2E2E] rounded-full"></span>     
+    <span class="w-1.5 h-8 bg-[#CC2E2E] rounded-full"></span>      
     Anunțuri recente
 </h2>
 
@@ -214,11 +214,7 @@
 @forelse($services as $service)
 
     @php
-        // AICI AM MODIFICAT:
-        // Am șters logica veche pentru imagini pentru că acum avem Modelul inteligent.
-        
-        // Logică Favorite (păstrată)
-        $isFav = auth()->check() && $service->favorites()->where('user_id', auth()->id())->exists();
+        $isFav = auth()->check() && $service->isFavoritedBy(auth()->user());
     @endphp
 
     {{-- CARD INDIVIDUAL --}}
@@ -246,16 +242,11 @@
             </svg>
         </button>
 
-        <a href="{{ route('services.show', ['id' => $service->id, 'slug' => $service->slug]) }}" class="block flex-grow flex flex-col">
+        {{-- 🔥 AICI ESTE SCHIMBAREA MAJORĂ: Link-ul SEO Friendly 🔥 --}}
+        <a href="{{ $service->public_url }}" class="block flex-grow flex flex-col">
 
             {{-- Image Area --}}
             <div class="relative w-full aspect-[4/3] bg-gray-100 dark:bg-[#121212] overflow-hidden">
-                
-                {{-- 
-                    🔥 MODIFICARE IMPORTANTĂ AICI 🔥 
-                    Folosim $service->main_image_url
-                    Asta verifică automat: Poză User -> Poză Categorie -> Placeholder
-                --}}
                 <img src="{{ $service->main_image_url }}"
                      class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                      alt="{{ $service->title }} - {{ $service->county->name }} - {{ $service->category->name }}"
@@ -316,7 +307,7 @@
                             <span class="font-medium">{{ $service->views ?? 0 }}</span>
                         </div>
 
-                        {{-- Dată (MODIFICATĂ AICI) --}}
+                        {{-- Dată --}}
                         <span class="opacity-60 text-gray-300 dark:text-gray-600">|</span>
                         <span class="opacity-80 whitespace-nowrap text-xs">
                             @if($service->created_at->isToday())

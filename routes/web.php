@@ -35,11 +35,11 @@ Route::get('/contul-meu', function () {
 |--------------------------------------------------------------------------
 */
 
-// CHECK USERNAME – se folosește la REGISTER și PROFILE
+// CHECK USERNAME
 Route::post('/profile/check-name', [ProfileController::class, 'checkName'])
     ->name('profile.checkName');
 
-// CHECK EMAIL – se folosește la REGISTER și PROFILE
+// CHECK EMAIL
 Route::post('/profile/check-email', [ProfileController::class, 'checkEmail'])
     ->name('profile.checkEmail');
 
@@ -66,15 +66,6 @@ Route::middleware('auth')->group(function () {
 
     Route::post('/favorite/toggle', [FavoriteController::class, 'toggle'])->name('favorite.toggle');
 });
-
-/*
-|--------------------------------------------------------------------------
-| SHOW (ultimul!)
-|--------------------------------------------------------------------------
-*/
-Route::get('/anunt/{id}/{slug}', [ServiceController::class, 'show'])
-    ->name('services.show');
-
 
 /*
 |--------------------------------------------------------------------------
@@ -110,5 +101,21 @@ Route::middleware(['auth', 'admin.access'])
 
         Route::get('/counties', fn() => 'counties page')->name('counties.index');
     });
+
+/*
+|--------------------------------------------------------------------------
+| SEO ROUTES (trebuie să fie ultimele!)
+|--------------------------------------------------------------------------
+*/
+
+// 1. Listare Categorie + Județ (ex: /zugravi/braila)
+Route::get('/{category}/{county}', [ServiceController::class, 'indexLocation'])
+    ->name('category.location');
+
+// 2. Afișare Anunț (ex: /zugravi/braila/titlu-smart-69)
+// "service.show" (singular) se potrivește cu ce am pus în Modelul Service.php
+Route::get('/{category}/{county}/{slug}-{id}', [ServiceController::class, 'show'])
+    ->where(['id' => '[0-9]+', 'slug' => '.*'])
+    ->name('service.show');
 
 require __DIR__.'/auth.php';

@@ -79,8 +79,8 @@
                         overflow-hidden hover:shadow-lg transition-all duration-300 group"
                  id="service-{{ $service->id }}">
 
-                <a href="{{ route('services.show', [$service->id, $service->slug]) }}" class="block relative overflow-hidden">
-                    {{-- 🔥 MODIFICARE: Folosim main_image_url --}}
+                {{-- 🔥 MODIFICAT AICI: Link SEO Friendly --}}
+                <a href="{{ $service->public_url }}" class="block relative overflow-hidden">
                     <img src="{{ $service->main_image_url }}"
                          class="w-full h-48 object-cover transition-transform duration-500 group-hover:scale-105"
                          alt="{{ $service->title }}">
@@ -164,8 +164,8 @@
             <div class="bg-white dark:bg-[#1E1E1E] rounded-2xl shadow-sm border border-gray-200 dark:border-[#333333] p-4 favorite-card transition-colors group" 
                  id="favorite-{{ $service->id }}">
 
-                <a href="{{ route('services.show', [$service->id, $service->slug]) }}">
-                    {{-- 🔥 MODIFICARE: Folosim main_image_url --}}
+                {{-- 🔥 MODIFICAT AICI: Link SEO Friendly --}}
+                <a href="{{ $service->public_url }}">
                     <img src="{{ $service->main_image_url }}"
                          class="w-full h-40 object-cover rounded-xl mb-3 bg-gray-100 dark:bg-[#2C2C2C] group-hover:scale-[1.02] transition-transform duration-300">
                 </a>
@@ -192,7 +192,7 @@
     @endif
 
 
-   {{-- TAB 3: PROFIL (A rămas neschimbat, dar inclus pentru completitudine) --}}
+   {{-- TAB 3: PROFIL --}}
    @if(request('tab') === 'profil')
 
    <div class="max-w-5xl mr-auto">
@@ -242,8 +242,8 @@
                                 </div>
                                 <input id="editName" type="text" value="{{ auth()->user()->name }}"
                                     class="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-300 dark:border-[#404040] 
-                                            bg-gray-50 dark:bg-[#2C2C2C] text-gray-900 dark:text-white text-sm font-medium
-                                            focus:ring-2 focus:ring-[#CC2E2E]/20 focus:border-[#CC2E2E] outline-none transition shadow-sm">
+                                           bg-gray-50 dark:bg-[#2C2C2C] text-gray-900 dark:text-white text-sm font-medium
+                                           focus:ring-2 focus:ring-[#CC2E2E]/20 focus:border-[#CC2E2E] outline-none transition shadow-sm">
                             </div>
                             
                             {{-- FEEDBACK VALIDARE --}}
@@ -263,8 +263,8 @@
                                 </div>
                                 <input id="editEmail" type="email" value="{{ auth()->user()->email }}"
                                     class="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-300 dark:border-[#404040] 
-                                            bg-gray-50 dark:bg-[#2C2C2C] text-gray-900 dark:text-white text-sm font-medium
-                                            focus:ring-2 focus:ring-[#CC2E2E]/20 focus:border-[#CC2E2E] outline-none transition shadow-sm">
+                                           bg-gray-50 dark:bg-[#2C2C2C] text-gray-900 dark:text-white text-sm font-medium
+                                           focus:ring-2 focus:ring-[#CC2E2E]/20 focus:border-[#CC2E2E] outline-none transition shadow-sm">
                             </div>
                         </div>
                     </div>
@@ -289,8 +289,8 @@
                                 </div>
                                 <input id="editPassword" type="password" placeholder="Lasă gol dacă nu schimbi"
                                     class="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-300 dark:border-[#404040] 
-                                            bg-gray-50 dark:bg-[#2C2C2C] text-gray-900 dark:text-white text-sm font-medium
-                                            focus:ring-2 focus:ring-[#CC2E2E]/20 focus:border-[#CC2E2E] outline-none transition shadow-sm">
+                                           bg-gray-50 dark:bg-[#2C2C2C] text-gray-900 dark:text-white text-sm font-medium
+                                           focus:ring-2 focus:ring-[#CC2E2E]/20 focus:border-[#CC2E2E] outline-none transition shadow-sm">
                             </div>
                         </div>
                     </div>
@@ -298,8 +298,8 @@
                     <div class="pt-4 flex justify-start">
                         <button onclick="updateProfile()"
                             class="px-6 py-3 rounded-xl text-white font-bold text-sm tracking-wide
-                                    bg-[#CC2E2E] hover:bg-[#B72626] 
-                                    shadow-lg hover:shadow-red-500/20 active:scale-95 transition-all duration-200 flex items-center gap-2">
+                                   bg-[#CC2E2E] hover:bg-[#B72626] 
+                                   shadow-lg hover:shadow-red-500/20 active:scale-95 transition-all duration-200 flex items-center gap-2">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
                             </svg>

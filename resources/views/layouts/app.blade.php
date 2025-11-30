@@ -3,46 +3,49 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
 
     {{-- 
        1. TITLU DINAMIC
-       Verificăm întâi dacă există 'meta_title' (din show.blade.php), 
-       apoi 'title' (din create.blade.php), apoi fallback default.
+       Logica: Dacă avem 'meta_title' (calculat pentru SEO), îl afișăm.
+       Dacă nu, luăm titlul simplu al paginii și adăugăm numele site-ului.
+       Dacă niciunul nu există, afișăm default-ul.
     --}}
-    <title>@yield('meta_title', view()->hasSection('title') ? view()->getSection('title') : 'Servicii România - MeseriasBun.ro')</title>
+    <title>@yield('meta_title', view()->hasSection('title') ? view()->getSection('title') . ' - MeseriasBun.ro' : 'Servicii România - MeseriasBun.ro')</title>
     
-    <meta name="csrf-token" content="{{ csrf_token() }}">
-    
-    {{-- DESCRIERE --}}
+    {{-- 2. DESCRIERE --}}
     <meta name="description" content="@yield('meta_description', 'Găsește rapid meseriașul potrivit în zona ta. Electricieni, instalatori, constructori și multe altele pe MeseriasBun.ro')">
 
-    <link rel="canonical" href="{{ url()->current() }}">
-
     {{-- 
-       2. OPEN GRAPH (Facebook / WhatsApp) 
-       Folosim aceleași reguli de fallback ca la titlu.
-       La imagine, dacă nu avem una specifică, punem logo-ul site-ului.
+       🔥 3. CANONICAL LINK (MODIFICARE CRITICĂ) 🔥
+       Aici era problema. Acum verificăm dacă pagina curentă (ex: show.blade.php) 
+       oferă un link canonical specific. Dacă da, îl folosim pe acela.
+       Dacă nu, folosim URL-ul curent.
     --}}
+    @hasSection('canonical')
+        @yield('canonical')
+    @else
+        <link rel="canonical" href="{{ url()->current() }}">
+    @endif
+
+    {{-- 4. OPEN GRAPH (Facebook / WhatsApp) --}}
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="MeseriasBun.ro">
+    <meta property="og:url" content="{{ url()->current() }}">
     <meta property="og:title" content="@yield('meta_title', view()->hasSection('title') ? view()->getSection('title') : 'Servicii România')">
     <meta property="og:description" content="@yield('meta_description', 'Găsește meseriași verificați în zona ta.')">
     <meta property="og:image" content="@yield('meta_image', asset('images/logo.webp'))">
-    <meta property="og:url" content="{{ url()->current() }}">
-    <meta property="og:type" content="article">
-    <meta property="og:site_name" content="MeseriasBun.ro">
 
-    {{-- 3. TWITTER CARDS --}}
+    {{-- 5. TWITTER CARDS --}}
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="@yield('meta_title', view()->hasSection('title') ? view()->getSection('title') : 'Servicii România')">
     <meta name="twitter:description" content="@yield('meta_description', 'Găsește meseriași verificați în zona ta.')">
     <meta name="twitter:image" content="@yield('meta_image', asset('images/logo.webp'))">
 
-    {{-- 4. SCHEMA.ORG (JSON-LD) --}}
+    {{-- 6. SCHEMA.ORG (JSON-LD) --}}
     @yield('schema')
 
-    {{-- 
-        🔥 GOOGLE ANALYTICS (Doar pe PRODUCȚIE)
-        Se încarcă doar dacă site-ul e live și există ID-ul în config.
-    --}}
+    {{-- GOOGLE ANALYTICS (Doar pe PRODUCȚIE) --}}
     @if(app()->environment('production') && config('services.google.analytics_id'))
         <script async src="https://www.googletagmanager.com/gtag/js?id={{ config('services.google.analytics_id') }}"></script>
         <script>

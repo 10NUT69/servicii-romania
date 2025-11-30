@@ -247,7 +247,8 @@
             </button>
             
             <div class="text-center mt-6">
-                 <a href="{{ route('services.show', [$service->id, $service->slug]) }}" class="text-gray-500 dark:text-gray-400 hover:underline text-sm">
+                 {{-- 🔥 AICI AM MODIFICAT: Acum folosim $service->public_url --}}
+                 <a href="{{ $service->public_url }}" class="text-gray-500 dark:text-gray-400 hover:underline text-sm">
                     Renunță și întoarce-te la anunț
                 </a>
             </div>

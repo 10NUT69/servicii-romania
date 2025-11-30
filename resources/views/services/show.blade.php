@@ -2,38 +2,26 @@
 
 @php
     // =========================================================
-    // 1. TITLU SEO (Max ~60 caractere)
+    // 1. GENERARE DATE SEO
     // =========================================================
-    $words = preg_split('/\s+/', trim($service->title));
-    $shortUserTitle = implode(' ', array_slice($words, 0, 3)); 
     
-    $seoLocation = $service->city ?: $service->county->name;
-    $rawTitle = $shortUserTitle . ' | ' . $service->category->name . ' în ' . $seoLocation . ' | MeseriasBun.ro';
-    $fullSeoTitle = \Illuminate\Support\Str::limit($rawTitle, 60);
+    // Folosim URL-ul Public ("smart") definit in Model
+    $pageUrl = $service->public_url; 
 
-    // =========================================================
-    // 2. DESCRIERE SEO (Max ~160 caractere & Hibridă)
-    // =========================================================
-    $introPart = "Cauti {$service->category->name} în {$seoLocation}? Găsește rapid meseriașul potrivit. ";
-    $availableSpace = 155 - strlen($introPart);
-    if ($availableSpace < 20) $availableSpace = 20;
-    $userDescription = \Illuminate\Support\Str::limit(strip_tags($service->description), $availableSpace);
+    // Titlu și Descriere
+    $seoLocation = $service->city ?: $service->county->name;
+    $fullSeoTitle = $service->title . ' | ' . $service->category->name . ' ' . $seoLocation;
+    $fullSeoTitle = \Illuminate\Support\Str::limit($fullSeoTitle, 60);
+
+    $introPart = "Cauti {$service->category->name} în {$seoLocation}? ";
+    $userDescription = \Illuminate\Support\Str::limit(strip_tags($service->description), 120);
     $seoDescription = $introPart . $userDescription;
 
-    // =========================================================
-    // 3. IMAGINE SEO (Safe Link Absolute)
-    // =========================================================
-    $rawImage = $service->main_image_url;
-    if (empty($rawImage)) {
-        $seoImage = asset('images/logo.webp');
-    } elseif (str_starts_with($rawImage, 'http')) {
-        $seoImage = $rawImage;
-    } else {
-        $seoImage = asset($rawImage);
-    }
+    // Imagine
+    $seoImage = $service->main_image_url;
 
     // =========================================================
-    // 4. SCHEMA.ORG (JSON-LD)
+    // 2. SCHEMA.ORG (JSON-LD) - PRODUCT / SERVICE
     // =========================================================
     $schemaData = [
         "@context" => "https://schema.org",
@@ -41,60 +29,115 @@
         "name" => $service->title,
         "description" => $seoDescription,
         "image" => $seoImage,
+        "url" => $pageUrl,
         "areaServed" => $seoLocation,
         "provider" => [
             "@type" => "Person",
             "name" => $service->user->name ?? 'Meseriaș'
+        ],
+        "offers" => [
+            "@type" => "Offer",
+            "priceCurrency" => $service->currency ?? 'RON',
+            "price" => $service->price_value ?? '0'
+        ]
+    ];
+
+    // =========================================================
+    // 3. SCHEMA.ORG - BREADCRUMBS
+    // =========================================================
+    $catUrl = route('category.location', ['category' => $service->category->slug, 'county' => $service->county->slug]);
+    
+    $breadcrumbSchema = [
+        "@context" => "https://schema.org",
+        "@type" => "BreadcrumbList",
+        "itemListElement" => [
+            [
+                "@type" => "ListItem",
+                "position" => 1,
+                "name" => "Acasa",
+                "item" => route('services.index')
+            ],
+            [
+                "@type" => "ListItem",
+                "position" => 2,
+                "name" => $service->category->name . " " . $service->county->name,
+                "item" => $catUrl
+            ],
+            [
+                "@type" => "ListItem",
+                "position" => 3,
+                "name" => \Illuminate\Support\Str::limit($service->title, 20)
+            ]
         ]
     ];
 @endphp
 
-{{-- SECȚIUNI OUTPUT LAYOUT --}}
+{{-- SECȚIUNI META --}}
 @section('title', $fullSeoTitle)
 @section('meta_title', $fullSeoTitle)
 @section('meta_description', $seoDescription)
 @section('meta_image', $seoImage)
 
+{{-- CANONICAL TAG (CRITIC PENTRU SEO) --}}
+@section('canonical')
+    <link rel="canonical" href="{{ $pageUrl }}" />
+@endsection
+
 @section('schema')
 <script type="application/ld+json">
 {!! json_encode($schemaData, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) !!}
+</script>
+<script type="application/ld+json">
+{!! json_encode($breadcrumbSchema, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) !!}
 </script>
 @endsection
 
 @section('content')
 
 {{-- CONTAINER PRINCIPAL --}}
-<div class="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-10 pt-6 pb-10">
+<div class="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-10 pt-6 pb-10 px-4 md:px-0">
 
     {{-- ================================================= --}}
     {{-- COL 1: CONȚINUT PRINCIPAL (Stânga) --}}
     {{-- ================================================= --}}
     <div class="lg:col-span-2">
 
-        {{-- Buton Înapoi --}}
-        <a href="{{ url()->previous() }}"
-           class="inline-flex items-center gap-2 mb-6 px-4 py-2 rounded-lg text-sm font-semibold text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-[#2C2C2C] hover:bg-gray-200 dark:hover:bg-[#333333] transition-colors">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-            </svg>
-            Înapoi la listă
-        </a>
+        {{-- 🔥 BREADCRUMBS VIZUAL (NAVIGARE) --}}
+        <nav class="flex items-center text-sm text-gray-500 dark:text-gray-400 mb-6 flex-wrap gap-2">
+            <a href="{{ route('services.index') }}" class="hover:text-[#CC2E2E] transition">Acasă</a>
+            <span class="text-gray-300">/</span>
+            
+            {{-- Link către Categorie + Județ (Ex: Zugravi Braila) --}}
+            <a href="{{ route('category.location', ['category' => $service->category->slug, 'county' => $service->county->slug]) }}" 
+               class="hover:text-[#CC2E2E] transition font-medium">
+                {{ $service->category->name }} {{ $service->county->name }}
+            </a>
+            
+            <span class="text-gray-300">/</span>
+            <span class="text-gray-800 dark:text-gray-200 truncate max-w-[150px] md:max-w-xs" title="{{ $service->title }}">
+                Anunț #{{ $service->id }}
+            </span>
+        </nav>
 
         {{-- Titlu --}}
-        <h1 class="text-2xl md:text-4xl font-bold text-gray-900 dark:text-[#F2F2F2] mb-4 leading-tight">
+        <h1 class="text-2xl md:text-3xl lg:text-4xl font-bold text-gray-900 dark:text-[#F2F2F2] mb-4 leading-tight">
             {{ $service->title }}
         </h1>
 
-        {{-- Tag-uri --}}
+        {{-- TAG-URI CLICKABILE (LINK BUILDING INTERN) --}}
         <div class="flex flex-wrap gap-2 mb-8">
-            <span class="px-3 py-1 text-xs md:text-sm rounded-full font-bold bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 border border-blue-100 dark:border-blue-800">
+            {{-- Tag Categorie --}}
+            <a href="{{ route('category.location', ['category' => $service->category->slug, 'county' => 'romania']) }}" 
+               class="px-3 py-1 text-xs md:text-sm rounded-full font-bold bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 border border-blue-100 dark:border-blue-800 hover:bg-blue-100 transition">
                 {{ $service->category->name }}
-            </span>
+            </a>
             
-            <span class="px-3 py-1 text-xs md:text-sm rounded-full font-bold bg-purple-50 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300 border border-purple-100 dark:border-purple-800 flex items-center gap-1">
+            {{-- Tag Județ --}}
+            <a href="{{ route('category.location', ['category' => $service->category->slug, 'county' => $service->county->slug]) }}" 
+               class="px-3 py-1 text-xs md:text-sm rounded-full font-bold bg-purple-50 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300 border border-purple-100 dark:border-purple-800 hover:bg-purple-100 transition flex items-center gap-1">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
                 {{ $service->county->name }}
-            </span>
+            </a>
 
             @if($service->city)
             <span class="px-3 py-1 text-xs md:text-sm rounded-full font-bold bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300 border border-gray-200 dark:border-gray-700">
@@ -112,13 +155,12 @@
         @endphp
 
         {{-- ZONA IMAGINI PRINCIPALĂ --}}
-        <div class="mb-4 relative overflow-hidden rounded-2xl shadow-lg border border-gray-100 dark:border-[#333333] aspect-[16/10]">
+        <div class="mb-4 relative overflow-hidden rounded-2xl shadow-lg border border-gray-100 dark:border-[#333333] aspect-[16/10] bg-gray-100 dark:bg-[#121212]">
             <img id="mainImage"
                  src="{{ $service->main_image_url }}" 
                  class="w-full h-full object-cover transition duration-500"
                  alt="{{ $service->title }}"
-                 fetchpriority="high"
-                 loading="eager">
+                 fetchpriority="high">
         </div>
 
         {{-- ZONA THUMBNAILS --}}
@@ -129,7 +171,7 @@
                          onclick="document.getElementById('mainImage').src='{{ asset('storage/services/' . $image) }}'">
                         <img src="{{ asset('storage/services/' . $image) }}" 
                              class="w-full h-full object-cover hover:opacity-90 transition"
-                             alt="{{ $service->title }}" >
+                             alt="{{ $service->title }} - poza {{ $key + 1 }}" >
                     </div>
                 @endforeach
             </div>
@@ -139,24 +181,32 @@
 
         {{-- DESCRIERE --}}
         <div class="prose dark:prose-invert max-w-none mb-8">
-            <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-4">Descriere detaliată</h3>
+            <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-4 border-b border-gray-100 dark:border-[#333333] pb-2">
+                Descriere detaliată
+            </h3>
             <div class="text-gray-700 dark:text-[#D4D4D4] leading-relaxed whitespace-pre-line text-base md:text-lg">
                 {{ $service->description }}
             </div>
         </div>
 
-        {{-- META FOOTER (AICI AM ACTUALIZAT DATA) --}}
+        {{-- META FOOTER --}}
         <div class="flex items-center gap-6 text-sm text-gray-500 dark:text-[#A1A1AA] border-t border-gray-100 dark:border-[#333333] pt-6">
             <span class="flex items-center gap-2" title="Vizualizări">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-1.274 4.057-5.065 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                 </svg>
-                <span class="font-medium">{{ $service->views ?? 0 }}</span>
+                <span class="font-medium">{{ $service->views ?? 0 }} vizualizări</span>
             </span>
             
             <span class="text-gray-300">|</span>
             
+            <span>
+                ID Anunț: <strong>{{ $service->id }}</strong>
+            </span>
+
+            <span class="text-gray-300">|</span>
+
             <span>
                 Publicat: 
                 @if($service->created_at->isToday())
@@ -235,7 +285,7 @@
                                   bg-[#CC2E2E] text-white font-bold text-lg shadow-lg shadow-red-500/30
                                   hover:bg-[#B72626] hover:shadow-red-500/50 hover:-translate-y-0.5 
                                   active:translate-y-0 transition-all duration-200 overflow-hidden">
-                           
+                            
                             <div class="absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:animate-[shimmer_1.5s_infinite]"></div>
 
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -258,14 +308,14 @@
                     </div>
                 </div>
 
-                {{-- C. ZONA SHARE (FOOTER INTEGRAT - COLORAT) --}}
+                {{-- C. ZONA SHARE (FIXAT CU LINKUL NOU) --}}
                 <div class="bg-gray-50 dark:bg-[#252525] border-t border-gray-100 dark:border-[#333333] p-4">
                     <p class="text-[10px] font-bold text-gray-400 uppercase text-center mb-3 tracking-wider">Distribuie anunțul</p>
                     
                     <div class="grid grid-cols-3 gap-2">
                         
                         {{-- FACEBOOK --}}
-                        <a href="https://www.facebook.com/sharer/sharer.php?u={{ urlencode(url()->current()) }}" 
+                        <a href="https://www.facebook.com/sharer/sharer.php?u={{ urlencode($pageUrl) }}" 
                            target="_blank"
                            class="flex flex-col items-center justify-center gap-1 p-2 rounded-lg bg-[#1877F2]/10 hover:bg-[#1877F2]/20 text-[#1877F2] dark:bg-[#1877F2]/20 dark:hover:bg-[#1877F2]/30 transition-all group">
                             <svg class="w-6 h-6 group-hover:scale-110 transition-transform" fill="currentColor" viewBox="0 0 24 24"><path d="M22 12c0-5.523-4.477-10-10-10S2 6.477 2 12c0 4.991 3.657 9.128 8.438 9.878v-6.987h-2.54V12h2.54V9.797c0-2.506 1.492-3.89 3.777-3.89 1.094 0 2.238.195 2.238.195v2.46h-1.26c-1.243 0-1.63.771-1.63 1.562V12h2.773l-.443 2.89h-2.33v6.988C18.343 21.128 22 16.991 22 12z"/></svg>
@@ -273,7 +323,7 @@
                         </a>
 
                         {{-- WHATSAPP --}}
-                        <a href="https://api.whatsapp.com/send?text={{ urlencode($service->title . ' - ' . url()->current()) }}" 
+                        <a href="https://api.whatsapp.com/send?text={{ urlencode($service->title . ' - ' . $pageUrl) }}" 
                            target="_blank"
                            class="flex flex-col items-center justify-center gap-1 p-2 rounded-lg bg-green-100 hover:bg-green-200 text-green-600 dark:bg-green-900/30 dark:hover:bg-green-900/50 dark:text-green-400 transition-all group">
                             <svg class="w-6 h-6 group-hover:scale-110 transition-transform" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12c0 1.8.48 3.5 1.33 5L2.6 21.6a.5.5 0 00.64.64l4.6-1.33C9.5 21.52 10.75 22 12 22c5.52 0 10-4.48 10-10S17.52 2 12 2zm.16 16.92c-1.57 0-3.09-.43-4.42-1.22l-.32-.19-2.92.85.85-2.92-.19-.32a8.53 8.53 0 01-1.22-4.42c0-4.72 3.84-8.56 8.56-8.56 4.72 0 8.56 3.84 8.56 8.56 0 4.72-3.84 8.56-8.56 8.56z"/></svg>
@@ -309,7 +359,10 @@
             {{-- Script Copiere Link --}}
             <script>
             function copyToClipboard() {
-                navigator.clipboard.writeText(window.location.href).then(() => {
+                // Folosim link-ul oficial (canonical) dacă e disponibil, altfel URL-ul curent
+                const urlToCopy = "{{ $pageUrl }}";
+                
+                navigator.clipboard.writeText(urlToCopy).then(() => {
                     const btn = document.getElementById('copyBtn');
                     const text = document.getElementById('copyText');
                     

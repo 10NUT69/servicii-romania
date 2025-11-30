@@ -16,7 +16,7 @@ use Illuminate\Support\Facades\Log;
 
 class ServiceController extends Controller
 {
-    // INDEX
+    // INDEX (Pagina Home / Căutare generală)
     public function index(Request $request)
     {
         $query = Service::where('status', 'active');
@@ -44,6 +44,50 @@ class ServiceController extends Controller
         ]);
     }
 
+    // NEW: INDEX LOCATION (Pagini SEO: /zugravi/braila)
+    public function indexLocation($categorySlug, $countySlug)
+    {
+        // 1. Găsim ID-urile pe baza slug-ului din URL
+        $category = Category::where('slug', $categorySlug)->firstOrFail();
+        $county   = County::where('slug', $countySlug)->firstOrFail();
+
+        // 2. Facem query-ul filtrat strict
+        $services = Service::where('status', 'active')
+            ->where('category_id', $category->id)
+            ->where('county_id', $county->id)
+            ->orderBy('created_at', 'desc')
+            ->paginate(24);
+
+        // 3. Returnăm același view, dar cu datele filtrate
+        return view('services.index', [
+            'services'   => $services,
+            'counties'   => County::all(),
+            'categories' => Category::orderBy('sort_order', 'asc')->get(),
+            // Opțional: poți folosi astea în view ca să schimbi titlul paginii
+            'currentCategory' => $category,
+            'currentCounty'   => $county,
+        ]);
+    }
+
+    // SHOW (Afișare Anunț Individual - Modificat pentru SEO)
+    public function show($category, $county, $slug, $id)
+    {
+        // 1. Găsim serviciul după ID
+        $service = Service::with(['category', 'county', 'user'])->findOrFail($id);
+
+        // 2. SEO CHECK: Verificăm dacă URL-ul este cel "perfect" (fără cuvinte inutile)
+        // Folosim funcția smart_slug pe care am pus-o în Model
+        $correctSlug = $service->smart_slug;
+        
+        if ($slug !== $correctSlug) {
+            // Dacă linkul e vechi sau greșit, redirectăm 301 către cel bun
+            return redirect()->to($service->public_url, 301);
+        }
+
+        $service->increment('views');
+        return view('services.show', compact('service'));
+    }
+
     // CREATE
     public function create()
     {
@@ -53,7 +97,7 @@ class ServiceController extends Controller
         ]);
     }
 
-    // STORE (ADĂUGARE)
+    // STORE
     public function store(Request $request)
     {
         $rules = [
@@ -85,7 +129,6 @@ class ServiceController extends Controller
         if (Auth::check()) {
             $userId = Auth::id();
         } elseif ($request->filled('email') && $request->filled('password')) {
-            // Logică creare user (identică cu ce aveai)
             if ($request->filled('name')) {
                 $finalName = $request->name;
             } else {
@@ -94,9 +137,9 @@ class ServiceController extends Controller
                 $finalName = ucfirst(strtolower($cleanName));
             }
             $user = User::create([
-                'name'     => $finalName,
-                'email'    => $request->email,
-                'password' => Hash::make($request->password),
+                'name'      => $finalName,
+                'email'     => $request->email,
+                'password'  => Hash::make($request->password),
             ]);
             Auth::login($user);
             $userId = $user->id;
@@ -117,23 +160,10 @@ class ServiceController extends Controller
             $service->email = $request->email;
         }
 
-        // =========================================================
-        // 🔥 ARTIFICIU SEO: GENERARE LINK (SLUG) COMPLEX 🔥
-        // Structură: "primele-3-cuvinte-titlu-categoria-judet"
-        // =========================================================
+        // Generăm un slug de bază pentru DB (chiar dacă URL-ul e dinamic acum)
+        $words = Str::of($validated['title'])->explode(' ')->take(5)->implode(' ');
+        $baseSlug = Str::slug($words);
         
-        // 1. Luăm primele 3 cuvinte din titlu
-        $words = Str::of($validated['title'])->explode(' ')->take(3)->implode(' ');
-        
-        // 2. Luăm numele categoriei și al județului
-        $categoryName = Category::find($validated['category_id'])->name;
-        $countyName = County::find($validated['county_id'])->name;
-
-        // 3. Generăm slug-ul de bază
-        $seoString = $words . ' ' . $categoryName . ' ' . $countyName;
-        $baseSlug = Str::slug($seoString);
-        
-        // 4. Verificăm unicitatea
         $uniqueSlug = $baseSlug;
         $i = 2;
         while (Service::where('slug', $uniqueSlug)->exists()) {
@@ -144,11 +174,10 @@ class ServiceController extends Controller
         
         $service->status = 'active';
         
-        // --- LOGICĂ IMAGINI (Rămâne neschimbată) ---
+        // Imagini
         $savedImages = [];
         if ($request->hasFile('images')) {
             $manager = new ImageManager(new Driver());
-            // Folosim același string SEO și pentru numele imaginilor
             $seoBaseName = $baseSlug; 
 
             foreach ($request->file('images') as $image) {
@@ -171,15 +200,9 @@ class ServiceController extends Controller
         $service->images = $savedImages; 
         $service->save();
 
-        return redirect()->route('services.show', [$service->id, $service->slug])
+        // MODIFICARE: Redirect către noul URL SEO-Friendly
+        return redirect()->to($service->public_url)
                          ->with('success', 'Anunțul a fost publicat!');
-    }
-    // SHOW
-    public function show($id, $slug)
-    {
-        $service = Service::where('id', $id)->where('slug', $slug)->firstOrFail();
-        $service->increment('views');
-        return view('services.show', compact('service'));
     }
 
     // EDIT
@@ -213,9 +236,7 @@ class ServiceController extends Controller
             'images.*'    => 'image|mimes:jpeg,png,jpg,webp|max:15360', 
         ]);
 
-        // Păstrăm imaginile vechi
         $finalImages = $service->images;
-        // Asigurăm compatibilitatea dacă vine ca string sau array
         if (is_string($finalImages)) $finalImages = json_decode($finalImages, true);
         if (!is_array($finalImages)) $finalImages = [];
 
@@ -270,7 +291,6 @@ class ServiceController extends Controller
             if (file_exists($path)) unlink($path);
 
             unset($currentImages[$key]);
-            // Reindexăm array-ul
             $service->images = array_values($currentImages);
             $service->save();
 
@@ -284,12 +304,10 @@ class ServiceController extends Controller
     {
         $service = Service::where('id', $id)->where('user_id', auth()->id())->firstOrFail();
         
-        // Decodare sigură
         $images = $service->images;
         if (is_string($images)) $images = json_decode($images, true);
         if (!is_array($images)) $images = [];
 
-        // Ștergem fișierele fizice
         foreach ($images as $img) {
             if (!$img) continue;
             $path = storage_path("app/public/services/" . $img);

@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Support\Str; // <--- AM ADĂUGAT ASTA PENTRU SLUG
 
 class Service extends Model
 {
@@ -47,13 +48,67 @@ class Service extends Model
     }
 
     // ==========================================
+    // 🚀 SEO: SMART SLUG (Fără cuvinte inutile)
+    // ==========================================
+    public function getSmartSlugAttribute()
+    {
+        // Lista de cuvinte de ignorat (Stopwords) pentru limba română
+        $stopWords = [
+            'de', 'la', 'si', 'in', 'cu', 'o', 'un', 'ofera', 'pentru', 'pt', 
+            'fara', 'cel', 'cea', 'care', 'vand', 'execut', 'rog', 'seriozitate',
+            'prestez', 'servicii', 'ieftin', 'rapid', 'urgenta', 'non-stop', 'ofer'
+        ];
+
+        // Facem titlul mic
+        $title = Str::lower($this->title);
+
+        // Spargem în cuvinte
+        $words = explode(' ', $title);
+
+        // Filtrăm cuvintele
+        $filteredWords = array_filter($words, function($word) use ($stopWords) {
+            // Păstrăm cuvântul doar dacă NU e în lista neagră și are mai mult de 2 litere
+            return !in_array($word, $stopWords) && strlen($word) > 2;
+        });
+
+        // Reconstruim titlul
+        $cleanTitle = implode(' ', $filteredWords);
+
+        // Fallback: Dacă am șters tot din greșeală, revenim la titlul original
+        if (empty(trim($cleanTitle))) {
+            return Str::slug($this->title);
+        }
+
+        return Str::slug($cleanTitle);
+    }
+
+    // ==========================================
+    // 🔗 SEO: PUBLIC URL (Link-ul perfect)
+    // ==========================================
+    public function getPublicUrlAttribute()
+    {
+        // Folosim slug-ul categoriei sau un fallback
+        $catSlug = $this->category ? $this->category->slug : 'diverse';
+        
+        // Folosim slug-ul județului sau un fallback
+        $countySlug = $this->county ? $this->county->slug : 'romania';
+
+        // Generăm ruta folosind numele pe care îl vom defini în routes/web.php
+        return route('service.show', [
+            'category' => $catSlug,
+            'county'   => $countySlug,
+            'slug'     => $this->smart_slug, // Apelează funcția de mai sus automat
+            'id'       => $this->id
+        ]);
+    }
+
+    // ==========================================
     // 🔥 FIX: CALEA CORECTĂ PENTRU IMAGINI 🔥
     // ==========================================
     public function getMainImageUrlAttribute()
     {
         // 1. Verificăm dacă userul a încărcat imagini
         if (!empty($this->images) && is_array($this->images) && isset($this->images[0])) {
-            // AICI ERA PROBLEMA: Trebuie să includem folderul 'services'
             return asset('storage/services/' . $this->images[0]);
         }
 
