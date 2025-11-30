@@ -258,28 +258,28 @@
                     </div>
                 </div>
 
-                {{-- C. ZONA SHARE (FOOTER INTEGRAT) --}}
+                {{-- C. ZONA SHARE (FOOTER INTEGRAT - COLORAT) --}}
                 <div class="bg-gray-50 dark:bg-[#252525] border-t border-gray-100 dark:border-[#333333] p-4">
                     <p class="text-[10px] font-bold text-gray-400 uppercase text-center mb-3 tracking-wider">Distribuie anunțul</p>
                     
                     <div class="grid grid-cols-3 gap-2">
-                        {{-- FACEBOOK --}}
+                        {{-- FACEBOOK (Albastru permanent) --}}
                         <a href="https://www.facebook.com/sharer/sharer.php?u={{ urlencode(url()->current()) }}" 
                            target="_blank"
-                           class="flex flex-col items-center justify-center gap-1 p-2 rounded-lg bg-white dark:bg-[#1E1E1E] border border-gray-200 dark:border-[#333333] hover:border-blue-500 hover:text-blue-600 text-gray-600 dark:text-gray-300 transition-all group">
+                           class="flex flex-col items-center justify-center gap-1 p-2 rounded-lg bg-[#1877F2]/10 hover:bg-[#1877F2]/20 text-[#1877F2] dark:bg-[#1877F2]/20 dark:hover:bg-[#1877F2]/30 transition-colors group">
                             <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M22 12c0-5.523-4.477-10-10-10S2 6.477 2 12c0 4.991 3.657 9.128 8.438 9.878v-6.987h-2.54V12h2.54V9.797c0-2.506 1.492-3.89 3.777-3.89 1.094 0 2.238.195 2.238.195v2.46h-1.26c-1.243 0-1.63.771-1.63 1.562V12h2.773l-.443 2.89h-2.33v6.988C18.343 21.128 22 16.991 22 12z"/></svg>
                         </a>
 
-                        {{-- WHATSAPP --}}
+                        {{-- WHATSAPP (Verde permanent) --}}
                         <a href="https://api.whatsapp.com/send?text={{ urlencode($service->title . ' - ' . url()->current()) }}" 
                            target="_blank"
-                           class="flex flex-col items-center justify-center gap-1 p-2 rounded-lg bg-white dark:bg-[#1E1E1E] border border-gray-200 dark:border-[#333333] hover:border-green-500 hover:text-green-600 text-gray-600 dark:text-gray-300 transition-all group">
+                           class="flex flex-col items-center justify-center gap-1 p-2 rounded-lg bg-[#25D366]/10 hover:bg-[#25D366]/20 text-[#25D366] dark:bg-[#25D366]/20 dark:hover:bg-[#25D366]/30 transition-colors group">
                             <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12c0 1.8.48 3.5 1.33 5L2.6 21.6a.5.5 0 00.64.64l4.6-1.33C9.5 21.52 10.75 22 12 22c5.52 0 10-4.48 10-10S17.52 2 12 2zm.16 16.92c-1.57 0-3.09-.43-4.42-1.22l-.32-.19-2.92.85.85-2.92-.19-.32a8.53 8.53 0 01-1.22-4.42c0-4.72 3.84-8.56 8.56-8.56 4.72 0 8.56 3.84 8.56 8.56 0 4.72-3.84 8.56-8.56 8.56z"/></svg>
                         </a>
 
-                        {{-- COPY --}}
+                        {{-- COPY (Gri neutru) --}}
                         <button onclick="copyToClipboard()" id="copyBtn"
-                                class="flex flex-col items-center justify-center gap-1 p-2 rounded-lg bg-white dark:bg-[#1E1E1E] border border-gray-200 dark:border-[#333333] hover:border-gray-500 hover:text-gray-800 dark:hover:text-white text-gray-600 dark:text-gray-300 transition-all group">
+                                class="flex flex-col items-center justify-center gap-1 p-2 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-600 dark:bg-gray-800 dark:hover:bg-gray-700 dark:text-gray-300 transition-colors group">
                             <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" /></svg>
                         </button>
                     </div>
@@ -287,7 +287,7 @@
 
             </div>
 
-            {{-- 2. CARD SIGURANȚĂ (PĂSTRAT MAI JOS) --}}
+            {{-- 2. CARD SIGURANȚĂ --}}
             <div class="bg-blue-50 dark:bg-blue-900/10 border border-blue-100 dark:border-blue-800 rounded-xl p-5">
                 <h5 class="font-bold text-blue-800 dark:text-blue-300 text-sm mb-3 flex items-center gap-2">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -302,15 +302,18 @@
                 </ul>
             </div>
 
-            {{-- Script Copiere Link --}}
+            {{-- Script Copiere Link (Actualizat pentru fundal colorat) --}}
             <script>
             function copyToClipboard() {
                 navigator.clipboard.writeText(window.location.href).then(() => {
                     const btn = document.getElementById('copyBtn');
-                    // Efect vizual simplu
-                    btn.classList.add('border-green-500', 'text-green-600');
+                    // Efect vizual: devine verde scurt timp
+                    btn.classList.remove('bg-gray-100', 'text-gray-600', 'dark:bg-gray-800', 'dark:text-gray-300');
+                    btn.classList.add('bg-green-100', 'text-green-600', 'dark:bg-green-900', 'dark:text-green-400');
+                    
                     setTimeout(() => {
-                        btn.classList.remove('border-green-500', 'text-green-600');
+                        btn.classList.remove('bg-green-100', 'text-green-600', 'dark:bg-green-900', 'dark:text-green-400');
+                        btn.classList.add('bg-gray-100', 'text-gray-600', 'dark:bg-gray-800', 'dark:text-gray-300');
                     }, 1000);
                 });
             }
