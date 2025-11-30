@@ -1,23 +1,53 @@
 @extends('layouts.app')
 
 @php
-    // 1. Titlu scurt SEO
+    // =========================================================
+    // 1. TITLU SEO (Max ~60 caractere)
+    // =========================================================
     $words = preg_split('/\s+/', trim($service->title));
-    $seoTitle = implode(' ', array_slice($words, 0, 3));
-
-    // 2. Locația
+    $shortUserTitle = implode(' ', array_slice($words, 0, 3)); 
+    
     $seoLocation = $service->city ?: $service->county->name;
 
-    // 3. Meta description
-    $seoDescription = "Cauti {$service->category->name} în {$seoLocation}? ".
-                      "Găsește rapid meseriașul potrivit, disponibil când ai nevoie. ".
-                      "Verifică detalii și contactează direct pe MeseriasBun.ro.";
+    // Construim titlul brut
+    $rawTitle = $shortUserTitle . ' | ' . $service->category->name . ' în ' . $seoLocation . ' | MeseriasBun.ro';
+    
+    // Tăiem la 60 de caractere ca să nu pună Google "..."
+    $fullSeoTitle = \Illuminate\Support\Str::limit($rawTitle, 60);
 
-    // 4. Poză principală (FOLOSIM NOUL MODEL INTELIGENT)
-    // Aceasta va returna automat: Poza User SAU Poza Categorie SAU Placeholder
-    $seoImage = $service->main_image_url;
 
-    // 5. Schema.org
+    // =========================================================
+    // 2. DESCRIERE SEO (Max ~160 caractere & Hibridă)
+    // =========================================================
+    $introPart = "Cauti {$service->category->name} în {$seoLocation}? Găsește rapid meseriașul potrivit. ";
+    
+    // Calculăm spațiul rămas
+    $availableSpace = 155 - strlen($introPart);
+    if ($availableSpace < 20) $availableSpace = 20;
+
+    // Tăiem descrierea userului
+    $userDescription = \Illuminate\Support\Str::limit(strip_tags($service->description), $availableSpace);
+    
+    $seoDescription = $introPart . $userDescription;
+
+
+    // =========================================================
+    // 3. IMAGINE SEO (Safe Link Absolute)
+    // =========================================================
+    $rawImage = $service->main_image_url;
+
+    if (empty($rawImage)) {
+        $seoImage = asset('images/logo.webp');
+    } elseif (str_starts_with($rawImage, 'http')) {
+        $seoImage = $rawImage;
+    } else {
+        $seoImage = asset($rawImage);
+    }
+
+
+    // =========================================================
+    // 4. SCHEMA.ORG (JSON-LD)
+    // =========================================================
     $schemaData = [
         "@context" => "https://schema.org",
         "@type" => "Service",
@@ -30,21 +60,28 @@
             "name" => $service->user->name ?? 'Meseriaș'
         ]
     ];
-
-    $fullSeoTitle = $seoTitle . ' | ' . $service->category->name . ' în ' . $seoLocation . ' | MeseriasBun.ro';
 @endphp
 
+{{-- SECȚIUNI OUTPUT LAYOUT --}}
 @section('title', $fullSeoTitle)
-@section('meta_description', $seoDescription)
 @section('meta_title', $fullSeoTitle)
+@section('meta_description', $seoDescription)
 @section('meta_image', $seoImage)
+
+@section('schema')
+<script type="application/ld+json">
+{!! json_encode($schemaData, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) !!}
+</script>
+@endsection
 
 @section('content')
 
 {{-- CONTAINER PRINCIPAL --}}
 <div class="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-10 pt-6 pb-10">
 
+    {{-- ================================================= --}}
     {{-- COL 1: CONȚINUT PRINCIPAL (Stânga) --}}
+    {{-- ================================================= --}}
     <div class="lg:col-span-2">
 
         {{-- Buton Înapoi --}}
@@ -61,7 +98,7 @@
             {{ $service->title }}
         </h1>
 
-        {{-- Tag-uri (Categorie, Județ, Oraș) --}}
+        {{-- Tag-uri --}}
         <div class="flex flex-wrap gap-2 mb-8">
             <span class="px-3 py-1 text-xs md:text-sm rounded-full font-bold bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 border border-blue-100 dark:border-blue-800">
                 {{ $service->category->name }}
@@ -81,17 +118,13 @@
 
         {{-- LOGICĂ IMAGINI --}}
         @php
-            // Obținem array-ul real de imagini DOAR dacă userul a încărcat ceva
             $userImages = $service->images;
             if (is_string($userImages)) $userImages = json_decode($userImages, true);
             if (!is_array($userImages)) $userImages = [];
             $userImages = array_values(array_filter($userImages));
         @endphp
 
-        {{-- 
-            ZONA IMAGINI PRINCIPALĂ 
-            Aici folosim $service->main_image_url pentru a garanta că avem o poză (User sau Categorie)
-        --}}
+        {{-- ZONA IMAGINI PRINCIPALĂ --}}
         <div class="mb-4 relative overflow-hidden rounded-2xl shadow-lg border border-gray-100 dark:border-[#333333] aspect-[16/10]">
             <img id="mainImage"
                  src="{{ $service->main_image_url }}" 
@@ -101,25 +134,19 @@
                  loading="eager">
         </div>
 
-        {{-- 
-            ZONA THUMBNAILS (Galerie mică)
-            O afișăm DOAR dacă userul a încărcat efectiv poze ($userImages nu e gol).
-            Dacă e poza default de categorie, nu vrem thumbnails.
-        --}}
+        {{-- ZONA THUMBNAILS --}}
         @if(count($userImages) > 0)
             <div class="grid grid-cols-5 gap-2 md:gap-3 mb-10">
                 @foreach($userImages as $key => $image)
                     <div class="aspect-square relative rounded-xl overflow-hidden cursor-pointer border-2 border-transparent hover:border-[#CC2E2E] transition-all"
-                         {{-- Aici folosim asset storage/services pentru că iterăm fișierele reale --}}
                          onclick="document.getElementById('mainImage').src='{{ asset('storage/services/' . $image) }}'">
                         <img src="{{ asset('storage/services/' . $image) }}" 
                              class="w-full h-full object-cover hover:opacity-90 transition"
-                             alt="{{ $service->title }} – fotografie {{ $key + 1 }}">
+                             alt="{{ $service->title }}" >
                     </div>
                 @endforeach
             </div>
         @else
-            {{-- Spatiator dacă nu sunt thumbnails --}}
             <div class="mb-8"></div>
         @endif
 
@@ -140,22 +167,21 @@
                 </svg>
                 <span class="font-medium">{{ $service->views ?? 0 }}</span>
             </span>
-
             <span class="text-gray-300">|</span>
-
             <span>Publicat: {{ $service->created_at->diffForHumans() }}</span>
         </div>
 
     </div>
 
 
+    {{-- ================================================= --}}
     {{-- COL 2: SIDEBAR (Dreapta) --}}
+    {{-- ================================================= --}}
     <div class="lg:col-span-1">
         
-        {{-- STICKY SIDEBAR --}}
         <div class="sticky top-24 space-y-6">
 
-            {{-- CARD PREȚ & CONTACT --}}
+            {{-- 1. CARD PREȚ & CONTACT --}}
             <div class="bg-white dark:bg-[#1E1E1E] rounded-2xl shadow-xl border border-gray-100 dark:border-[#333333] overflow-hidden">
                 
                 {{-- Preț --}}
@@ -212,7 +238,6 @@
                                   hover:bg-[#B72626] hover:shadow-red-500/50 hover:-translate-y-0.5 
                                   active:translate-y-0 transition-all duration-200 overflow-hidden">
                            
-                            {{-- Shimmer Effect --}}
                             <div class="absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:animate-[shimmer_1.5s_infinite]"></div>
 
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -237,7 +262,7 @@
                 </div>
             </div>
 
-            {{-- Safety Tips --}}
+            {{-- 2. CARD SIGURANȚĂ --}}
             <div class="bg-blue-50 dark:bg-blue-900/10 border border-blue-100 dark:border-blue-800 rounded-xl p-5">
                 <h5 class="font-bold text-blue-800 dark:text-blue-300 text-sm mb-3 flex items-center gap-2">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -252,15 +277,72 @@
                 </ul>
             </div>
 
+            {{-- 3. CARD SHARE (NOU) --}}
+            <div class="bg-white dark:bg-[#1E1E1E] border border-gray-100 dark:border-[#333333] rounded-xl p-5 shadow-sm">
+                <h5 class="font-bold text-gray-900 dark:text-white text-sm mb-3 flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+                    </svg>
+                    Distribuie anunțul
+                </h5>
+
+                <div class="grid grid-cols-3 gap-2">
+                    
+                    {{-- FACEBOOK --}}
+                    <a href="https://www.facebook.com/sharer/sharer.php?u={{ urlencode(url()->current()) }}" 
+                       target="_blank"
+                       class="flex flex-col items-center justify-center gap-1 p-2 rounded-lg bg-[#1877F2]/10 hover:bg-[#1877F2]/20 text-[#1877F2] transition-colors group">
+                        <svg class="w-6 h-6 group-hover:scale-110 transition-transform" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                            <path fill-rule="evenodd" d="M22 12c0-5.523-4.477-10-10-10S2 6.477 2 12c0 4.991 3.657 9.128 8.438 9.878v-6.987h-2.54V12h2.54V9.797c0-2.506 1.492-3.89 3.777-3.89 1.094 0 2.238.195 2.238.195v2.46h-1.26c-1.243 0-1.63.771-1.63 1.562V12h2.773l-.443 2.89h-2.33v6.988C18.343 21.128 22 16.991 22 12z" clip-rule="evenodd"></path>
+                        </svg>
+                        <span class="text-[10px] font-bold">Facebook</span>
+                    </a>
+
+                    {{-- WHATSAPP --}}
+                    <a href="https://api.whatsapp.com/send?text={{ urlencode('Salut! Uite ce anunț am găsit pe MeseriasBun.ro: ' . $service->title . ' - ' . url()->current()) }}" 
+                       target="_blank"
+                       class="flex flex-col items-center justify-center gap-1 p-2 rounded-lg bg-[#25D366]/10 hover:bg-[#25D366]/20 text-[#25D366] transition-colors group">
+                        <svg class="w-6 h-6 group-hover:scale-110 transition-transform" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                            <path fill-rule="evenodd" d="M12 2C6.48 2 2 6.48 2 12c0 1.8.48 3.5 1.33 5L2.6 21.6a.5.5 0 00.64.64l4.6-1.33C9.5 21.52 10.75 22 12 22c5.52 0 10-4.48 10-10S17.52 2 12 2zm.16 16.92c-1.57 0-3.09-.43-4.42-1.22l-.32-.19-2.92.85.85-2.92-.19-.32a8.53 8.53 0 01-1.22-4.42c0-4.72 3.84-8.56 8.56-8.56 4.72 0 8.56 3.84 8.56 8.56 0 4.72-3.84 8.56-8.56 8.56z" clip-rule="evenodd"></path>
+                        </svg>
+                        <span class="text-[10px] font-bold">WhatsApp</span>
+                    </a>
+
+                    {{-- COPY LINK --}}
+                    <button onclick="copyToClipboard()" 
+                            id="copyBtn"
+                            class="flex flex-col items-center justify-center gap-1 p-2 rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-600 dark:text-gray-300 transition-colors group">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 group-hover:scale-110 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+                        </svg>
+                        <span class="text-[10px] font-bold" id="copyText">Copiază</span>
+                    </button>
+
+                </div>
+            </div>
+
+            {{-- Script Copiere Link --}}
+            <script>
+            function copyToClipboard() {
+                navigator.clipboard.writeText(window.location.href).then(() => {
+                    const btn = document.getElementById('copyBtn');
+                    const text = document.getElementById('copyText');
+                    
+                    // Feedback vizual
+                    btn.classList.add('bg-green-100', 'text-green-700', 'dark:bg-green-900', 'dark:text-green-300');
+                    text.innerText = 'Copiat!';
+                    
+                    setTimeout(() => {
+                        btn.classList.remove('bg-green-100', 'text-green-700', 'dark:bg-green-900', 'dark:text-green-300');
+                        text.innerText = 'Copiază';
+                    }, 2000);
+                });
+            }
+            </script>
+
         </div>
     </div>
 
 </div>
 
-@endsection
-
-@section('schema')
-<script type="application/ld+json">
-{!! json_encode($schemaData, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) !!}
-</script>
 @endsection
