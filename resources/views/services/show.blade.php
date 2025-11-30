@@ -145,7 +145,7 @@
             </div>
         </div>
 
-        {{-- META FOOTER --}}
+        {{-- META FOOTER (AICI AM ACTUALIZAT DATA) --}}
         <div class="flex items-center gap-6 text-sm text-gray-500 dark:text-[#A1A1AA] border-t border-gray-100 dark:border-[#333333] pt-6">
             <span class="flex items-center gap-2" title="Vizualizări">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -154,8 +154,19 @@
                 </svg>
                 <span class="font-medium">{{ $service->views ?? 0 }}</span>
             </span>
+            
             <span class="text-gray-300">|</span>
-            <span>Publicat: {{ $service->created_at->diffForHumans() }}</span>
+            
+            <span>
+                Publicat: 
+                @if($service->created_at->isToday())
+                    <span class="text-green-600 dark:text-green-400 font-bold">Azi</span>
+                @elseif($service->created_at->isYesterday())
+                    <span>Ieri</span>
+                @else
+                    {{ $service->created_at->format('d.m.Y') }}
+                @endif
+            </span>
         </div>
 
     </div>
@@ -247,13 +258,13 @@
                     </div>
                 </div>
 
-                {{-- C. ZONA SHARE (FOOTER INTEGRAT - ICON + TEXT) --}}
+                {{-- C. ZONA SHARE (FOOTER INTEGRAT - COLORAT) --}}
                 <div class="bg-gray-50 dark:bg-[#252525] border-t border-gray-100 dark:border-[#333333] p-4">
                     <p class="text-[10px] font-bold text-gray-400 uppercase text-center mb-3 tracking-wider">Distribuie anunțul</p>
                     
                     <div class="grid grid-cols-3 gap-2">
                         
-                        {{-- FACEBOOK (Albastru) --}}
+                        {{-- FACEBOOK --}}
                         <a href="https://www.facebook.com/sharer/sharer.php?u={{ urlencode(url()->current()) }}" 
                            target="_blank"
                            class="flex flex-col items-center justify-center gap-1 p-2 rounded-lg bg-[#1877F2]/10 hover:bg-[#1877F2]/20 text-[#1877F2] dark:bg-[#1877F2]/20 dark:hover:bg-[#1877F2]/30 transition-all group">
@@ -261,8 +272,7 @@
                             <span class="text-[10px] font-bold">Facebook</span>
                         </a>
 
-                        {{-- WHATSAPP (Verde Închis pt Contrast) --}}
-                        {{-- Am pus text-green-600 pentru a se vedea bine pe fundalul palid --}}
+                        {{-- WHATSAPP --}}
                         <a href="https://api.whatsapp.com/send?text={{ urlencode($service->title . ' - ' . url()->current()) }}" 
                            target="_blank"
                            class="flex flex-col items-center justify-center gap-1 p-2 rounded-lg bg-green-100 hover:bg-green-200 text-green-600 dark:bg-green-900/30 dark:hover:bg-green-900/50 dark:text-green-400 transition-all group">
@@ -270,7 +280,7 @@
                             <span class="text-[10px] font-bold">WhatsApp</span>
                         </a>
 
-                        {{-- COPY (Gri Neutru) --}}
+                        {{-- COPY --}}
                         <button onclick="copyToClipboard()" id="copyBtn"
                                 class="flex flex-col items-center justify-center gap-1 p-2 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-600 dark:bg-gray-800 dark:hover:bg-gray-700 dark:text-gray-300 transition-all group">
                             <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 group-hover:scale-110 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" /></svg>
@@ -296,7 +306,7 @@
                 </ul>
             </div>
 
-            {{-- Script Copiere Link (Feedback Text) --}}
+            {{-- Script Copiere Link --}}
             <script>
             function copyToClipboard() {
                 navigator.clipboard.writeText(window.location.href).then(() => {
