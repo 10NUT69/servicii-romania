@@ -4,7 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Support\Str; // <--- AM ADĂUGAT ASTA PENTRU SLUG
+use Illuminate\Support\Str;
 
 class Service extends Model
 {
@@ -48,38 +48,26 @@ class Service extends Model
     }
 
     // ==========================================
-    // 🚀 SEO: SMART SLUG (Fără cuvinte inutile)
+    // 🚀 SEO: SMART SLUG (Fix Primele 3 Cuvinte)
     // ==========================================
     public function getSmartSlugAttribute()
     {
-        // Lista de cuvinte de ignorat (Stopwords) pentru limba română
-        $stopWords = [
-            'de', 'la', 'si', 'in', 'cu', 'o', 'un', 'ofera', 'pentru', 'pt', 
-            'fara', 'cel', 'cea', 'care', 'vand', 'execut', 'rog', 'seriozitate',
-            'prestez', 'servicii', 'ieftin', 'rapid', 'urgenta', 'non-stop', 'ofer'
-        ];
+        // 1. Curățăm titlul de spații multiple
+        $cleanTitle = trim(preg_replace('/\s+/', ' ', $this->title));
 
-        // Facem titlul mic
-        $title = Str::lower($this->title);
+        // 2. Spargem în cuvinte
+        $words = explode(' ', $cleanTitle);
 
-        // Spargem în cuvinte
-        $words = explode(' ', $title);
+        // 3. Luăm FIX primele 3 elemente din array
+        // (Nu mai filtrăm nimic, luăm exact ce a scris omul la început)
+        // Dacă titlul are mai puțin de 3 cuvinte, le ia pe toate.
+        $firstThreeWords = array_slice($words, 0, 3);
 
-        // Filtrăm cuvintele
-        $filteredWords = array_filter($words, function($word) use ($stopWords) {
-            // Păstrăm cuvântul doar dacă NU e în lista neagră și are mai mult de 2 litere
-            return !in_array($word, $stopWords) && strlen($word) > 2;
-        });
+        // 4. Le unim la loc
+        $slugString = implode(' ', $firstThreeWords);
 
-        // Reconstruim titlul
-        $cleanTitle = implode(' ', $filteredWords);
-
-        // Fallback: Dacă am șters tot din greșeală, revenim la titlul original
-        if (empty(trim($cleanTitle))) {
-            return Str::slug($this->title);
-        }
-
-        return Str::slug($cleanTitle);
+        // 5. Transformăm în slug (litere mici și cratime)
+        return Str::slug($slugString);
     }
 
     // ==========================================
