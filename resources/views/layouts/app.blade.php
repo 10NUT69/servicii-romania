@@ -39,6 +39,20 @@
     {{-- 4. SCHEMA.ORG (JSON-LD) --}}
     @yield('schema')
 
+    {{-- 
+        🔥 GOOGLE ANALYTICS (Doar pe PRODUCȚIE)
+        Se încarcă doar dacă site-ul e live și există ID-ul în config.
+    --}}
+    @if(app()->environment('production') && config('services.google.analytics_id'))
+        <script async src="https://www.googletagmanager.com/gtag/js?id={{ config('services.google.analytics_id') }}"></script>
+        <script>
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+            gtag('config', '{{ config('services.google.analytics_id') }}');
+        </script>
+    @endif
+
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 
@@ -46,7 +60,7 @@
 
     {{-- HEADER FIX --}}
     <nav id="main-nav" class="fixed top-0 left-0 w-full z-[999] h-14 md:h-[72px] transition-all duration-500 ease-in-out
-                              emag-gradient text-white border-b border-transparent dark:border-gray-800 flex items-center shadow-md will-change-transform">
+                            emag-gradient text-white border-b border-transparent dark:border-gray-800 flex items-center shadow-md will-change-transform">
         
         <div class="w-full max-w-7xl mx-auto px-3 sm:px-4 flex items-center justify-between">
 
