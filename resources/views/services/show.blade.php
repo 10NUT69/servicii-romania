@@ -2,72 +2,66 @@
 
 @php
     // =========================================================
-    // 1. GENERARE DATE SEO
+    // 1. LOGICA STRICTĂ: 3 CUVINTE REALE
     // =========================================================
     
-    // Folosim URL-ul Public ("smart") definit in Model
-    $pageUrl = $service->public_url; 
+    // Eliminăm orice caracter care nu e literă sau cifră (scoatem -, |, etc)
+    // Astfel "Instalator - Autorizat" devine "Instalator Autorizat"
+    $cleanTitleString = preg_replace('/[^\p{L}\p{N}\s]/u', '', $service->title);
+    
+    // Eliminăm spațiile multiple
+    $cleanTitleString = trim(preg_replace('/\s+/', ' ', $cleanTitleString));
+    
+    // Spargem în cuvinte
+    $words = explode(' ', $cleanTitleString);
+    
+    // Luăm primele 3 cuvinte
+    $shortUserTitle = implode(' ', array_slice($words, 0, 3));
 
-    // Titlu și Descriere
+    // =========================================================
+    // 2. CONSTRUIRE TITLU & META
+    // =========================================================
+    $categoryName = $service->category->name;
     $seoLocation = $service->city ?: $service->county->name;
-    $fullSeoTitle = $service->title . ' | ' . $service->category->name . ' ' . $seoLocation;
-    $fullSeoTitle = \Illuminate\Support\Str::limit($fullSeoTitle, 60);
+    
+    // Titlul Final: [3 Cuvinte] – [Categorie] în [Oraș]
+    $fullSeoTitle = $shortUserTitle . ' – ' . $categoryName . ' în ' . $seoLocation;
+    
+    // Branding la final (dacă e loc)
+    if (mb_strlen($fullSeoTitle) + 17 <= 60) {
+        $fullSeoTitle .= ' | MeseriasBun.ro';
+    }
 
-    $introPart = "Cauti {$service->category->name} în {$seoLocation}? ";
+    // Descrierea
+    $introPart = "Cauti {$categoryName} în {$seoLocation}? ";
     $userDescription = \Illuminate\Support\Str::limit(strip_tags($service->description), 120);
     $seoDescription = $introPart . $userDescription;
 
-    // Imagine
+    // URL & Imagine
+    $pageUrl = $service->public_url;
     $seoImage = $service->main_image_url;
 
-    // =========================================================
-    // 2. SCHEMA.ORG (JSON-LD) - PRODUCT / SERVICE
-    // =========================================================
+    // Schema.org
     $schemaData = [
         "@context" => "https://schema.org",
         "@type" => "Service",
-        "name" => $service->title,
+        "name" => $fullSeoTitle,
         "description" => $seoDescription,
         "image" => $seoImage,
         "url" => $pageUrl,
         "areaServed" => $seoLocation,
-        "provider" => [
-            "@type" => "Person",
-            "name" => $service->user->name ?? 'Meseriaș'
-        ],
-        "offers" => [
-            "@type" => "Offer",
-            "priceCurrency" => $service->currency ?? 'RON',
-            "price" => $service->price_value ?? '0'
-        ]
+        "provider" => ["@type" => "Person", "name" => $service->user->name ?? 'Meseriaș'],
+        "offers" => ["@type" => "Offer", "priceCurrency" => $service->currency ?? 'RON', "price" => $service->price_value ?? '0']
     ];
-
-    // =========================================================
-    // 3. SCHEMA.ORG - BREADCRUMBS
-    // =========================================================
-    $catUrl = route('category.location', ['category' => $service->category->slug, 'county' => $service->county->slug]);
     
+    $catUrl = route('category.location', ['category' => $service->category->slug, 'county' => $service->county->slug]);
     $breadcrumbSchema = [
         "@context" => "https://schema.org",
         "@type" => "BreadcrumbList",
         "itemListElement" => [
-            [
-                "@type" => "ListItem",
-                "position" => 1,
-                "name" => "Acasa",
-                "item" => route('services.index')
-            ],
-            [
-                "@type" => "ListItem",
-                "position" => 2,
-                "name" => $service->category->name . " " . $service->county->name,
-                "item" => $catUrl
-            ],
-            [
-                "@type" => "ListItem",
-                "position" => 3,
-                "name" => \Illuminate\Support\Str::limit($service->title, 20)
-            ]
+            ["@type" => "ListItem", "position" => 1, "name" => "Acasa", "item" => route('services.index')],
+            ["@type" => "ListItem", "position" => 2, "name" => "{$categoryName} {$seoLocation}", "item" => $catUrl],
+            ["@type" => "ListItem", "position" => 3, "name" => \Illuminate\Support\Str::limit($service->title, 20)]
         ]
     ];
 @endphp
