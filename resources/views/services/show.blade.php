@@ -8,31 +8,22 @@
     $shortUserTitle = implode(' ', array_slice($words, 0, 3)); 
     
     $seoLocation = $service->city ?: $service->county->name;
-
-    // Construim titlul brut
     $rawTitle = $shortUserTitle . ' | ' . $service->category->name . ' în ' . $seoLocation . ' | MeseriasBun.ro';
-    
-    // Tăiem la 60 de caractere
     $fullSeoTitle = \Illuminate\Support\Str::limit($rawTitle, 60);
-
 
     // =========================================================
     // 2. DESCRIERE SEO (Max ~160 caractere & Hibridă)
     // =========================================================
     $introPart = "Cauti {$service->category->name} în {$seoLocation}? Găsește rapid meseriașul potrivit. ";
-    
     $availableSpace = 155 - strlen($introPart);
     if ($availableSpace < 20) $availableSpace = 20;
-
     $userDescription = \Illuminate\Support\Str::limit(strip_tags($service->description), $availableSpace);
     $seoDescription = $introPart . $userDescription;
-
 
     // =========================================================
     // 3. IMAGINE SEO (Safe Link Absolute)
     // =========================================================
     $rawImage = $service->main_image_url;
-
     if (empty($rawImage)) {
         $seoImage = asset('images/logo.webp');
     } elseif (str_starts_with($rawImage, 'http')) {
@@ -40,7 +31,6 @@
     } else {
         $seoImage = asset($rawImage);
     }
-
 
     // =========================================================
     // 4. SCHEMA.ORG (JSON-LD)
@@ -155,7 +145,7 @@
             </div>
         </div>
 
-        {{-- META FOOTER (Views/Date) --}}
+        {{-- META FOOTER --}}
         <div class="flex items-center gap-6 text-sm text-gray-500 dark:text-[#A1A1AA] border-t border-gray-100 dark:border-[#333333] pt-6">
             <span class="flex items-center gap-2" title="Vizualizări">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -176,7 +166,6 @@
     {{-- ================================================= --}}
     <div class="lg:col-span-1">
         
-        {{-- Wrapper Sticky --}}
         <div class="sticky top-24 space-y-6">
 
             {{-- 1. CARD COMPLET: PREȚ + CONTACT + SHARE --}}
@@ -258,29 +247,32 @@
                     </div>
                 </div>
 
-                {{-- C. ZONA SHARE (FOOTER INTEGRAT - COLORAT) --}}
+                {{-- C. ZONA SHARE (FOOTER INTEGRAT - ICON + TEXT) --}}
                 <div class="bg-gray-50 dark:bg-[#252525] border-t border-gray-100 dark:border-[#333333] p-4">
                     <p class="text-[10px] font-bold text-gray-400 uppercase text-center mb-3 tracking-wider">Distribuie anunțul</p>
                     
                     <div class="grid grid-cols-3 gap-2">
-                        {{-- FACEBOOK (Albastru permanent) --}}
+                        {{-- FACEBOOK --}}
                         <a href="https://www.facebook.com/sharer/sharer.php?u={{ urlencode(url()->current()) }}" 
                            target="_blank"
-                           class="flex flex-col items-center justify-center gap-1 p-2 rounded-lg bg-[#1877F2]/10 hover:bg-[#1877F2]/20 text-[#1877F2] dark:bg-[#1877F2]/20 dark:hover:bg-[#1877F2]/30 transition-colors group">
-                            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M22 12c0-5.523-4.477-10-10-10S2 6.477 2 12c0 4.991 3.657 9.128 8.438 9.878v-6.987h-2.54V12h2.54V9.797c0-2.506 1.492-3.89 3.777-3.89 1.094 0 2.238.195 2.238.195v2.46h-1.26c-1.243 0-1.63.771-1.63 1.562V12h2.773l-.443 2.89h-2.33v6.988C18.343 21.128 22 16.991 22 12z"/></svg>
+                           class="flex flex-col items-center justify-center gap-1 p-2 rounded-lg bg-[#1877F2]/10 hover:bg-[#1877F2]/20 text-[#1877F2] dark:bg-[#1877F2]/20 dark:hover:bg-[#1877F2]/30 transition-all group">
+                            <svg class="w-6 h-6 group-hover:scale-110 transition-transform" fill="currentColor" viewBox="0 0 24 24"><path d="M22 12c0-5.523-4.477-10-10-10S2 6.477 2 12c0 4.991 3.657 9.128 8.438 9.878v-6.987h-2.54V12h2.54V9.797c0-2.506 1.492-3.89 3.777-3.89 1.094 0 2.238.195 2.238.195v2.46h-1.26c-1.243 0-1.63.771-1.63 1.562V12h2.773l-.443 2.89h-2.33v6.988C18.343 21.128 22 16.991 22 12z"/></svg>
+                            <span class="text-[10px] font-bold">Facebook</span>
                         </a>
 
-                        {{-- WHATSAPP (Verde permanent) --}}
+                        {{-- WHATSAPP --}}
                         <a href="https://api.whatsapp.com/send?text={{ urlencode($service->title . ' - ' . url()->current()) }}" 
                            target="_blank"
-                           class="flex flex-col items-center justify-center gap-1 p-2 rounded-lg bg-[#25D366]/10 hover:bg-[#25D366]/20 text-[#25D366] dark:bg-[#25D366]/20 dark:hover:bg-[#25D366]/30 transition-colors group">
-                            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12c0 1.8.48 3.5 1.33 5L2.6 21.6a.5.5 0 00.64.64l4.6-1.33C9.5 21.52 10.75 22 12 22c5.52 0 10-4.48 10-10S17.52 2 12 2zm.16 16.92c-1.57 0-3.09-.43-4.42-1.22l-.32-.19-2.92.85.85-2.92-.19-.32a8.53 8.53 0 01-1.22-4.42c0-4.72 3.84-8.56 8.56-8.56 4.72 0 8.56 3.84 8.56 8.56 0 4.72-3.84 8.56-8.56 8.56z"/></svg>
+                           class="flex flex-col items-center justify-center gap-1 p-2 rounded-lg bg-[#25D366]/10 hover:bg-[#25D366]/20 text-[#25D366] dark:bg-[#25D366]/20 dark:hover:bg-[#25D366]/30 transition-all group">
+                            <svg class="w-6 h-6 group-hover:scale-110 transition-transform" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12c0 1.8.48 3.5 1.33 5L2.6 21.6a.5.5 0 00.64.64l4.6-1.33C9.5 21.52 10.75 22 12 22c5.52 0 10-4.48 10-10S17.52 2 12 2zm.16 16.92c-1.57 0-3.09-.43-4.42-1.22l-.32-.19-2.92.85.85-2.92-.19-.32a8.53 8.53 0 01-1.22-4.42c0-4.72 3.84-8.56 8.56-8.56 4.72 0 8.56 3.84 8.56 8.56 0 4.72-3.84 8.56-8.56 8.56z"/></svg>
+                            <span class="text-[10px] font-bold">WhatsApp</span>
                         </a>
 
-                        {{-- COPY (Gri neutru) --}}
+                        {{-- COPY --}}
                         <button onclick="copyToClipboard()" id="copyBtn"
-                                class="flex flex-col items-center justify-center gap-1 p-2 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-600 dark:bg-gray-800 dark:hover:bg-gray-700 dark:text-gray-300 transition-colors group">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" /></svg>
+                                class="flex flex-col items-center justify-center gap-1 p-2 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-600 dark:bg-gray-800 dark:hover:bg-gray-700 dark:text-gray-300 transition-all group">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 group-hover:scale-110 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" /></svg>
+                            <span class="text-[10px] font-bold" id="copyText">Copiază</span>
                         </button>
                     </div>
                 </div>
@@ -302,19 +294,23 @@
                 </ul>
             </div>
 
-            {{-- Script Copiere Link (Actualizat pentru fundal colorat) --}}
+            {{-- Script Copiere Link (Feedback Text) --}}
             <script>
             function copyToClipboard() {
                 navigator.clipboard.writeText(window.location.href).then(() => {
                     const btn = document.getElementById('copyBtn');
-                    // Efect vizual: devine verde scurt timp
+                    const text = document.getElementById('copyText');
+                    
+                    // Efect vizual
                     btn.classList.remove('bg-gray-100', 'text-gray-600', 'dark:bg-gray-800', 'dark:text-gray-300');
                     btn.classList.add('bg-green-100', 'text-green-600', 'dark:bg-green-900', 'dark:text-green-400');
+                    text.innerText = 'Copiat!';
                     
                     setTimeout(() => {
                         btn.classList.remove('bg-green-100', 'text-green-600', 'dark:bg-green-900', 'dark:text-green-400');
                         btn.classList.add('bg-gray-100', 'text-gray-600', 'dark:bg-gray-800', 'dark:text-gray-300');
-                    }, 1000);
+                        text.innerText = 'Copiază';
+                    }, 2000);
                 });
             }
             </script>
