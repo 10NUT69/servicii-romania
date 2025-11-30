@@ -12,7 +12,7 @@
     // Construim titlul brut
     $rawTitle = $shortUserTitle . ' | ' . $service->category->name . ' în ' . $seoLocation . ' | MeseriasBun.ro';
     
-    // Tăiem la 60 de caractere ca să nu pună Google "..."
+    // Tăiem la 60 de caractere
     $fullSeoTitle = \Illuminate\Support\Str::limit($rawTitle, 60);
 
 
@@ -21,13 +21,10 @@
     // =========================================================
     $introPart = "Cauti {$service->category->name} în {$seoLocation}? Găsește rapid meseriașul potrivit. ";
     
-    // Calculăm spațiul rămas
     $availableSpace = 155 - strlen($introPart);
     if ($availableSpace < 20) $availableSpace = 20;
 
-    // Tăiem descrierea userului
     $userDescription = \Illuminate\Support\Str::limit(strip_tags($service->description), $availableSpace);
-    
     $seoDescription = $introPart . $userDescription;
 
 
@@ -158,7 +155,7 @@
             </div>
         </div>
 
-        {{-- META FOOTER --}}
+        {{-- META FOOTER (Views/Date) --}}
         <div class="flex items-center gap-6 text-sm text-gray-500 dark:text-[#A1A1AA] border-t border-gray-100 dark:border-[#333333] pt-6">
             <span class="flex items-center gap-2" title="Vizualizări">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -179,12 +176,13 @@
     {{-- ================================================= --}}
     <div class="lg:col-span-1">
         
+        {{-- Wrapper Sticky --}}
         <div class="sticky top-24 space-y-6">
 
-            {{-- 1. CARD PREȚ & CONTACT --}}
+            {{-- 1. CARD COMPLET: PREȚ + CONTACT + SHARE --}}
             <div class="bg-white dark:bg-[#1E1E1E] rounded-2xl shadow-xl border border-gray-100 dark:border-[#333333] overflow-hidden">
                 
-                {{-- Preț --}}
+                {{-- A. ZONA PREȚ --}}
                 <div class="p-6 border-b border-gray-100 dark:border-[#333333] bg-gray-50/50 dark:bg-[#252525] text-center">
                     <p class="text-xs uppercase tracking-widest text-gray-500 dark:text-gray-400 font-bold mb-2">Preț Solicitat</p>
                     
@@ -205,8 +203,8 @@
                     @endif
                 </div>
 
-                {{-- Contact --}}
-                <div class="p-6 space-y-6">
+                {{-- B. ZONA CONTACT --}}
+                <div class="p-6 pb-2 space-y-6">
                     
                     {{-- User Info --}}
                     <div class="flex items-center gap-4">
@@ -225,7 +223,7 @@
                         </div>
                     </div>
 
-                    {{-- Buton Telefon --}}
+                    {{-- Buton Telefon (HERO) --}}
                     @if($service->phone)
                         @php
                             $rawPhone = preg_replace('/[^0-9]/', '', $service->phone);
@@ -252,17 +250,44 @@
                     @endif
 
                     {{-- Safety Badge --}}
-                    <div class="flex items-center justify-center gap-2 text-xs text-green-600 dark:text-green-400 font-medium">
+                    <div class="flex items-center justify-center gap-2 text-xs text-green-600 dark:text-green-400 font-medium pb-4">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
                             <path fill-rule="evenodd" d="M2.166 4.999A11.954 11.954 0 0010 1.944 11.954 11.954 0 0017.834 5c.11.65.166 1.32.166 2.001 0 5.225-3.34 9.67-8 11.317C5.34 16.67 2 12.225 2 7c0-.682.057-1.35.166-2.001zm11.541 3.708a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
                         </svg>
                         Date contact verificate
                     </div>
-
                 </div>
+
+                {{-- C. ZONA SHARE (FOOTER INTEGRAT) --}}
+                <div class="bg-gray-50 dark:bg-[#252525] border-t border-gray-100 dark:border-[#333333] p-4">
+                    <p class="text-[10px] font-bold text-gray-400 uppercase text-center mb-3 tracking-wider">Distribuie anunțul</p>
+                    
+                    <div class="grid grid-cols-3 gap-2">
+                        {{-- FACEBOOK --}}
+                        <a href="https://www.facebook.com/sharer/sharer.php?u={{ urlencode(url()->current()) }}" 
+                           target="_blank"
+                           class="flex flex-col items-center justify-center gap-1 p-2 rounded-lg bg-white dark:bg-[#1E1E1E] border border-gray-200 dark:border-[#333333] hover:border-blue-500 hover:text-blue-600 text-gray-600 dark:text-gray-300 transition-all group">
+                            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M22 12c0-5.523-4.477-10-10-10S2 6.477 2 12c0 4.991 3.657 9.128 8.438 9.878v-6.987h-2.54V12h2.54V9.797c0-2.506 1.492-3.89 3.777-3.89 1.094 0 2.238.195 2.238.195v2.46h-1.26c-1.243 0-1.63.771-1.63 1.562V12h2.773l-.443 2.89h-2.33v6.988C18.343 21.128 22 16.991 22 12z"/></svg>
+                        </a>
+
+                        {{-- WHATSAPP --}}
+                        <a href="https://api.whatsapp.com/send?text={{ urlencode($service->title . ' - ' . url()->current()) }}" 
+                           target="_blank"
+                           class="flex flex-col items-center justify-center gap-1 p-2 rounded-lg bg-white dark:bg-[#1E1E1E] border border-gray-200 dark:border-[#333333] hover:border-green-500 hover:text-green-600 text-gray-600 dark:text-gray-300 transition-all group">
+                            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12c0 1.8.48 3.5 1.33 5L2.6 21.6a.5.5 0 00.64.64l4.6-1.33C9.5 21.52 10.75 22 12 22c5.52 0 10-4.48 10-10S17.52 2 12 2zm.16 16.92c-1.57 0-3.09-.43-4.42-1.22l-.32-.19-2.92.85.85-2.92-.19-.32a8.53 8.53 0 01-1.22-4.42c0-4.72 3.84-8.56 8.56-8.56 4.72 0 8.56 3.84 8.56 8.56 0 4.72-3.84 8.56-8.56 8.56z"/></svg>
+                        </a>
+
+                        {{-- COPY --}}
+                        <button onclick="copyToClipboard()" id="copyBtn"
+                                class="flex flex-col items-center justify-center gap-1 p-2 rounded-lg bg-white dark:bg-[#1E1E1E] border border-gray-200 dark:border-[#333333] hover:border-gray-500 hover:text-gray-800 dark:hover:text-white text-gray-600 dark:text-gray-300 transition-all group">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" /></svg>
+                        </button>
+                    </div>
+                </div>
+
             </div>
 
-            {{-- 2. CARD SIGURANȚĂ --}}
+            {{-- 2. CARD SIGURANȚĂ (PĂSTRAT MAI JOS) --}}
             <div class="bg-blue-50 dark:bg-blue-900/10 border border-blue-100 dark:border-blue-800 rounded-xl p-5">
                 <h5 class="font-bold text-blue-800 dark:text-blue-300 text-sm mb-3 flex items-center gap-2">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -277,65 +302,16 @@
                 </ul>
             </div>
 
-            {{-- 3. CARD SHARE (NOU) --}}
-            <div class="bg-white dark:bg-[#1E1E1E] border border-gray-100 dark:border-[#333333] rounded-xl p-5 shadow-sm">
-                <h5 class="font-bold text-gray-900 dark:text-white text-sm mb-3 flex items-center gap-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
-                    </svg>
-                    Distribuie anunțul
-                </h5>
-
-                <div class="grid grid-cols-3 gap-2">
-                    
-                    {{-- FACEBOOK --}}
-                    <a href="https://www.facebook.com/sharer/sharer.php?u={{ urlencode(url()->current()) }}" 
-                       target="_blank"
-                       class="flex flex-col items-center justify-center gap-1 p-2 rounded-lg bg-[#1877F2]/10 hover:bg-[#1877F2]/20 text-[#1877F2] transition-colors group">
-                        <svg class="w-6 h-6 group-hover:scale-110 transition-transform" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                            <path fill-rule="evenodd" d="M22 12c0-5.523-4.477-10-10-10S2 6.477 2 12c0 4.991 3.657 9.128 8.438 9.878v-6.987h-2.54V12h2.54V9.797c0-2.506 1.492-3.89 3.777-3.89 1.094 0 2.238.195 2.238.195v2.46h-1.26c-1.243 0-1.63.771-1.63 1.562V12h2.773l-.443 2.89h-2.33v6.988C18.343 21.128 22 16.991 22 12z" clip-rule="evenodd"></path>
-                        </svg>
-                        <span class="text-[10px] font-bold">Facebook</span>
-                    </a>
-
-                    {{-- WHATSAPP --}}
-                    <a href="https://api.whatsapp.com/send?text={{ urlencode('Salut! Uite ce anunț am găsit pe MeseriasBun.ro: ' . $service->title . ' - ' . url()->current()) }}" 
-                       target="_blank"
-                       class="flex flex-col items-center justify-center gap-1 p-2 rounded-lg bg-[#25D366]/10 hover:bg-[#25D366]/20 text-[#25D366] transition-colors group">
-                        <svg class="w-6 h-6 group-hover:scale-110 transition-transform" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                            <path fill-rule="evenodd" d="M12 2C6.48 2 2 6.48 2 12c0 1.8.48 3.5 1.33 5L2.6 21.6a.5.5 0 00.64.64l4.6-1.33C9.5 21.52 10.75 22 12 22c5.52 0 10-4.48 10-10S17.52 2 12 2zm.16 16.92c-1.57 0-3.09-.43-4.42-1.22l-.32-.19-2.92.85.85-2.92-.19-.32a8.53 8.53 0 01-1.22-4.42c0-4.72 3.84-8.56 8.56-8.56 4.72 0 8.56 3.84 8.56 8.56 0 4.72-3.84 8.56-8.56 8.56z" clip-rule="evenodd"></path>
-                        </svg>
-                        <span class="text-[10px] font-bold">WhatsApp</span>
-                    </a>
-
-                    {{-- COPY LINK --}}
-                    <button onclick="copyToClipboard()" 
-                            id="copyBtn"
-                            class="flex flex-col items-center justify-center gap-1 p-2 rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-600 dark:text-gray-300 transition-colors group">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 group-hover:scale-110 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
-                        </svg>
-                        <span class="text-[10px] font-bold" id="copyText">Copiază</span>
-                    </button>
-
-                </div>
-            </div>
-
             {{-- Script Copiere Link --}}
             <script>
             function copyToClipboard() {
                 navigator.clipboard.writeText(window.location.href).then(() => {
                     const btn = document.getElementById('copyBtn');
-                    const text = document.getElementById('copyText');
-                    
-                    // Feedback vizual
-                    btn.classList.add('bg-green-100', 'text-green-700', 'dark:bg-green-900', 'dark:text-green-300');
-                    text.innerText = 'Copiat!';
-                    
+                    // Efect vizual simplu
+                    btn.classList.add('border-green-500', 'text-green-600');
                     setTimeout(() => {
-                        btn.classList.remove('bg-green-100', 'text-green-700', 'dark:bg-green-900', 'dark:text-green-300');
-                        text.innerText = 'Copiază';
-                    }, 2000);
+                        btn.classList.remove('border-green-500', 'text-green-600');
+                    }, 1000);
                 });
             }
             </script>
