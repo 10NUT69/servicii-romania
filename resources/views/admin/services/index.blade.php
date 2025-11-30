@@ -68,14 +68,18 @@
                                 <input type="checkbox" name="ids[]" value="{{ $service->id }}" class="rowCheck">
                             </td>
 
-                            <td class="p-3">{{ $service->id }}</td>
-
                             <td class="p-3 font-semibold">
-                                <a href="{{ route('services.show', [$service->id, $service->slug]) }}"
-                                   class="text-blue-600 hover:underline" target="_blank">
-                                    {{ $service->title }}
-                                </a>
-                            </td>
+    <a href="{{ route('service.show', [
+        'category' => $service->category->slug,
+        'county'   => $service->county,
+        'slug'     => $service->slug,
+        'id'       => $service->id
+    ]) }}"
+       class="text-blue-600 hover:underline" target="_blank">
+        {{ $service->title }}
+    </a>
+</td>
+
 
                             <td class="p-3">
                                 {{ $service->user->name ?? 'User șters' }}
