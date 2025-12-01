@@ -26,19 +26,14 @@ class AdminServiceController extends Controller
     {
         $service = Service::findOrFail($id);
 
-        // Ștergere imagini
-        if ($service->images) {
-            foreach ($service->images as $img) {
-                if (Storage::exists($img)) {
-                    Storage::delete($img);
-                }
-            }
-        }
+        // 1. Ștergem pozele fizice de pe server
+        $this->deleteImages($service);
 
+        // 2. Ștergem anunțul din baza de date
         $service->delete();
 
         return redirect()->route('admin.services.index')
-            ->with('success', 'Anunțul a fost șters.');
+            ->with('success', 'Anunțul și imaginile au fost șterse.');
     }
 
     // ==========================================================
@@ -65,7 +60,7 @@ class AdminServiceController extends Controller
     public function bulkAction(Request $request)
     {
         $action = $request->action;
-        $ids = (array) $request->ids; // convertim în array chiar dacă e doar un ID
+        $ids = (array) $request->ids; 
 
         if (!$ids || count($ids) === 0) {
             return back()->with('error', 'Selectează cel puțin un anunț.');
@@ -77,24 +72,18 @@ class AdminServiceController extends Controller
             // ȘTERGERE ÎN MASĂ
             // --------------------
             case 'delete':
+                
+                // Luăm anunțurile unul câte unul pentru a le șterge pozele
+                $services = Service::whereIn('id', $ids)->get();
 
-                foreach ($ids as $id) {
-                    $service = Service::find($id);
-                    if (!$service) continue;
-
-                    // Ștergere imagini
-                    if ($service->images) {
-                        foreach ($service->images as $img) {
-                            if (Storage::exists($img)) {
-                                Storage::delete($img);
-                            }
-                        }
-                    }
-
+                foreach ($services as $service) {
+                    // Ștergem pozele fizice
+                    $this->deleteImages($service);
+                    // Ștergem din DB
                     $service->delete();
                 }
 
-                return back()->with('success', 'Anunțurile selectate au fost șterse.');
+                return back()->with('success', 'Anunțurile selectate au fost șterse definitiv.');
 
             // --------------------
             // ACTIVARE ÎN MASĂ
@@ -123,6 +112,26 @@ class AdminServiceController extends Controller
             // --------------------
             default:
                 return back()->with('error', 'Acțiune invalidă.');
+        }
+    }
+
+    // ==========================================================
+    // HELPER: Funcție pentru ștergerea fizică a imaginilor
+    // ==========================================================
+    private function deleteImages(Service $service)
+    {
+        // Verificăm dacă anunțul are imagini
+        if (!empty($service->images) && is_array($service->images)) {
+            foreach ($service->images as $imageName) {
+                // Construim calea absolută către fișier
+                // Aici presupunem că pozele sunt în storage/app/public/services/
+                $path = storage_path('app/public/services/' . $imageName);
+
+                // Dacă fișierul există, îl ștergem
+                if (file_exists($path)) {
+                    @unlink($path); // @ ascunde erorile dacă fișierul e blocat
+                }
+            }
         }
     }
 }
