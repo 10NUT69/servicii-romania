@@ -242,36 +242,45 @@
             </svg>
         </button>
 
-        {{-- Link Către Anunț --}}
-        <a href="{{ $service->public_url }}" class="block flex-grow flex flex-col">
+   {{-- Link Către Anunț --}}
+<a href="{{ $service->public_url }}" class="block flex-grow flex flex-col">
 
-            {{-- Image Area --}}
-            <div class="relative w-full aspect-[4/3] bg-gray-100 dark:bg-[#121212] overflow-hidden">
-                <img src="{{ $service->main_image_url }}"
-     class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-     {{-- 
-         SEO UPGRADE: Alt text descriptiv 
-         Ex: "Reparații Frigidere - Instalator în București - MeseriasBun.ro"
-     --}}
-     alt="{{ $service->title }} - {{ $service->category->name }} în {{ $service->city ?? $service->county->name }}"
-     loading="lazy"
-     width="400" 
-     height="300">
+    {{-- Image Area --}}
+    {{-- Div-ul acesta are "relative", deci tot ce e "absolute" trebuie să stea ÎN EL --}}
+    <div class="relative w-full aspect-[4/3] bg-gray-100 dark:bg-[#121212] overflow-hidden">
+        
+        <img src="{{ $service->main_image_url }}"
+             class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+             alt="{{ $service->title }} - {{ $service->category->name }} în {{ $service->city ?? $service->county->name }}"
+             
+             {{-- LOGICĂ OPTIMIZARE LCP --}}
+             @if($loop->index < 2)
+                 loading="eager"
+                 fetchpriority="high"
+             @else
+                 loading="lazy"
+             @endif
+             
+             width="400" 
+             height="300">
 
-                {{-- Badge Categorie --}}
-                <span class="absolute bottom-2 left-2 md:bottom-3 md:left-3 bg-black/70 text-white text-[9px] md:text-xs px-2 py-0.5 md:px-2.5 md:py-1 rounded-md font-bold uppercase backdrop-blur-md border border-white/10 shadow-lg">
-                    {{ $service->category->name }}
-                </span>
-            </div>
+        {{-- Badge Categorie (Trebuie să fie în interiorul div-ului relative de mai sus) --}}
+        <span class="absolute bottom-2 left-2 md:bottom-3 md:left-3 bg-black/70 text-white text-[9px] md:text-xs px-2 py-0.5 md:px-2.5 md:py-1 rounded-md font-bold uppercase backdrop-blur-md border border-white/10 shadow-lg">
+            {{ $service->category->name }}
+        </span>
+        
+    </div> {{-- <--- AICI se închide corect zona de imagine --}}
 
-            {{-- Card Content --}}
-            <div class="p-3 md:p-4 flex flex-col flex-grow">
+    {{-- Card Content --}}
+    <div class="p-3 md:p-4 flex flex-col flex-grow">
 
-                {{-- TITLU (Trunchiat la 2 rânduri) --}}
-                <h3 class="text-sm md:text-lg font-bold text-gray-900 dark:text-[#F2F2F2] mb-2 line-clamp-2 leading-snug overflow-hidden group-hover:text-[#CC2E2E] transition-colors min-h-[2.5rem] md:min-h-[3.5rem]" 
-                    title="{{ $service->title }}">
-                    {{ $service->title }}
-                </h3>
+        {{-- TITLU --}}
+        <h3 class="text-sm md:text-lg font-bold text-gray-900 dark:text-[#F2F2F2] mb-2 line-clamp-2 leading-snug overflow-hidden group-hover:text-[#CC2E2E] transition-colors min-h-[2.5rem] md:min-h-[3.5rem]" 
+            title="{{ $service->title }}">
+            {{ $service->title }}
+        </h3>
+
+        {{-- ... restul conținutului (preț, locație etc) ... --}}
 
                 {{-- PREȚ --}}
                 <div class="mb-3">
