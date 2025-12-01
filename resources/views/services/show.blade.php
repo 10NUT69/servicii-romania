@@ -2,7 +2,7 @@
 
 @php
     // =========================================================
-    // 1. LOGICA PHP: PREGĂTIRE DATE, FORMATĂRI & SEO
+    // 1. LOGICA PHP: PREGĂTIRE DATE & SEO
     // =========================================================
     $brand = 'MeseriasBun.ro';
     
@@ -26,31 +26,21 @@
     $pageUrl = $service->public_url;
     $seoImage = $service->main_image_url;
 
-    // --- USER INFO ---
-    $displayName = 'Utilizator';
-    $displayInitial = 'U';
-    if($service->user) {
-        $displayName = $service->user->name;
-        $displayInitial = strtoupper(substr($service->user->name, 0, 1));
-    } else {
-        $displayName = 'Vizitator';
-    }
+    // --- USER INFO (LOGICA NOUĂ) ---
+    // Acum citim direct din funcțiile pe care le-am pus în Model
+    $displayName = $service->author_name;     
+    $displayInitial = $service->author_initial;
 
-    // --- LOGICĂ TELEFON (FORMATARE CU SPAȚII) ---
+    // --- LOGICĂ TELEFON ---
     $hasPhone = !empty($service->phone);
     $rawPhone = '';
     $formattedPhone = '';
     
     if ($hasPhone) {
-        // 1. Curățăm tot ce nu e cifră pentru link-ul tel: (ex: 0722111222)
         $rawPhone = preg_replace('/[^0-9]/', '', $service->phone);
-        
-        // 2. Formatăm vizual (ex: 0722 111 222)
-        // Dacă are 10 cifre (standard RO), îl spargem în grupuri 4-3-3
         if (strlen($rawPhone) === 10) {
             $formattedPhone = preg_replace('/^(\d{4})(\d{3})(\d{3})$/', '$1 $2 $3', $rawPhone);
         } else {
-            // Dacă e alt format, îl lăsăm cum l-a scris userul
             $formattedPhone = $service->phone;
         }
     }
@@ -81,7 +71,7 @@
 @endphp
 
 {{-- ========================================================= --}}
-{{-- 2. HEADER SECȚIUNE (META & STILURI) --}}
+{{-- 2. HEADER SECȚIUNE --}}
 {{-- ========================================================= --}}
 @section('title', $fullSeoTitle)
 @section('meta_title', $fullSeoTitle)
@@ -106,7 +96,6 @@
 {{-- 
     =========================================================
     3. MOBILE BOTTOM NAV (PREMIUM LAYOUT)
-    Fixat jos, aspect de aplicație nativă.
     =========================================================
 --}}
 <div class="fixed bottom-0 left-0 right-0 z-50 lg:hidden safe-area-bottom
@@ -116,24 +105,22 @@
 
     <div class="flex items-center justify-between gap-4">
         
-        {{-- ZONA STÂNGA: INFO (Preț + User) --}}
+        {{-- ZONA STÂNGA: INFO --}}
         <div class="flex flex-col justify-center min-w-0 flex-1">
             
             {{-- Rând 1: Avatar + Nume --}}
             <div class="flex items-center gap-1.5 mb-1">
-                {{-- Avatar Mic --}}
                 <div class="w-4 h-4 rounded-full bg-gray-100 dark:bg-[#333333] flex items-center justify-center border border-gray-200 dark:border-[#444] shrink-0">
                     <span class="text-[9px] font-bold text-gray-600 dark:text-gray-300">
                         {{ $displayInitial }}
                     </span>
                 </div>
-                {{-- Nume User --}}
                 <span class="text-[11px] font-medium text-gray-500 dark:text-gray-300 truncate max-w-[120px]">
                     {{ $displayName }}
                 </span>
             </div>
 
-            {{-- Rând 2: Preț (Mare) --}}
+            {{-- Rând 2: Preț --}}
             @if($service->price_value)
                 <div class="flex items-baseline gap-1">
                     <span class="text-xl font-black text-gray-900 dark:text-white leading-none tracking-tight">
@@ -146,7 +133,7 @@
             @endif
         </div>
 
-        {{-- ZONA DREAPTA: BUTON (Click to Reveal) --}}
+        {{-- ZONA DREAPTA: BUTON --}}
         <div class="shrink-0 w-[55%]">
             @if($hasPhone)
                 <div id="phone-wrapper-mobile">
@@ -155,11 +142,7 @@
                               bg-[#CC2E2E] active:bg-[#B72626] text-white rounded-xl 
                               shadow-lg shadow-red-600/20 active:shadow-none active:scale-[0.98] 
                               transition-all duration-200 overflow-hidden cursor-pointer">
-                        
-                        {{-- Efect lucios --}}
                         <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent translate-x-[-100%] animate-[shimmer_2s_infinite]"></div>
-                        
-                        {{-- Icon Ochi (Arată) --}}
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-1.274 4.057-5.065 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
@@ -179,20 +162,14 @@
 
 {{-- 
     =========================================================
-    4. CONTAINER PRINCIPAL (GRID 12 COLOANE)
+    4. CONTAINER PRINCIPAL (DESKTOP)
     =========================================================
 --}}
 <div class="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 pt-4 pb-24 lg:pb-12 px-4 md:px-0">
 
-    {{-- 
-        =================================================
-        COL 1: CONȚINUT PRINCIPAL (Stânga - 75% lățime)
-        Ocupă 9 din 12 coloane pe desktop
-        =================================================
-    --}}
+    {{-- COL 1: CONȚINUT --}}
     <div class="lg:col-span-8 xl:col-span-9">
 
-        {{-- Breadcrumbs (Vizibil doar Desktop) --}}
         <nav class="hidden md:flex items-center text-sm text-gray-500 dark:text-gray-400 mb-6 gap-2">
             <a href="{{ route('services.index') }}" class="hover:text-[#CC2E2E] transition">Acasă</a>
             <span class="text-gray-300">/</span>
@@ -203,7 +180,6 @@
             <span class="text-gray-400 truncate max-w-[200px]">{{ $service->title }}</span>
         </nav>
 
-        {{-- Titlu și Tag-uri --}}
         <div class="mb-6">
             <div class="flex flex-wrap gap-2 mb-3">
                 <a href="{{ route('category.location', ['category' => $service->category->slug, 'county' => 'romania']) }}" 
@@ -230,17 +206,14 @@
             </p>
         </div>
 
-        {{-- GALERIE FOTO (DESIGN 2025 - BLURRED BACKDROP + SEO ALT) --}}
+        {{-- GALERIE FOTO --}}
         <div class="space-y-4 mb-10">
             <div class="relative w-full aspect-video md:aspect-[16/10] bg-gray-100 dark:bg-[#121212] rounded-2xl overflow-hidden shadow-sm border border-gray-100 dark:border-[#333333] group select-none">
-                
-                {{-- Imagine fundal (Blurată pentru umplere - Alt gol pt că e decorativă) --}}
                 <img id="mainImageBlur" 
                      src="{{ $service->main_image_url }}" 
                      class="absolute inset-0 w-full h-full object-cover blur-xl opacity-50 scale-110 dark:opacity-30 transition-all duration-500"
                      alt=""> 
                 
-                {{-- Imagine Principală (Clară - Aici contează SEO) --}}
                 <img id="mainImage" 
                      src="{{ $service->main_image_url }}" 
                      class="relative w-full h-full object-contain z-10 transition-transform duration-500" 
@@ -248,7 +221,6 @@
                      fetchpriority="high">
             </div>
 
-            {{-- Thumbnails --}}
             @php
                 $userImages = is_string($service->images) ? json_decode($service->images, true) : ($service->images ?? []);
                 $userImages = array_filter((array)$userImages);
@@ -259,7 +231,6 @@
                     @foreach($userImages as $img)
                         <div class="snap-start shrink-0 w-16 h-16 md:w-20 md:h-20 rounded-xl overflow-hidden border-2 border-transparent hover:border-[#CC2E2E] cursor-pointer transition-all"
                              onclick="changeImage('{{ asset('storage/services/' . $img) }}')">
-                             
                             <img src="{{ asset('storage/services/' . $img) }}" 
                                  class="w-full h-full object-cover"
                                  alt="Galerie foto {{ $service->title }} - {{ $service->category->name }} - Poza {{ $loop->iteration }}">
@@ -268,6 +239,7 @@
                 </div>
             @endif
         </div>
+
         {{-- DESCRIERE --}}
         <div class="prose prose-lg dark:prose-invert max-w-none mb-10 text-gray-700 dark:text-gray-300">
             <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2 pb-2 border-b border-gray-100 dark:border-[#333333]">
@@ -279,7 +251,7 @@
             </div>
         </div>
 
-        {{-- SAFETY BOX (MOBILE IN-FLOW) --}}
+        {{-- SAFETY BOX (MOBILE) --}}
         <div class="lg:hidden bg-blue-50 dark:bg-blue-900/10 border border-blue-100 dark:border-blue-800 rounded-xl p-4 mb-6">
             <h4 class="text-xs uppercase font-bold text-blue-800 dark:text-blue-200 mb-2 flex items-center gap-2">
                 <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -295,13 +267,7 @@
 
     </div>
 
-
-    {{-- 
-        =================================================
-        COL 2: SIDEBAR (Dreapta - 25% lățime)
-        Ocupă 3 din 12 coloane pe desktop
-        =================================================
-    --}}
+    {{-- COL 2: SIDEBAR --}}
     <div class="hidden lg:block lg:col-span-4 xl:col-span-3">
         <div class="sticky top-24 space-y-5">
 
@@ -337,7 +303,7 @@
                     </div>
                 </div>
 
-                {{-- CTA Button (Desktop - Click to Reveal) --}}
+                {{-- CTA Button --}}
                 @if($hasPhone)
                     <div id="phone-wrapper-desktop" class="w-full mb-3">
                         <button onclick="revealPhone('desktop', '{{ $rawPhone }}', '{{ $formattedPhone }}')"

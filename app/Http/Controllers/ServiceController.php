@@ -16,7 +16,7 @@ use Illuminate\Support\Facades\Log;
 
 class ServiceController extends Controller
 {
-    // INDEX (Pagina Home / Căutare generală)
+    // INDEX
     public function index(Request $request)
     {
         $query = Service::where('status', 'active');
@@ -44,43 +44,34 @@ class ServiceController extends Controller
         ]);
     }
 
-    // NEW: INDEX LOCATION (Pagini SEO: /zugravi/braila)
+    // INDEX LOCATION
     public function indexLocation($categorySlug, $countySlug)
     {
-        // 1. Găsim ID-urile pe baza slug-ului din URL
         $category = Category::where('slug', $categorySlug)->firstOrFail();
         $county   = County::where('slug', $countySlug)->firstOrFail();
 
-        // 2. Facem query-ul filtrat strict
         $services = Service::where('status', 'active')
             ->where('category_id', $category->id)
             ->where('county_id', $county->id)
             ->orderBy('created_at', 'desc')
             ->paginate(24);
 
-        // 3. Returnăm același view, dar cu datele filtrate
         return view('services.index', [
-            'services'   => $services,
-            'counties'   => County::all(),
-            'categories' => Category::orderBy('sort_order', 'asc')->get(),
-            // Opțional: poți folosi astea în view ca să schimbi titlul paginii
+            'services'    => $services,
+            'counties'    => County::all(),
+            'categories'  => Category::orderBy('sort_order', 'asc')->get(),
             'currentCategory' => $category,
             'currentCounty'   => $county,
         ]);
     }
 
-    // SHOW (Afișare Anunț Individual - Modificat pentru SEO)
+    // SHOW
     public function show($category, $county, $slug, $id)
     {
-        // 1. Găsim serviciul după ID
         $service = Service::with(['category', 'county', 'user'])->findOrFail($id);
 
-        // 2. SEO CHECK: Verificăm dacă URL-ul este cel "perfect" (fără cuvinte inutile)
-        // Folosim funcția smart_slug pe care am pus-o în Model
         $correctSlug = $service->smart_slug;
-        
         if ($slug !== $correctSlug) {
-            // Dacă linkul e vechi sau greșit, redirectăm 301 către cel bun
             return redirect()->to($service->public_url, 301);
         }
 
@@ -97,7 +88,7 @@ class ServiceController extends Controller
         ]);
     }
 
-    // STORE
+    // STORE (LOGICA NUME MODIFICATĂ)
     public function store(Request $request)
     {
         $rules = [
@@ -109,7 +100,7 @@ class ServiceController extends Controller
             'price_value' => 'nullable|numeric',
             'price_type'  => 'required|in:fixed,negotiable',
             'currency'    => 'required|in:RON,EUR',
-            'name'        => 'nullable|string|max:255',
+            'name'        => 'nullable|string|max:255', 
             'images.*'    => 'image|mimes:jpeg,png,jpg,webp|max:15360', 
         ];
 
@@ -125,19 +116,46 @@ class ServiceController extends Controller
 
         $validated = $request->validate($rules, $messages);
 
+        // =========================================================
+        // 1. CALCULARE NUME (LOGICA CERUTĂ)
+        // =========================================================
+        
+        // Pasul A: Verificăm dacă a introdus manual un nume
+        $calculatedName = $request->input('name'); 
+
+        // Pasul B: Dacă NU a introdus nume, prelucrăm emailul
+        if (empty($calculatedName) && $request->filled('email')) {
+            $emailParts = explode('@', $request->input('email'));
+            $rawName = $emailParts[0]; // ex: ion.popescu sau maria_123
+
+            // Spargem textul la prima apariție a unui caracter special (., _, -) sau cifră
+            // Regex: [\.\_\-\d] înseamnă punct, underscore, cratimă sau cifră
+            $nameParts = preg_split('/[\.\_\-\d]/', $rawName);
+
+            // Luăm prima parte (ex: din "ion.popescu" luăm "ion")
+            if (!empty($nameParts[0])) {
+                $calculatedName = ucfirst($nameParts[0]);
+            } else {
+                // Caz de rezervă: dacă emailul începe cu cifră (ex: 123ion), luăm tot și curățăm
+                $calculatedName = ucfirst(preg_replace('/[^A-Za-z0-9]/', '', $rawName));
+            }
+        }
+
+        // Fallback final
+        if (empty($calculatedName)) {
+            $calculatedName = 'Vizitator';
+        }
+
+        // =========================================================
+        // 2. LOGICA USER
+        // =========================================================
         $userId = null;
+
         if (Auth::check()) {
             $userId = Auth::id();
         } elseif ($request->filled('email') && $request->filled('password')) {
-            if ($request->filled('name')) {
-                $finalName = $request->name;
-            } else {
-                $rawName = explode('@', $request->email)[0];
-                $cleanName = preg_replace('/[^A-Za-z0-9]/', '', $rawName);
-                $finalName = ucfirst(strtolower($cleanName));
-            }
             $user = User::create([
-                'name'      => $finalName,
+                'name'      => $calculatedName, // Salvăm numele curat și în User
                 'email'     => $request->email,
                 'password'  => Hash::make($request->password),
             ]);
@@ -145,8 +163,17 @@ class ServiceController extends Controller
             $userId = $user->id;
         }
 
+        // =========================================================
+        // 3. SALVARE SERVICIU
+        // =========================================================
         $service = new Service();
         $service->user_id     = $userId;
+        
+        // Dacă e anonim, salvăm numele în contact_name
+        if (!$userId) {
+            $service->contact_name = $calculatedName;
+        }
+
         $service->title       = $validated['title'];
         $service->description = $validated['description'];
         $service->category_id = $validated['category_id'];
@@ -160,10 +187,8 @@ class ServiceController extends Controller
             $service->email = $request->email;
         }
 
-        // Generăm un slug de bază pentru DB (chiar dacă URL-ul e dinamic acum)
         $words = Str::of($validated['title'])->explode(' ')->take(5)->implode(' ');
         $baseSlug = Str::slug($words);
-        
         $uniqueSlug = $baseSlug;
         $i = 2;
         while (Service::where('slug', $uniqueSlug)->exists()) {
@@ -171,10 +196,8 @@ class ServiceController extends Controller
             $i++;
         }
         $service->slug = $uniqueSlug;
-        
         $service->status = 'active';
         
-        // Imagini
         $savedImages = [];
         if ($request->hasFile('images')) {
             $manager = new ImageManager(new Driver());
@@ -200,7 +223,6 @@ class ServiceController extends Controller
         $service->images = $savedImages; 
         $service->save();
 
-        // MODIFICARE: Redirect către noul URL SEO-Friendly
         return redirect()->to($service->public_url)
                          ->with('success', 'Anunțul a fost publicat!');
     }

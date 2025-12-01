@@ -20,6 +20,7 @@ class Service extends Model
         'price_value',
         'price_type',
         'currency',
+        'contact_name', // <--- IMPORTANT: Să fie aici
         'phone',
         'email',
         'images',
@@ -48,64 +49,85 @@ class Service extends Model
     }
 
     // ==========================================
-    // 🚀 SEO: SMART SLUG (Fix Primele 3 Cuvinte)
+    // 👤 LOGICĂ NUME AUTOR (SMART ACCESSOR)
+    // ==========================================
+    public function getAuthorNameAttribute()
+    {
+        // 1. UTILIZATOR ÎNREGISTRAT
+        if ($this->user) {
+            if (!empty($this->user->name) && $this->user->name !== 'Anonymous' && $this->user->name !== 'Vizitator') {
+                return $this->user->name;
+            }
+            // Fallback la email
+            $parts = explode('@', $this->user->email);
+            return ucfirst($parts[0]);
+        }
+
+        // 2. VIZITATOR (Citim din coloana contact_name)
+        // Folosim getAttribute pentru siguranță
+        $guestName = $this->getAttribute('contact_name');
+        if (!empty($guestName)) {
+            return $guestName;
+        }
+
+        // 3. Fallback: Email de contact al anunțului
+        if (!empty($this->email)) {
+            $parts = explode('@', $this->email);
+            return ucfirst($parts[0]);
+        }
+
+        // 4. Ultimul resort
+        return 'Vizitator';
+    }
+
+    // Helper pentru inițiala numelui (Avatar)
+    public function getAuthorInitialAttribute()
+    {
+        $name = $this->author_name; // Apelează funcția de mai sus
+        return strtoupper(substr($name, 0, 1));
+    }
+
+    // ==========================================
+    // 🚀 SEO: SMART SLUG
     // ==========================================
     public function getSmartSlugAttribute()
     {
-        // 1. Curățăm titlul de spații multiple
         $cleanTitle = trim(preg_replace('/\s+/', ' ', $this->title));
-
-        // 2. Spargem în cuvinte
         $words = explode(' ', $cleanTitle);
-
-        // 3. Luăm FIX primele 3 elemente din array
-        // (Nu mai filtrăm nimic, luăm exact ce a scris omul la început)
-        // Dacă titlul are mai puțin de 3 cuvinte, le ia pe toate.
         $firstThreeWords = array_slice($words, 0, 3);
-
-        // 4. Le unim la loc
         $slugString = implode(' ', $firstThreeWords);
-
-        // 5. Transformăm în slug (litere mici și cratime)
         return Str::slug($slugString);
     }
 
     // ==========================================
-    // 🔗 SEO: PUBLIC URL (Link-ul perfect)
+    // 🔗 SEO: PUBLIC URL
     // ==========================================
     public function getPublicUrlAttribute()
     {
-        // Folosim slug-ul categoriei sau un fallback
         $catSlug = $this->category ? $this->category->slug : 'diverse';
-        
-        // Folosim slug-ul județului sau un fallback
         $countySlug = $this->county ? $this->county->slug : 'romania';
 
-        // Generăm ruta folosind numele pe care îl vom defini în routes/web.php
         return route('service.show', [
             'category' => $catSlug,
             'county'   => $countySlug,
-            'slug'     => $this->smart_slug, // Apelează funcția de mai sus automat
+            'slug'     => $this->smart_slug,
             'id'       => $this->id
         ]);
     }
 
     // ==========================================
-    // 🔥 FIX: CALEA CORECTĂ PENTRU IMAGINI 🔥
+    // 🖼️ IMAGINI
     // ==========================================
     public function getMainImageUrlAttribute()
     {
-        // 1. Verificăm dacă userul a încărcat imagini
         if (!empty($this->images) && is_array($this->images) && isset($this->images[0])) {
             return asset('storage/services/' . $this->images[0]);
         }
 
-        // 2. Dacă nu, verificăm dacă Categoria are o poză default
         if ($this->category && $this->category->default_image) {
             return asset('images/defaults/' . $this->category->default_image);
         }
 
-        // 3. Fallback final
         return asset('images/defaults/placeholder.png');
     }
 }
