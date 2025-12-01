@@ -3,7 +3,6 @@
 @section('content')
 <div class="max-w-[1600px] mx-auto py-8 px-4 sm:px-6 lg:px-8 bg-[#F8FAFC] min-h-screen font-sans text-slate-600">
 
-    <!-- HEADER -->
     <div class="flex flex-col md:flex-row justify-between items-end mb-6 gap-4">
         <div>
             <h1 class="text-2xl font-bold text-slate-800 tracking-tight">Utilizatori</h1>
@@ -40,12 +39,11 @@
     {{-- CARD PRINCIPAL --}}
     <div class="bg-white rounded-xl shadow-[0_2px_15px_-3px_rgba(0,0,0,0.07),0_10px_20px_-2px_rgba(0,0,0,0.04)] border border-slate-100 overflow-hidden">
 
-        {{-- FORMULAR BULK (Structură pregătită pentru viitor) --}}
-        {{-- Notă: Asigură-te că ai ruta 'admin.users.bulk' definită dacă vrei să folosești acțiunile în masă --}}
-        <form action="{{ Route::has('admin.users.bulk') ? route('admin.users.bulk') : '#' }}" method="POST" id="bulkForm">
+        <form action="{{ Route::has('admin.users.bulk') ? route('admin.users.bulk') : '#' }}" method="POST" id="bulkForm" onsubmit="return submitBulk(event)">
             @csrf
+            {{-- INPUT ASCUNS PENTRU ID-URI (Trimis de JS) --}}
+            <input type="hidden" name="ids" id="bulkIds"> 
 
-            {{-- TOOLBAR --}}
             <div class="p-4 border-b border-slate-100 bg-slate-50/50 flex flex-col sm:flex-row justify-between items-center gap-4">
                 
                 <div class="flex items-center gap-2 w-full sm:w-auto">
@@ -53,19 +51,18 @@
                         <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
                             <i class="fas fa-user-cog text-xs"></i>
                         </div>
-                        <select name="action" class="pl-9 pr-8 py-2 bg-white border border-slate-200 text-slate-700 text-sm rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all cursor-pointer font-medium hover:border-blue-300 w-full sm:w-48 shadow-sm">
+                        <select name="action" id="bulkActionSelect" class="pl-9 pr-8 py-2 bg-white border border-slate-200 text-slate-700 text-sm rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all cursor-pointer font-medium hover:border-blue-300 w-full sm:w-48 shadow-sm">
                             <option value="">Acțiuni...</option>
-                            <option value="activate">✅ Deblochează</option>
-                            <option value="deactivate">🚫 Blochează</option>
-                            <option value="delete">🗑️ Șterge</option>
+                            <option value="activate" class="text-green-600 font-bold">✅ Deblochează</option>
+                            <option value="deactivate" class="text-orange-600 font-bold">🚫 Blochează</option>
+                            <option value="delete" class="text-red-600 font-black">🗑️ Șterge</option>
                         </select>
                     </div>
-                    <button type="button" onclick="submitBulk()" class="bg-slate-800 hover:bg-slate-900 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all shadow-md active:transform active:scale-95">
+                    <button type="submit" class="bg-slate-800 hover:bg-slate-900 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all shadow-md active:transform active:scale-95">
                         Aplică
                     </button>
                 </div>
 
-                {{-- Search --}}
                 <div class="relative w-full sm:w-64">
                     <input type="text" placeholder="Caută utilizator..." class="w-full pl-10 pr-4 py-2 bg-white border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent shadow-sm">
                     <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
@@ -74,7 +71,6 @@
                 </div>
             </div>
 
-            {{-- TABEL --}}
             <div class="overflow-x-auto">
                 <table class="w-full text-left border-collapse">
                     <thead>
@@ -95,13 +91,17 @@
                             <tr class="group hover:bg-slate-50/80 transition-colors duration-150">
                                 
                                 <td class="p-4 text-center">
-                                    <input type="checkbox" name="ids[]" value="{{ $user->id }}" class="rowCheck rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer w-4 h-4">
+                                    {{-- Folosim clasa rowCheck și valoarea ID-ului, dar verificăm să nu fie adminul curent --}}
+                                    @if($user->id !== auth()->id())
+                                        <input type="checkbox" value="{{ $user->id }}" class="rowCheck rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer w-4 h-4">
+                                    @else
+                                        <i class="fas fa-user-shield text-slate-300" title="Tu ești acesta"></i>
+                                    @endif
                                 </td>
 
                                 {{-- User Info + Avatar --}}
                                 <td class="p-4">
                                     <div class="flex items-center gap-3">
-                                        {{-- Avatar Generat --}}
                                         <div class="w-10 h-10 rounded-full bg-gradient-to-br {{ $user->is_admin ? 'from-purple-600 to-indigo-700' : 'from-slate-600 to-slate-800' }} text-white flex items-center justify-center text-sm font-bold shadow-md ring-2 ring-white">
                                             {{ strtoupper(substr($user->name, 0, 1)) }}
                                         </div>
@@ -160,104 +160,108 @@
 
                                 {{-- Acțiuni --}}
                                 <td class="p-4 text-right">
-                                    <div class="flex items-center justify-end gap-2 opacity-80 group-hover:opacity-100 transition-opacity">
-                                        
-                                        {{-- Toggle --}}
-                                        <button type="button" 
-                                                onclick="toggleUser({{ $user->id }})"
-                                                class="p-2 bg-white border border-slate-200 rounded-lg transition shadow-sm
-                                                {{ $user->is_active ? 'text-amber-500 hover:bg-amber-50 hover:border-amber-200' : 'text-emerald-600 hover:bg-emerald-50 hover:border-emerald-200' }}"
-                                                title="{{ $user->is_active ? 'Blochează accesul' : 'Deblochează accesul' }}">
-                                            <i class="fas {{ $user->is_active ? 'fa-ban' : 'fa-check' }}"></i>
-                                        </button>
+                                    <div class="flex items-center justify-end gap-2">
+                                        @if($user->id !== auth()->id())
+                                            
+                                            {{-- Toggle --}}
+                                            <button type="button" 
+                                                    onclick="toggleUser({{ $user->id }})"
+                                                    class="p-2 border rounded-lg transition shadow-sm
+                                                    {{ $user->is_active ? 'text-amber-500 hover:bg-amber-50 hover:border-amber-200' : 'text-emerald-600 hover:bg-emerald-50 hover:border-emerald-200' }}"
+                                                    title="{{ $user->is_active ? 'Blochează accesul' : 'Deblochează accesul' }}">
+                                                <i class="fas {{ $user->is_active ? 'fa-ban' : 'fa-check' }}"></i>
+                                            </button>
 
-                                        {{-- Delete --}}
-                                        <button type="button" 
-                                                onclick="deleteUser({{ $user->id }})"
-                                                class="p-2 bg-white border border-slate-200 text-red-500 rounded-lg hover:bg-red-50 hover:text-red-600 hover:border-red-200 transition shadow-sm"
-                                                title="Șterge contul">
-                                            <i class="fas fa-trash-alt"></i>
-                                        </button>
-
+                                            {{-- Delete --}}
+                                            <button type="button" 
+                                                    onclick="deleteUser({{ $user->id }})"
+                                                    class="p-2 border border-red-200 text-red-600 rounded-lg hover:bg-red-50 transition shadow-sm"
+                                                    title="Șterge contul">
+                                                <i class="fas fa-trash-alt"></i>
+                                            </button>
+                                        @endif
                                     </div>
                                 </td>
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="7" class="p-12 text-center">
-                                    <div class="flex flex-col items-center justify-center text-slate-400">
-                                        <div class="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mb-4">
-                                            <i class="far fa-user text-3xl"></i>
-                                        </div>
-                                        <p class="text-lg font-medium text-slate-600">Nu există utilizatori</p>
-                                    </div>
-                                </td>
+                                <td colspan="7" class="p-12 text-center text-slate-400">Nu există utilizatori.</td>
                             </tr>
                         @endforelse
                     </tbody>
                 </table>
             </div>
 
-            {{-- PAGINARE --}}
             @if($users->hasPages())
             <div class="p-4 border-t border-slate-100 bg-slate-50 flex justify-center">
-                {{ $users->links() }} 
+                {{ $users->links() }}
             </div>
             @endif
 
         </form>
+        {{-- FORMULAR BULK END --}}
     </div>
 </div>
 
-{{-- FORMULARE ASCUNSE --}}
-<form id="toggleForm" action="" method="POST" style="display: none;">
-    @csrf
-</form>
+<form id="toggleForm" action="" method="POST" style="display: none;"> @csrf </form>
+<form id="deleteForm" action="" method="POST" style="display: none;"> @csrf @method('DELETE') </form>
 
-<form id="deleteForm" action="" method="POST" style="display: none;">
-    @csrf
-    @method('DELETE')
-</form>
-
-{{-- SCRIPTS --}}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/js/all.min.js"></script>
 <script>
     // 1. Select All
-    const selectAll = document.getElementById('selectAll');
-    const rowChecks = document.querySelectorAll('.rowCheck');
-    if(selectAll) {
-        selectAll.addEventListener('change', function() {
-            rowChecks.forEach(cb => cb.checked = this.checked);
+    document.getElementById('selectAll').addEventListener('change', function() {
+        document.querySelectorAll('.rowCheck').forEach(cb => {
+            // Nu bifăm rândul adminului
+            if (cb.closest('tr').querySelector('.fa-user-shield')) return;
+            cb.checked = this.checked;
         });
-    }
+    });
 
     // 2. URL Templates
-    const toggleUrlTemplate = '{{ route("admin.users.toggle", "ID_PLACEHOLDER") }}';
-    const deleteUrlTemplate = '{{ route("admin.users.destroy", "ID_PLACEHOLDER") }}';
+    const toggleUrlTemplate = '{{ route("admin.users.toggle", ":id") }}';
+    const deleteUrlTemplate = '{{ route("admin.users.destroy", ":id") }}';
 
-    // 3. Actions
+    // 3. Actions (Individuale)
     function toggleUser(id) {
         const form = document.getElementById('toggleForm');
-        form.action = toggleUrlTemplate.replace('ID_PLACEHOLDER', id);
+        form.action = toggleUrlTemplate.replace(':id', id);
         form.submit();
     }
 
     function deleteUser(id) {
         if (confirm('⚠️ Ești sigur că vrei să ștergi acest utilizator?\n\nToate anunțurile lui vor fi șterse automat.')) {
             const form = document.getElementById('deleteForm');
-            form.action = deleteUrlTemplate.replace('ID_PLACEHOLDER', id);
+            form.action = deleteUrlTemplate.replace(':id', id);
             form.submit();
         }
     }
 
-    function submitBulk() {
-        // Verifică dacă ruta bulk există (fallback simplu în HTML)
+    // 4. SUBMIT BULK (ACȚIUNI ÎN MASĂ)
+    function submitBulk(e) {
+        // Oprim submit-ul automat al form-ului
+        e.preventDefault(); 
+        
         const form = document.getElementById('bulkForm');
-        if(form.action.includes('#')) {
-            alert('Funcționalitatea Bulk Action pentru utilizatori nu este încă configurată în rute.');
-            return;
+        const action = document.getElementById('bulkActionSelect').value;
+        
+        let selected = [];
+        // Colectăm ID-urile bifate
+        document.querySelectorAll('.rowCheck:checked').forEach(cb => selected.push(cb.value));
+
+        // Validări
+        if(selected.length === 0) { alert('Selectează cel puțin un utilizator!'); return false; }
+        if(!action) { alert('Alege o acțiune!'); return false; }
+
+        if(action === 'delete') {
+            if(!confirm('⚠️ ATENȚIE!\n\nȘtergi definitiv ' + selected.length + ' utilizatori?\nAnunțurile lor vor fi șterse.')) return false;
         }
+
+        // Punem ID-urile în input-ul ascuns (ca string "1,2,3")
+        document.getElementById('bulkIds').value = selected.join(',');
+        
+        // Trimitem formularul
         form.submit();
+        return true;
     }
 </script>
 @endsection

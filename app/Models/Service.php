@@ -4,11 +4,12 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
 
 class Service extends Model
 {
-    use HasFactory;
+    use HasFactory, SoftDeletes;
 
     protected $fillable = [
         'user_id',
@@ -20,7 +21,7 @@ class Service extends Model
         'price_value',
         'price_type',
         'currency',
-        'contact_name', // <--- IMPORTANT: Să fie aici
+        'contact_name',
         'phone',
         'email',
         'images',
@@ -48,48 +49,34 @@ class Service extends Model
         return $this->favorites()->where('user_id', $user->id)->exists();
     }
 
-    // ==========================================
-    // 👤 LOGICĂ NUME AUTOR (SMART ACCESSOR)
-    // ==========================================
+    // LOGICA NUME AUTOR
     public function getAuthorNameAttribute()
     {
-        // 1. UTILIZATOR ÎNREGISTRAT
         if ($this->user) {
             if (!empty($this->user->name) && $this->user->name !== 'Anonymous' && $this->user->name !== 'Vizitator') {
                 return $this->user->name;
             }
-            // Fallback la email
             $parts = explode('@', $this->user->email);
             return ucfirst($parts[0]);
         }
 
-        // 2. VIZITATOR (Citim din coloana contact_name)
-        // Folosim getAttribute pentru siguranță
         $guestName = $this->getAttribute('contact_name');
-        if (!empty($guestName)) {
-            return $guestName;
-        }
+        if (!empty($guestName)) return $guestName;
 
-        // 3. Fallback: Email de contact al anunțului
         if (!empty($this->email)) {
             $parts = explode('@', $this->email);
             return ucfirst($parts[0]);
         }
 
-        // 4. Ultimul resort
         return 'Vizitator';
     }
 
-    // Helper pentru inițiala numelui (Avatar)
     public function getAuthorInitialAttribute()
     {
-        $name = $this->author_name; // Apelează funcția de mai sus
-        return strtoupper(substr($name, 0, 1));
+        return strtoupper(substr($this->author_name, 0, 1));
     }
 
-    // ==========================================
-    // 🚀 SEO: SMART SLUG
-    // ==========================================
+    // SMART SLUG
     public function getSmartSlugAttribute()
     {
         $cleanTitle = trim(preg_replace('/\s+/', ' ', $this->title));
@@ -99,15 +86,13 @@ class Service extends Model
         return Str::slug($slugString);
     }
 
-    // ==========================================
-    // 🔗 SEO: PUBLIC URL
-    // ==========================================
+    // PUBLIC URL
     public function getPublicUrlAttribute()
     {
         $catSlug = $this->category ? $this->category->slug : 'diverse';
         $countySlug = $this->county ? $this->county->slug : 'romania';
 
-        return route('service.show', [
+        return route('service.show', [ 
             'category' => $catSlug,
             'county'   => $countySlug,
             'slug'     => $this->smart_slug,
@@ -116,18 +101,22 @@ class Service extends Model
     }
 
     // ==========================================
-    // 🖼️ IMAGINI
+    // 🖼️ IMAGINI (LOGICA DE DEFAULT CATEGORIE)
     // ==========================================
     public function getMainImageUrlAttribute()
     {
+        // 1. Dacă utilizatorul a încărcat poze, o afișăm pe prima
         if (!empty($this->images) && is_array($this->images) && isset($this->images[0])) {
             return asset('storage/services/' . $this->images[0]);
         }
 
-        if ($this->category && $this->category->default_image) {
-            return asset('images/defaults/' . $this->category->default_image);
+        // 2. Dacă NU are poze (sau au fost șterse), căutăm poza categoriei
+        // Logica ta: images/defaults/{category-slug}.webp
+        if ($this->category) {
+            return asset('images/defaults/' . $this->category->slug . '.webp');
         }
 
+        // 3. Fallback absolut (dacă nu are nici categorie)
         return asset('images/defaults/placeholder.png');
     }
 }

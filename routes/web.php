@@ -82,6 +82,10 @@ Route::middleware(['auth', 'admin.access'])
 
         // USERS
         Route::get('/users', [AdminUserController::class, 'index'])->name('users.index');
+        
+        // 🔥 RUTA ADAUGATA/FIXATA PENTRU BULK ACTIONS (POST)
+        Route::post('/users', [AdminUserController::class, 'bulkAction'])->name('users.bulk');
+        
         Route::post('/users/{id}/toggle', [AdminUserController::class, 'toggle'])->name('users.toggle');
         Route::delete('/users/{id}', [AdminUserController::class, 'destroy'])->name('users.destroy');
 
@@ -113,7 +117,6 @@ Route::get('/{category}/{county}', [ServiceController::class, 'indexLocation'])
     ->name('category.location');
 
 // 2. Afișare Anunț (ex: /zugravi/braila/titlu-smart-69)
-// "service.show" (singular) se potrivește cu ce am pus în Modelul Service.php
 Route::get('/{category}/{county}/{slug}-{id}', [ServiceController::class, 'show'])
     ->where(['id' => '[0-9]+', 'slug' => '.*'])
     ->name('service.show');

@@ -16,7 +16,7 @@ use Illuminate\Support\Facades\Log;
 
 class ServiceController extends Controller
 {
-    // INDEX
+    // INDEX (ORIGINAL)
     public function index(Request $request)
     {
         $query = Service::where('status', 'active');
@@ -44,7 +44,7 @@ class ServiceController extends Controller
         ]);
     }
 
-    // INDEX LOCATION
+    // INDEX LOCATION (ORIGINAL)
     public function indexLocation($categorySlug, $countySlug)
     {
         $category = Category::where('slug', $categorySlug)->firstOrFail();
@@ -65,21 +65,26 @@ class ServiceController extends Controller
         ]);
     }
 
-    // SHOW
+    // SHOW (MODIFICAT PENTRU SOFT DELETE SEO)
     public function show($category, $county, $slug, $id)
     {
-        $service = Service::with(['category', 'county', 'user'])->findOrFail($id);
+        // 1. Folosim withTrashed() ca să găsim și anunțurile șterse (SEO)
+        $service = Service::withTrashed()->with(['category', 'county', 'user'])->findOrFail($id);
 
         $correctSlug = $service->smart_slug;
         if ($slug !== $correctSlug) {
             return redirect()->to($service->public_url, 301);
         }
 
-        $service->increment('views');
+        // 2. Incrementăm view-uri DOAR dacă anunțul NU este șters
+        if (!$service->trashed()) {
+            $service->increment('views');
+        }
+
         return view('services.show', compact('service'));
     }
 
-    // CREATE
+    // CREATE (ORIGINAL)
     public function create()
     {
         return view('services.create', [
@@ -88,7 +93,7 @@ class ServiceController extends Controller
         ]);
     }
 
-    // STORE (LOGICA NUME MODIFICATĂ)
+    // STORE (ORIGINAL - STRICT CODUL TAU)
     public function store(Request $request)
     {
         $rules = [
@@ -116,46 +121,29 @@ class ServiceController extends Controller
 
         $validated = $request->validate($rules, $messages);
 
-        // =========================================================
-        // 1. CALCULARE NUME (LOGICA CERUTĂ)
-        // =========================================================
-        
-        // Pasul A: Verificăm dacă a introdus manual un nume
+        // 1. CALCULARE NUME
         $calculatedName = $request->input('name'); 
-
-        // Pasul B: Dacă NU a introdus nume, prelucrăm emailul
         if (empty($calculatedName) && $request->filled('email')) {
             $emailParts = explode('@', $request->input('email'));
-            $rawName = $emailParts[0]; // ex: ion.popescu sau maria_123
-
-            // Spargem textul la prima apariție a unui caracter special (., _, -) sau cifră
-            // Regex: [\.\_\-\d] înseamnă punct, underscore, cratimă sau cifră
+            $rawName = $emailParts[0]; 
             $nameParts = preg_split('/[\.\_\-\d]/', $rawName);
-
-            // Luăm prima parte (ex: din "ion.popescu" luăm "ion")
             if (!empty($nameParts[0])) {
                 $calculatedName = ucfirst($nameParts[0]);
             } else {
-                // Caz de rezervă: dacă emailul începe cu cifră (ex: 123ion), luăm tot și curățăm
                 $calculatedName = ucfirst(preg_replace('/[^A-Za-z0-9]/', '', $rawName));
             }
         }
-
-        // Fallback final
         if (empty($calculatedName)) {
             $calculatedName = 'Vizitator';
         }
 
-        // =========================================================
         // 2. LOGICA USER
-        // =========================================================
         $userId = null;
-
         if (Auth::check()) {
             $userId = Auth::id();
         } elseif ($request->filled('email') && $request->filled('password')) {
             $user = User::create([
-                'name'      => $calculatedName, // Salvăm numele curat și în User
+                'name'      => $calculatedName,
                 'email'     => $request->email,
                 'password'  => Hash::make($request->password),
             ]);
@@ -163,13 +151,9 @@ class ServiceController extends Controller
             $userId = $user->id;
         }
 
-        // =========================================================
         // 3. SALVARE SERVICIU
-        // =========================================================
         $service = new Service();
         $service->user_id     = $userId;
-        
-        // Dacă e anonim, salvăm numele în contact_name
         if (!$userId) {
             $service->contact_name = $calculatedName;
         }
@@ -227,7 +211,7 @@ class ServiceController extends Controller
                          ->with('success', 'Anunțul a fost publicat!');
     }
 
-    // EDIT
+    // EDIT (ORIGINAL)
     public function edit($id)
     {
         $service = Service::where('id', $id)->where('user_id', auth()->id())->firstOrFail();
@@ -238,7 +222,7 @@ class ServiceController extends Controller
         ]);
     }
 
-    // UPDATE
+    // UPDATE (ORIGINAL - STRICT CODUL TAU)
     public function update(Request $request, $id)
     {
         $service = Service::where('id', $id)
@@ -259,6 +243,7 @@ class ServiceController extends Controller
         ]);
 
         $finalImages = $service->images;
+        // Păstrăm logica ta de verificare array/string
         if (is_string($finalImages)) $finalImages = json_decode($finalImages, true);
         if (!is_array($finalImages)) $finalImages = [];
 
@@ -296,7 +281,7 @@ class ServiceController extends Controller
             ->with('success', 'Modificat cu succes!');
     }
 
-    // DELETE IMAGE
+    // DELETE IMAGE (ORIGINAL)
     public function deleteImage(Request $request, $id)
     {
         $service = Service::where('id', $id)->where('user_id', auth()->id())->firstOrFail();
@@ -321,30 +306,54 @@ class ServiceController extends Controller
         return response()->json(['success' => false], 404);
     }
 
-    // DELETE SERVICE
+    // DESTROY (MODIFICATĂ - BLINDATĂ)
+    // ==========================================
+   // ==========================================
+    // DESTROY (REPARAT - FĂRĂ STATUS UPDATE)
+    // ==========================================
     public function destroy($id)
     {
-        $service = Service::where('id', $id)->where('user_id', auth()->id())->firstOrFail();
-        
-        $images = $service->images;
-        if (is_string($images)) $images = json_decode($images, true);
-        if (!is_array($images)) $images = [];
+        try {
+            $service = Service::where('id', $id)->where('user_id', auth()->id())->firstOrFail();
+            
+            // 1. Ștergem imaginile fizic
+            $images = $service->images; // Laravel face cast automat la array datorită Modelului
+            
+            // Măsură de siguranță extra: dacă e null sau string ciudat
+            if (is_null($images)) $images = [];
+            elseif (is_string($images)) $images = json_decode($images, true) ?? [];
 
-        foreach ($images as $img) {
-            if (!$img) continue;
-            $path = storage_path("app/public/services/" . $img);
-            try {
-                if (file_exists($path)) @unlink($path); 
-            } catch (\Throwable $e) {
-                Log::error("Delete error: " . $e->getMessage());
+            if (is_array($images)) {
+                foreach ($images as $img) {
+                    if (empty($img)) continue;
+                    $path = storage_path("app/public/services/" . $img);
+                    if (file_exists($path)) {
+                        @unlink($path);
+                    }
+                }
             }
-        }
-        
-        $service->delete();
-        return response()->json(['status' => 'deleted']);
-    }
+            
+            // 2. Doar golim imaginile din DB (statusul îl lăsăm așa cum e)
+            $service->images = null;
+            
+            // ❌ SCOATEM LINIA ASTA CARE DĂDEA EROARE:
+            // $service->status = 'inactive'; 
+            
+            $service->save();
 
-    // RENEW
+            // 3. Executăm Soft Delete (Asta e tot ce contează pentru a ascunde anunțul)
+            $service->delete();
+
+            return response()->json(['status' => 'deleted']);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => $e->getMessage()
+            ], 500);
+        }
+    }
+    // RENEW (ORIGINAL)
     public function renew($id)
     {
         $service = Service::where('id', $id)->where('user_id', auth()->id())->firstOrFail();
