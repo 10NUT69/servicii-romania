@@ -157,14 +157,14 @@
 
     {{-- SCRIPTURI --}}
     <script>
-    function goToFavorites() {
-        @if(auth()->check())
-            window.location.href = "{{ route('account.index') }}"; 
-        @else
-            alert("Trebuie să fii autentificat.");
-        @endif
-    }
-
+   function goToFavorites() {
+    @if(auth()->check())
+        // Generează: /contul-meu?tab=favorite
+        window.location.href = "{{ route('account.index', ['tab' => 'favorite']) }}"; 
+    @else
+        alert("Trebuie să fii autentificat.");
+    @endif
+}
     // ============================================================
     // LOGICA HIBRIDĂ (START H-18 -> SHRINK H-14)
     // ============================================================

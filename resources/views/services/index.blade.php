@@ -209,7 +209,7 @@
 
 
 {{-- CARDS GRID --}}
-<div class="max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 pb-10 px-4 md:px-0 relative z-0">
+<div class="max-w-7xl mx-auto grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-6 pb-10 px-4 md:px-0 relative z-0">
 
 @forelse($services as $service)
 
@@ -218,7 +218,7 @@
     @endphp
 
     {{-- CARD INDIVIDUAL --}}
-    <div class="card-animate relative bg-white dark:bg-[#1E1E1E] rounded-2xl border border-gray-200 dark:border-[#333333] shadow-sm 
+    <div class="card-animate relative bg-white dark:bg-[#1E1E1E] rounded-xl md:rounded-2xl border border-gray-200 dark:border-[#333333] shadow-sm 
                 hover:shadow-xl dark:hover:shadow-none dark:hover:border-[#555555] 
                 transition-all duration-300 overflow-hidden group flex flex-col h-full">
 
@@ -226,11 +226,11 @@
         <button type="button"
                 onclick="toggleHeart(this, {{ $service->id }})"
                 @if(!auth()->check()) onclick="window.location.href='{{ route('login') }}'" @endif
-                class="absolute top-3 right-3 z-30 p-2 rounded-full backdrop-blur-md shadow-sm transition-all duration-200
+                class="absolute top-2 right-2 md:top-3 md:right-3 z-30 p-1.5 md:p-2 rounded-full backdrop-blur-md shadow-sm transition-all duration-200
                        bg-white/80 dark:bg-black/50 hover:bg-white dark:hover:bg-[#2C2C2C] group/heart border border-white/20"
                 title="Adaugă la favorite">
             <svg xmlns="http://www.w3.org/2000/svg"
-                class="heart-icon h-5 w-5 transition-transform duration-300 ease-in-out group-active/heart:scale-75
+                class="heart-icon h-4 w-4 md:h-5 md:w-5 transition-transform duration-300 ease-in-out group-active/heart:scale-75
                        {{ $isFav ? 'text-[#CC2E2E] fill-[#CC2E2E] scale-110' : 'text-gray-600 dark:text-gray-300 fill-none group-hover/heart:text-[#CC2E2E]' }}"
                 viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                 <path stroke-linecap="round" stroke-linejoin="round"
@@ -242,7 +242,7 @@
             </svg>
         </button>
 
-        {{-- 🔥 AICI ESTE SCHIMBAREA MAJORĂ: Link-ul SEO Friendly 🔥 --}}
+        {{-- Link SEO Friendly --}}
         <a href="{{ $service->public_url }}" class="block flex-grow flex flex-col">
 
             {{-- Image Area --}}
@@ -252,70 +252,58 @@
                      alt="{{ $service->title }} - {{ $service->county->name }} - {{ $service->category->name }}"
                      loading="lazy">
 
-                {{-- Badge Categorie --}}
-                <span class="absolute bottom-3 left-3 bg-black/70 text-white text-xs px-2.5 py-1 rounded-md font-bold uppercase backdrop-blur-md border border-white/10 shadow-lg">
+                {{-- Badge Categorie (Mai mic pe mobil) --}}
+                <span class="absolute bottom-2 left-2 md:bottom-3 md:left-3 bg-black/70 text-white text-[10px] md:text-xs px-2 py-0.5 md:px-2.5 md:py-1 rounded-md font-bold uppercase backdrop-blur-md border border-white/10 shadow-lg">
                     {{ $service->category->name }}
                 </span>
             </div>
 
             {{-- Card Content --}}
-            <div class="p-4 flex flex-col flex-grow">
+            <div class="p-3 md:p-4 flex flex-col flex-grow">
 
-                {{-- TITLU --}}
-                <h3 class="text-base md:text-lg font-bold text-gray-900 dark:text-[#F2F2F2] mb-2 line-clamp-2 leading-tight min-h-[3.5rem] group-hover:text-[#CC2E2E] transition-colors" 
+                {{-- TITLU (Ajustat font pentru 2 coloane) --}}
+                <h3 class="text-sm md:text-lg font-bold text-gray-900 dark:text-[#F2F2F2] mb-1.5 md:mb-2 line-clamp-2 leading-tight min-h-[2.5rem] md:min-h-[3.5rem] group-hover:text-[#CC2E2E] transition-colors" 
                     title="{{ $service->title }}">
                     {{ $service->title }}
                 </h3>
 
                 {{-- PREȚ --}}
-                <div class="mb-3">
+                <div class="mb-2 md:mb-3">
                     @if(!empty($service->price_value))
-                        <div class="flex items-baseline gap-1.5">
-                            <span class="text-lg md:text-xl font-bold text-gray-900 dark:text-white">
+                        <div class="flex items-baseline gap-1">
+                            <span class="text-base md:text-xl font-bold text-gray-900 dark:text-white">
                                 {{ number_format($service->price_value, 0, ',', '.') }} {{ $service->currency }}
                             </span>
                             @if($service->price_type === 'negotiable')
-                                <span class="text-gray-500 dark:text-gray-400 text-xs font-normal">Neg.</span>
+                                <span class="text-gray-500 dark:text-gray-400 text-[10px] md:text-xs font-normal">Neg.</span>
                             @endif
                         </div>
                     @else
-                        <span class="text-lg font-bold text-[#CC2E2E]">Cere ofertă</span>
+                        <span class="text-sm md:text-lg font-bold text-[#CC2E2E]">Cere ofertă</span>
                     @endif
                 </div>
 
                 {{-- META INFO --}}
-                <div class="mt-auto pt-3 flex items-center justify-between text-xs md:text-sm text-gray-500 dark:text-[#A1A1AA] border-t border-gray-100 dark:border-[#333333]">
+                <div class="mt-auto pt-2 md:pt-3 flex items-center justify-between text-[10px] md:text-sm text-gray-500 dark:text-[#A1A1AA] border-t border-gray-100 dark:border-[#333333]">
                     
                     {{-- Stânga: Locație --}}
-                    <div class="flex items-center gap-1.5 truncate max-w-[50%]" title="{{ $service->city ?? $service->county->name }}">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-[#CC2E2E] opacity-70 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <div class="flex items-center gap-1 truncate max-w-[60%]" title="{{ $service->city ?? $service->county->name }}">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 md:h-4 md:w-4 text-[#CC2E2E] opacity-70 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
                             <path stroke-linecap="round" stroke-linejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
                         </svg>
                         <span class="truncate font-medium">{{ $service->city ?? $service->county->name }}</span>
                     </div>
 
-                    {{-- Dreapta: Vizualizări & Dată --}}
-                    <div class="flex items-center gap-3">
-                        
-                        {{-- Vizualizări --}}
-                        <div class="flex items-center gap-1 opacity-80" title="Vizualizări">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-1.274 4.057-5.065 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                            </svg>
-                            <span class="font-medium">{{ $service->views ?? 0 }}</span>
-                        </div>
-
-                        {{-- Dată --}}
-                        <span class="opacity-60 text-gray-300 dark:text-gray-600">|</span>
-                        <span class="opacity-80 whitespace-nowrap text-xs">
+                    {{-- Dreapta: Dată (Ascundem views pe mobil ca să nu aglomerăm) --}}
+                    <div class="flex items-center gap-2">
+                        <span class="opacity-80 whitespace-nowrap">
                             @if($service->created_at->isToday())
                                 <span class="text-green-600 dark:text-green-400 font-bold">Azi</span>
                             @elseif($service->created_at->isYesterday())
                                 <span>Ieri</span>
                             @else
-                                {{ $service->created_at->format('d.m.Y') }}
+                                {{ $service->created_at->format('d.m') }}
                             @endif
                         </span>
                     </div>
