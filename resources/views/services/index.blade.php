@@ -248,9 +248,15 @@
             {{-- Image Area --}}
             <div class="relative w-full aspect-[4/3] bg-gray-100 dark:bg-[#121212] overflow-hidden">
                 <img src="{{ $service->main_image_url }}"
-                     class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-                     alt="{{ $service->title }}"
-                     loading="lazy">
+     class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+     {{-- 
+         SEO UPGRADE: Alt text descriptiv 
+         Ex: "Reparații Frigidere - Instalator în București - MeseriasBun.ro"
+     --}}
+     alt="{{ $service->title }} - {{ $service->category->name }} în {{ $service->city ?? $service->county->name }}"
+     loading="lazy"
+     width="400" 
+     height="300">
 
                 {{-- Badge Categorie --}}
                 <span class="absolute bottom-2 left-2 md:bottom-3 md:left-3 bg-black/70 text-white text-[9px] md:text-xs px-2 py-0.5 md:px-2.5 md:py-1 rounded-md font-bold uppercase backdrop-blur-md border border-white/10 shadow-lg">

@@ -230,19 +230,21 @@
             </p>
         </div>
 
-        {{-- GALERIE FOTO (DESIGN 2025 - BLURRED BACKDROP) --}}
+        {{-- GALERIE FOTO (DESIGN 2025 - BLURRED BACKDROP + SEO ALT) --}}
         <div class="space-y-4 mb-10">
             <div class="relative w-full aspect-video md:aspect-[16/10] bg-gray-100 dark:bg-[#121212] rounded-2xl overflow-hidden shadow-sm border border-gray-100 dark:border-[#333333] group select-none">
-                {{-- Imagine fundal (Blurată) --}}
+                
+                {{-- Imagine fundal (Blurată pentru umplere - Alt gol pt că e decorativă) --}}
                 <img id="mainImageBlur" 
                      src="{{ $service->main_image_url }}" 
-                     class="absolute inset-0 w-full h-full object-cover blur-xl opacity-50 scale-110 dark:opacity-30 transition-all duration-500">
+                     class="absolute inset-0 w-full h-full object-cover blur-xl opacity-50 scale-110 dark:opacity-30 transition-all duration-500"
+                     alt=""> 
                 
-                {{-- Imagine Principală (Clar) --}}
+                {{-- Imagine Principală (Clară - Aici contează SEO) --}}
                 <img id="mainImage" 
                      src="{{ $service->main_image_url }}" 
                      class="relative w-full h-full object-contain z-10 transition-transform duration-500" 
-                     alt="{{ $service->title }}"
+                     alt="{{ $service->title }} - Servicii {{ $service->category->name }} {{ $service->city ?? $service->county->name }} - Imagine Principală"
                      fetchpriority="high">
             </div>
 
@@ -257,13 +259,15 @@
                     @foreach($userImages as $img)
                         <div class="snap-start shrink-0 w-16 h-16 md:w-20 md:h-20 rounded-xl overflow-hidden border-2 border-transparent hover:border-[#CC2E2E] cursor-pointer transition-all"
                              onclick="changeImage('{{ asset('storage/services/' . $img) }}')">
-                            <img src="{{ asset('storage/services/' . $img) }}" class="w-full h-full object-cover">
+                             
+                            <img src="{{ asset('storage/services/' . $img) }}" 
+                                 class="w-full h-full object-cover"
+                                 alt="Galerie foto {{ $service->title }} - {{ $service->category->name }} - Poza {{ $loop->iteration }}">
                         </div>
                     @endforeach
                 </div>
             @endif
         </div>
-
         {{-- DESCRIERE --}}
         <div class="prose prose-lg dark:prose-invert max-w-none mb-10 text-gray-700 dark:text-gray-300">
             <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2 pb-2 border-b border-gray-100 dark:border-[#333333]">
