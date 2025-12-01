@@ -242,18 +242,18 @@
             </svg>
         </button>
 
-        {{-- Link SEO Friendly --}}
+        {{-- Link Către Anunț --}}
         <a href="{{ $service->public_url }}" class="block flex-grow flex flex-col">
 
             {{-- Image Area --}}
             <div class="relative w-full aspect-[4/3] bg-gray-100 dark:bg-[#121212] overflow-hidden">
                 <img src="{{ $service->main_image_url }}"
                      class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-                     alt="{{ $service->title }} - {{ $service->county->name }} - {{ $service->category->name }}"
+                     alt="{{ $service->title }}"
                      loading="lazy">
 
-                {{-- Badge Categorie (Mai mic pe mobil) --}}
-                <span class="absolute bottom-2 left-2 md:bottom-3 md:left-3 bg-black/70 text-white text-[10px] md:text-xs px-2 py-0.5 md:px-2.5 md:py-1 rounded-md font-bold uppercase backdrop-blur-md border border-white/10 shadow-lg">
+                {{-- Badge Categorie --}}
+                <span class="absolute bottom-2 left-2 md:bottom-3 md:left-3 bg-black/70 text-white text-[9px] md:text-xs px-2 py-0.5 md:px-2.5 md:py-1 rounded-md font-bold uppercase backdrop-blur-md border border-white/10 shadow-lg">
                     {{ $service->category->name }}
                 </span>
             </div>
@@ -261,14 +261,14 @@
             {{-- Card Content --}}
             <div class="p-3 md:p-4 flex flex-col flex-grow">
 
-                {{-- TITLU (Ajustat font pentru 2 coloane) --}}
-                <h3 class="text-sm md:text-lg font-bold text-gray-900 dark:text-[#F2F2F2] mb-1.5 md:mb-2 line-clamp-2 leading-tight min-h-[2.5rem] md:min-h-[3.5rem] group-hover:text-[#CC2E2E] transition-colors" 
+                {{-- TITLU (Trunchiat la 2 rânduri) --}}
+                <h3 class="text-sm md:text-lg font-bold text-gray-900 dark:text-[#F2F2F2] mb-2 line-clamp-2 leading-snug overflow-hidden group-hover:text-[#CC2E2E] transition-colors min-h-[2.5rem] md:min-h-[3.5rem]" 
                     title="{{ $service->title }}">
                     {{ $service->title }}
                 </h3>
 
                 {{-- PREȚ --}}
-                <div class="mb-2 md:mb-3">
+                <div class="mb-3">
                     @if(!empty($service->price_value))
                         <div class="flex items-baseline gap-1">
                             <span class="text-base md:text-xl font-bold text-gray-900 dark:text-white">
@@ -283,11 +283,11 @@
                     @endif
                 </div>
 
-                {{-- META INFO --}}
-                <div class="mt-auto pt-2 md:pt-3 flex items-center justify-between text-[10px] md:text-sm text-gray-500 dark:text-[#A1A1AA] border-t border-gray-100 dark:border-[#333333]">
+                {{-- META INFO (Locație + Views + Dată cu An) --}}
+                <div class="mt-auto pt-2 flex items-center justify-between text-[10px] md:text-sm text-gray-500 dark:text-[#A1A1AA] border-t border-gray-100 dark:border-[#333333]">
                     
                     {{-- Stânga: Locație --}}
-                    <div class="flex items-center gap-1 truncate max-w-[60%]" title="{{ $service->city ?? $service->county->name }}">
+                    <div class="flex items-center gap-1 truncate max-w-[40%]" title="{{ $service->city ?? $service->county->name }}">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 md:h-4 md:w-4 text-[#CC2E2E] opacity-70 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
                             <path stroke-linecap="round" stroke-linejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
@@ -295,15 +295,27 @@
                         <span class="truncate font-medium">{{ $service->city ?? $service->county->name }}</span>
                     </div>
 
-                    {{-- Dreapta: Dată (Ascundem views pe mobil ca să nu aglomerăm) --}}
-                    <div class="flex items-center gap-2">
+                    {{-- Dreapta: Vizualizări & Dată --}}
+                    <div class="flex items-center gap-2 md:gap-3">
+                        
+                        {{-- Views --}}
+                        <div class="flex items-center gap-0.5 opacity-80" title="Vizualizări">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 md:h-4 md:w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-1.274 4.057-5.065 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                            </svg>
+                            <span class="font-medium">{{ $service->views ?? 0 }}</span>
+                        </div>
+
+                        {{-- Data (Format ZI.LUNA.AN) --}}
                         <span class="opacity-80 whitespace-nowrap">
                             @if($service->created_at->isToday())
                                 <span class="text-green-600 dark:text-green-400 font-bold">Azi</span>
                             @elseif($service->created_at->isYesterday())
                                 <span>Ieri</span>
                             @else
-                                {{ $service->created_at->format('d.m') }}
+                                {{-- Aici este modificarea pentru an --}}
+                                {{ $service->created_at->format('d.m.Y') }}
                             @endif
                         </span>
                     </div>
@@ -313,7 +325,6 @@
             </div>
         </a>
     </div>
-
 @empty
     {{-- EMPTY STATE --}}
     <div class="col-span-full text-center py-20 bg-white dark:bg-[#1E1E1E] rounded-2xl border border-dashed border-gray-300 dark:border-[#333333]">
