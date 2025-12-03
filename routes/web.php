@@ -108,17 +108,35 @@ Route::middleware(['auth', 'admin.access'])
 
 /*
 |--------------------------------------------------------------------------
-| SEO ROUTES (trebuie să fie ultimele!)
+| AUTH ROUTES
 |--------------------------------------------------------------------------
 */
 
-// 1. Listare Categorie + Județ (ex: /zugravi/braila)
+require __DIR__.'/auth.php';
+
+/*
+|--------------------------------------------------------------------------
+| SEO ROUTES (CATEGORIE / CATEGORIE + JUDEȚ / ANUNȚ)
+|--------------------------------------------------------------------------
+|
+| ⚠ Acestea trebuie să fie ultimele, pentru că sunt foarte „generice”
+|    /{category}
+|    /{category}/{county}
+|    /{category}/{county}/{slug}-{id}
+|
+| Le punem DUPĂ toate celelalte (inclusiv auth), ca să nu „fure” /login, /admin etc.
+|
+*/
+
+// 1. Listare doar pe Categorie (ex: /electrician)
+Route::get('/{category}', [ServiceController::class, 'indexLocation'])
+    ->name('category.index');
+
+// 2. Listare Categorie + Județ (ex: /electrician/arges)
 Route::get('/{category}/{county}', [ServiceController::class, 'indexLocation'])
     ->name('category.location');
 
-// 2. Afișare Anunț (ex: /zugravi/braila/titlu-smart-69)
+// 3. Afișare Anunț (ex: /electrician/arges/titlu-smart-102)
 Route::get('/{category}/{county}/{slug}-{id}', [ServiceController::class, 'show'])
     ->where(['id' => '[0-9]+', 'slug' => '.*'])
     ->name('service.show');
-
-require __DIR__.'/auth.php';

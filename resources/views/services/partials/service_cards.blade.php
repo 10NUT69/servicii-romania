@@ -43,10 +43,14 @@
 
             {{-- Card Content --}}
             <div class="p-3 md:p-4 flex flex-col flex-grow">
-                <h3 class="text-sm md:text-lg font-bold text-gray-900 dark:text-[#F2F2F2] mb-2 line-clamp-2 leading-snug overflow-hidden group-hover:text-[#CC2E2E] transition-colors min-h-[2.5rem] md:min-h-[3.5rem]" 
-                    title="{{ $service->title }}">
-                    {{ $service->title }}
-                </h3>
+               <h3 class="text-sm md:text-lg font-bold text-gray-900 dark:text-[#F2F2F2] mb-2 
+           uppercase tracking-tight line-clamp-2 leading-snug overflow-hidden 
+           group-hover:text-[#CC2E2E] transition-colors 
+           min-h-[2.5rem] md:min-h-[3.5rem]"
+    title="{{ $service->title }}">
+    {{ $service->title }}
+</h3>
+
 
                 <div class="mb-3">
                     @if(!empty($service->price_value))

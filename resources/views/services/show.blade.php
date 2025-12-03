@@ -185,22 +185,26 @@
             </nav>
 
             <div class="mb-6">
-                <div class="flex flex-wrap gap-2 mb-3">
-                    <a href="{{ route('category.location', ['category' => $service->category->slug, 'county' => 'romania']) }}" 
-                       class="px-2.5 py-0.5 text-xs font-bold rounded text-blue-700 bg-blue-50 dark:text-blue-200 dark:bg-blue-900/30 border border-blue-100 dark:border-blue-800 uppercase tracking-wide hover:bg-blue-100 transition">
-                        {{ $service->category->name }}
-                    </a>
-                    <a href="{{ route('category.location', ['category' => $service->category->slug, 'county' => $service->county->slug]) }}" 
-                       class="px-2.5 py-0.5 text-xs font-bold rounded text-purple-700 bg-purple-50 dark:text-purple-200 dark:bg-purple-900/30 border border-purple-100 dark:border-purple-800 flex items-center gap-1 uppercase tracking-wide hover:bg-purple-100 transition">
-                        <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/></svg>
-                        {{ $service->county->name }}
-                    </a>
-                    @if($isDeleted)
-                        <span class="px-2.5 py-0.5 text-xs font-bold rounded text-gray-600 bg-gray-200 border border-gray-300 uppercase tracking-wide">
-                            INDISPONIBIL
-                        </span>
-                    @endif
-                </div>
+             <div class="flex flex-wrap gap-2 mb-3">
+    {{-- CATEGORIE: /electrician --}}
+    <a href="{{ route('category.index', ['category' => $service->category->slug]) }}" 
+       class="px-2.5 py-0.5 text-xs font-bold rounded text-blue-700 bg-blue-50 dark:text-blue-200 dark:bg-blue-900/30 border border-blue-100 dark:border-blue-800 uppercase tracking-wide hover:bg-blue-100 transition">
+        {{ $service->category->name }}
+    </a>
+
+    {{-- CATEGORIE + JUDEȚ: /electrician/arges --}}
+    <a href="{{ route('category.location', ['category' => $service->category->slug, 'county' => $service->county->slug]) }}" 
+       class="px-2.5 py-0.5 text-xs font-bold rounded text-purple-700 bg-purple-50 dark:text-purple-200 dark:bg-purple-900/30 border border-purple-100 dark:border-purple-800 flex items-center gap-1 uppercase tracking-wide hover:bg-purple-100 transition">
+        <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/></svg>
+        {{ $service->county->name }}
+    </a>
+
+    @if($isDeleted)
+        <span class="px-2.5 py-0.5 text-xs font-bold rounded text-gray-600 bg-gray-200 border border-gray-300 uppercase tracking-wide">
+            INDISPONIBIL
+        </span>
+    @endif
+</div>
 
                 <h1 class="text-2xl md:text-3xl lg:text-4xl font-extrabold text-gray-900 dark:text-[#F2F2F2] leading-tight mb-2">
                     {{ $service->title }}

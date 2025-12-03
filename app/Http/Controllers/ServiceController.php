@@ -71,39 +71,52 @@ class ServiceController extends Controller
             $html = view('services.partials.service_cards', ['services' => $services])->render();
 
             return response()->json([
-                'html' => $html,
-                'hasMore' => $hasMore,
-                'total' => $totalCount
+                'html'        => $html,
+                'hasMore'     => $hasMore,
+                'total'       => $totalCount,
+                // 🔥 pentru empty state din JS
+                'loadedCount' => $services->count(),
             ]);
         }
 
         // 5. Răspuns Initial (Blade)
         return view('services.index', [
-            'services' => $services,
-            'counties' => County::all(),
-            'categories' => Category::orderBy('sort_order', 'asc')->get(),
-            'hasMore' => $hasMore,
+            'services'        => $services,
+            'counties'        => County::all(),
+            'categories'      => Category::orderBy('sort_order', 'asc')->get(),
+            'hasMore'         => $hasMore,
+            // pentru paginile SEO (categorie / categorie + județ)
+            'currentCategory' => $request->attributes->get('currentCategory'),
+            'currentCounty'   => $request->attributes->get('currentCounty'),
         ]);
     }
-    // INDEX LOCATION (ORIGINAL)
-    public function indexLocation($categorySlug, $countySlug)
+
+    // INDEX LOCATION – /{category} și /{category}/{county}
+    public function indexLocation(Request $request, $categorySlug, $countySlug = null)
     {
+        // 1. Găsim categoria după slug (ex: electrician)
         $category = Category::where('slug', $categorySlug)->firstOrFail();
-        $county   = County::where('slug', $countySlug)->firstOrFail();
 
-        $services = Service::where('status', 'active')
-            ->where('category_id', $category->id)
-            ->where('county_id', $county->id)
-            ->orderBy('created_at', 'desc')
-            ->paginate(24);
+        // 2. Dacă există județ în URL, îl găsim după slug (ex: arges)
+        $county = null;
+        if ($countySlug) {
+            $county = County::where('slug', $countySlug)->firstOrFail();
+        }
 
-        return view('services.index', [
-            'services'    => $services,
-            'counties'    => County::all(),
-            'categories'  => Category::orderBy('sort_order', 'asc')->get(),
-            'currentCategory' => $category,
-            'currentCounty'   => $county,
+        // 3. Injectăm în request ID-urile ca și cum ar fi venit din filtre
+        $request->merge([
+            'category' => $category->id,
+            'county'   => $county ? $county->id : null,
         ]);
+
+        // 4. Setăm în request "currentCategory / currentCounty" pentru view
+        $request->attributes->set('currentCategory', $category);
+        if ($county) {
+            $request->attributes->set('currentCounty', $county);
+        }
+
+        // 5. Refolosim toată logica din index() (paginare, AJAX etc.)
+        return $this->index($request);
     }
 
     // SHOW (MODIFICAT PENTRU SOFT DELETE SEO)
@@ -347,11 +360,7 @@ class ServiceController extends Controller
         return response()->json(['success' => false], 404);
     }
 
-    // DESTROY (MODIFICATĂ - BLINDATĂ)
-    // ==========================================
-   // ==========================================
     // DESTROY (REPARAT - FĂRĂ STATUS UPDATE)
-    // ==========================================
     public function destroy($id)
     {
         try {
@@ -376,10 +385,6 @@ class ServiceController extends Controller
             
             // 2. Doar golim imaginile din DB (statusul îl lăsăm așa cum e)
             $service->images = null;
-            
-            // ❌ SCOATEM LINIA ASTA CARE DĂDEA EROARE:
-            // $service->status = 'inactive'; 
-            
             $service->save();
 
             // 3. Executăm Soft Delete (Asta e tot ce contează pentru a ascunde anunțul)
@@ -394,6 +399,7 @@ class ServiceController extends Controller
             ], 500);
         }
     }
+
     // RENEW (ORIGINAL)
     public function renew($id)
     {
