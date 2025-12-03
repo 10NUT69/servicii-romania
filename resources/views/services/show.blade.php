@@ -445,24 +445,8 @@
     }
 
     function shareFacebook() {
-    const shareData = {
-        title: '{{ addslashes($service->title) }}',
-        text: 'Vezi acest anunț pe MeseriasBun.ro',
-        url: '{{ $pageUrl }}'
-    };
-
-    if (navigator.share) {
-        // Pe mobil deschide share sheet-ul nativ (Facebook, WhatsApp, etc.)
-        navigator.share(shareData).catch(() => {
-            // Dacă utilizatorul închide share-ul sau apare o eroare -> fallback
-            window.open('https://www.facebook.com/sharer/sharer.php?u={{ urlencode($pageUrl) }}', '_blank');
-        });
-    } else {
-        // Desktop / browsere vechi
         window.open('https://www.facebook.com/sharer/sharer.php?u={{ urlencode($pageUrl) }}', '_blank');
     }
-}
-
     
     function shareWhatsapp() {
         window.open('https://api.whatsapp.com/send?text={{ urlencode($service->title . ' - ' . $pageUrl) }}', '_blank');
