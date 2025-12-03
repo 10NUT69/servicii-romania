@@ -2,44 +2,48 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Controller;
 use App\Models\Favorite;
-use App\Models\Service;
 use Illuminate\Http\Request;
 
 class FavoriteController extends Controller
 {
-    /**
-     * Toggle favorite (adauga / scoate).
-     */
-    public function toggle(Request $request)
-    {
-        // Daca nu e logat, nu salvam in DB
-        if (!auth()->check()) {
-            return response()->json(['status' => 'guest'], 401);
-        }
+    /**
+     * Toggle favorite (adaugă / scoate).
+     * Răspunde cu JSON pentru a fi folosit de AJAX.
+     */
+    public function toggle(Request $request)
+    {
+        // 1. Verificare autentificare
+        if (!auth()->check()) {
+            return response()->json(['status' => 'guest', 'message' => 'Trebuie să fii autentificat.'], 401);
+        }
 
-        $request->validate([
-            'service_id' => 'required|exists:services,id',
-        ]);
+        // 2. Validare input
+        $request->validate([
+            'service_id' => 'required|exists:services,id',
+        ]);
 
-        $serviceId = $request->service_id;
+        $serviceId = $request->service_id;
+        $userId = auth()->id();
 
-        $fav = Favorite::where('user_id', auth()->id())
-                       ->where('service_id', $serviceId)
-                       ->first();
+        // 3. Căutăm dacă există deja în favorite
+        $fav = Favorite::where('user_id', $userId)
+                       ->where('service_id', $serviceId)
+                       ->first();
 
-        if ($fav) {
-            $fav->delete();
-            return response()->json(['status' => 'removed']);
-        }
-
-        Favorite::create([
-            'user_id'    => auth()->id(),
-            'service_id' => $serviceId,
-        ]);
-
-        return response()->json(['status' => 'added']);
-    }
-
-  
+        // 4. Logică Toggle
+        if ($fav) {
+            // Dacă există -> Ștergem (Unfavorite)
+            $fav->delete();
+            return response()->json(['status' => 'removed']);
+        } else {
+            // Dacă nu există -> Creăm (Favorite)
+            Favorite::create([
+                'user_id'    => $userId,
+                'service_id' => $serviceId,
+            ]);
+            return response()->json(['status' => 'added']);
+        }
+    }
 }

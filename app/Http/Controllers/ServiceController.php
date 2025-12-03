@@ -16,34 +16,75 @@ use Illuminate\Support\Facades\Log;
 
 class ServiceController extends Controller
 {
-    // INDEX (ORIGINAL)
+    // INDEX (ACUM SUPORTĂ AJAX INFINITE SCROLL ȘI FILTRARE INSTANT)
     public function index(Request $request)
     {
+        // 1. Configurare Paginare Variabilă
+        $page = $request->get('page', 1);
+        $perPageFirst = 10; // Primele 10 anunțuri
+        $perPageNext = 8;   // Următoarele seturi de 8
+
+        if ($page == 1) {
+            $limit = $perPageFirst;
+            $offset = 0;
+        } else {
+            $limit = $perPageNext;
+            // Matematica: Primele 10 + (Pagina curentă - 2) * 8
+            $offset = $perPageFirst + (($page - 2) * $perPageNext);
+        }
+
         $query = Service::where('status', 'active');
 
+        // 2. FILTRE
         if ($request->filled('search')) {
             $search = $request->search;
-            $query->where(function ($q) use ($search) {
+            $query->where(function($q) use ($search) {
                 $q->where('title', 'like', "%$search%")
-                    ->orWhere('description', 'like', "%$search%");
+                  ->orWhere('description', 'like', "%$search%");
             });
         }
 
         if ($request->filled('county')) {
             $query->where('county_id', $request->county);
         }
-        
+
         if ($request->filled('category')) {
             $query->where('category_id', $request->category);
         }
 
+        // 3. Execuție Query
+        // Calculăm totalul pentru a ști dacă mai avem pagini (hasMore)
+        $totalCount = $query->count(); 
+        
+        $services = $query
+            ->orderBy('created_at', 'desc')
+            ->offset($offset)
+            ->limit($limit)
+            ->get();
+
+        // Calculăm dacă mai există rezultate după acest batch
+        $loadedSoFar = $offset + $services->count();
+        $hasMore = $loadedSoFar < $totalCount;
+
+        // 4. RĂSPUNS AJAX
+        if ($request->ajax()) {
+            $html = view('services.partials.service_cards', ['services' => $services])->render();
+
+            return response()->json([
+                'html' => $html,
+                'hasMore' => $hasMore,
+                'total' => $totalCount
+            ]);
+        }
+
+        // 5. Răspuns Initial (Blade)
         return view('services.index', [
-            'services'   => $query->orderBy('created_at', 'desc')->paginate(24)->withQueryString(),
-            'counties'   => County::all(),
+            'services' => $services,
+            'counties' => County::all(),
             'categories' => Category::orderBy('sort_order', 'asc')->get(),
+            'hasMore' => $hasMore,
         ]);
     }
-
     // INDEX LOCATION (ORIGINAL)
     public function indexLocation($categorySlug, $countySlug)
     {
