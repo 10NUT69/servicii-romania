@@ -1,6 +1,8 @@
 @extends('layouts.app')
 
-@section('title', 'Servicii România - Caută meseriași')
+@section('title', 'MeseriasBun.ro – Găsește Meseriași, Constructori și Instalatori')
+@section('meta_description', 'Ai nevoie de un profesionist? Găsește rapid oferte pentru construcții, renovări și instalații sau publică anunț gratuit pe MeseriasBun.ro.')
+@section('meta_image', asset('images/logo.webp'))
 
 @section('content')
 
