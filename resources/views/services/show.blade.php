@@ -68,6 +68,17 @@
             ["@type" => "ListItem", "position" => 3, "name" => \Illuminate\Support\Str::limit($service->title, 20)]
         ]
     ];
+	    // --- DATA PUBLICARII (ASTĂZI / IERI / DATA) ---
+    $createdAt = $service->created_at;
+
+    if ($createdAt->isToday()) {
+        $postedAtLabel = 'astăzi';
+    } elseif ($createdAt->isYesterday()) {
+        $postedAtLabel = 'ieri';
+    } else {
+        $postedAtLabel = $createdAt->format('d.m.Y');
+    }
+
 @endphp
 
 @section('title', $fullSeoTitle)
@@ -210,13 +221,14 @@
                     {{ $service->title }}
                 </h1>
                 
-                <p class="text-xs md:text-sm text-gray-500 dark:text-gray-400 flex items-center gap-2">
-                    Postat {{ $service->created_at->diffForHumans() }} 
-                    <span class="w-1 h-1 rounded-full bg-gray-300"></span>
-                    ID: {{ $service->id }}
-                    <span class="w-1 h-1 rounded-full bg-gray-300"></span>
-                    Vizualizări: {{ $service->views ?? 0 }}
-                </p>
+               <p class="text-xs md:text-sm text-gray-500 dark:text-gray-400 flex items-center gap-2">
+    Postat {{ $postedAtLabel }}
+    <span class="w-1 h-1 rounded-full bg-gray-300"></span>
+    ID: {{ $service->id }}
+    <span class="w-1 h-1 rounded-full bg-gray-300"></span>
+    Vizualizări: {{ $service->views ?? 0 }}
+</p>
+
             </div>
 
             {{-- GALERIE FOTO --}}
