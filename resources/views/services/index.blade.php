@@ -6,30 +6,31 @@
 
 {{-- SECȚIUNEA HERO --}}
 @section('hero')
-{{-- HERO CONTAINER - FĂRĂ MARGIN TOP --}}
 <div class="relative w-full bg-gray-900 group">
     
     {{-- A. IMAGINE + GRADIENT --}}
     <div class="absolute inset-0 h-[400px] md:h-[480px] w-full overflow-hidden z-0">
-        {{-- Imagine Desktop --}}
         <img src="{{ asset('images/hero-desktop.webp') }}" alt="Meserias Bun Fundal" 
              class="hidden md:block w-full h-full object-cover object-center transform transition duration-1000 group-hover:scale-105">
-        
-        {{-- Imagine Mobile --}}
         <img src="{{ asset('images/hero-mobile.webp') }}" alt="Meserias Bun Fundal" 
              class="block md:hidden w-full h-full object-cover object-center">
              
-        {{-- GRADIENT --}}
-        <div class="absolute inset-0 bg-gradient-to-b from-black/80 via-transparent to-transparent md:bg-gradient-to-r md:from-black/90 md:via-black/50 md:to-transparent"></div>
+        {{-- Gradient simplu pentru lizibilitate --}}
+        <div class="absolute inset-0 bg-gradient-to-b from-black/70 via-transparent to-transparent md:bg-gradient-to-r md:from-black/90 md:via-black/50 md:to-transparent"></div>
     </div>
 
     {{-- B. CONȚINUT TEXT --}}
-    {{-- pt-32/pt-40 împinge textul sub header --}}
-    <div class="relative z-10 max-w-7xl mx-auto px-4 h-[400px] md:h-[480px] flex flex-col justify-start md:justify-center items-start pt-32 md:pt-16 pb-8">
+    {{-- 
+        MOBIL (pt-20): Padding mic, urcă textul sus de tot, imediat sub header.
+        DESKTOP (md:justify-center, md:pt-16): Textul e centrat vertical pe imagine, așa cum ai vrut.
+    --}}
+    <div class="relative z-10 max-w-7xl mx-auto px-4 h-[400px] md:h-[480px] flex flex-col justify-start md:justify-center items-start pt-20 md:pt-16 pb-8">
         
         <h1 class="text-white font-extrabold tracking-tight drop-shadow-xl text-left mb-4 max-w-2xl animate-in slide-in-from-left-4 duration-700">
             <span class="block text-3xl md:text-4xl lg:text-5xl mb-2">GĂSEȘTI MEȘTERI</span>
-            <span class="block text-3xl md:text-4xl lg:text-5xl text-transparent bg-clip-text bg-gradient-to-r from-[#FF4D4D] to-white">
+            
+            {{-- TEXT ALB SIMPLU (FĂRĂ GRADIENT) --}}
+            <span class="block text-3xl md:text-4xl lg:text-5xl text-white font-black">
                 VERIFICAȚI, RAPID!
             </span>
         </h1>
@@ -40,8 +41,9 @@
 
     </div>
 
-    {{-- C. BARA DE CĂUTARE (INSULE SEPARATE) --}}
-    <div class="relative z-30 max-w-7xl mx-auto px-4 -mt-24 md:-mt-32 pb-4">
+    {{-- C. BARA DE CĂUTARE --}}
+    {{-- -mt-32 pe mobil trage bara foarte mult în sus peste poză --}}
+    <div class="relative z-30 max-w-7xl mx-auto px-4 -mt-32 md:-mt-32 pb-4">
         
         <form id="search-form" onsubmit="event.preventDefault(); loadServices(1);"
             class="relative w-full transition-all duration-300 ease-out grid grid-cols-1 md:grid-cols-12 gap-3 md:gap-4 bg-transparent p-0">
@@ -141,7 +143,12 @@
 
 @section('content')
 
-{{-- TITLU - SPAȚIERE MOBIL AJUSTATĂ --}}
+{{-- TITLU - SPAȚIERE MOBIL --}}
+{{-- 
+    mt-4 pe mobil: deoarece search-ul e tras mult în sus (-mt-32), 
+    avem nevoie de puțin spațiu aici ca să nu se suprapună cu titlul "Anunțuri recente".
+    Dacă se suprapun, schimbă mt-4 în mt-8 sau mt-12.
+--}}
 <div class="mt-4 md:mt-12 mb-8 flex items-center gap-3 max-w-7xl mx-auto px-4">
     <span class="w-1.5 h-8 bg-[#CC2E2E] rounded-full shadow-sm"></span>      
     <h2 class="text-2xl md:text-3xl font-bold text-gray-900 dark:text-[#F2F2F2]">
@@ -154,7 +161,8 @@
     @include('services.partials.service_cards', ['services' => $services])
 </div>
 
-{{-- LOADING & SCRIPTS (IDENTICE) --}}
+{{-- LOADING & SCRIPTS (IDENTICE CU CELE ANTERIOARE) --}}
+{{-- Te rog să păstrezi script-urile de jos din fișierul anterior (sunt neschimbate) --}}
 <div id="loading-indicator" class="text-center py-8 {{ $services->isEmpty() || !$hasMore ? 'hidden' : '' }}">
     <svg class="animate-spin h-8 w-8 text-[#CC2E2E] mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
       <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
