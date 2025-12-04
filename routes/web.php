@@ -116,6 +116,18 @@ require __DIR__.'/auth.php';
 
 /*
 |--------------------------------------------------------------------------
+| STATIC PAGES
+|--------------------------------------------------------------------------
+*/
+
+Route::view('/despre-noi', 'services.about')->name('page.about');
+Route::view('/contact', 'services.contact')->name('page.contact');
+Route::view('/termeni-si-conditii', 'services.terms')->name('page.terms');
+Route::view('/politica-confidentialitate', 'services.privacy')->name('page.privacy');
+
+
+/*
+|--------------------------------------------------------------------------
 | SEO ROUTES (CATEGORIE / CATEGORIE + JUDEȚ / ANUNȚ)
 |--------------------------------------------------------------------------
 |

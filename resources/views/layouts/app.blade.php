@@ -9,7 +9,7 @@
        1. TITLU DINAMIC
        Logica: Dacă avem 'meta_title' (calculat pentru SEO), îl afișăm.
        Dacă nu, luăm titlul simplu al paginii și adăugăm numele site-ului.
-       Dacă niciunul nu există, afișăm default-ul.
+       Dacă niciunul nu există, afișăm default-ul.gv
     --}}
     <title>@yield('meta_title', view()->hasSection('title') ? view()->getSection('title') . ' - MeseriasBun.ro' : 'Servicii România - MeseriasBun.ro')</title>
     
@@ -149,10 +149,56 @@
     </main>
 
 
-    {{-- FOOTER --}}
-    <footer class="text-center text-gray-600 dark:text-[#A1A1AA] text-sm py-10 mt-auto transition-colors border-t border-gray-200 dark:border-gray-800">
-        © {{ date('Y') }} Servicii România
-    </footer>
+{{-- FOOTER --}}
+<footer class="mt-auto border-t border-gray-200 dark:border-gray-800 bg-white/95 dark:bg-[#050505]/95 backdrop-blur">
+    <div class="max-w-7xl mx-auto px-4 md:px-0 py-4 md:py-5 text-xs text-gray-600 dark:text-gray-400">
+
+        {{-- Rând 1: Brand + slogan --}}
+        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+            <div class="text-center md:text-left space-y-1">
+                <span class="text-sm font-extrabold tracking-tight text-[#CC2E2E]">
+                    MeseriasBun.ro
+                </span>
+                <p class="text-[11px] text-gray-500 dark:text-gray-500 leading-tight">
+                    Găsești rapid meseriași și servicii în toată țara – simplu și fără bătăi de cap.
+                </p>
+            </div>
+
+            {{-- Navigație utilă --}}
+            <nav class="flex flex-wrap justify-center md:justify-end gap-2 md:gap-3">
+                <a href="{{ route('page.about') }}"
+                   class="px-3 py-1 rounded-full bg-gray-100/80 dark:bg-[#18181B] text-[11px] hover:bg-[#CC2E2E] hover:text-white transition">
+                    Despre noi
+                </a>
+                <a href="{{ route('page.contact') }}"
+                   class="px-3 py-1 rounded-full bg-gray-100/80 dark:bg-[#18181B] text-[11px] hover:bg-[#CC2E2E] hover:text-white transition">
+                    Contact
+                </a>
+                <a href="{{ route('page.terms') }}"
+                   class="px-3 py-1 rounded-full bg-gray-100/80 dark:bg-[#18181B] text-[11px] hover:bg-[#CC2E2E] hover:text-white transition">
+                    Termeni &amp; condiții
+                </a>
+                <a href="{{ route('page.privacy') }}"
+                   class="px-3 py-1 rounded-full bg-gray-100/80 dark:bg-[#18181B] text-[11px] hover:bg-[#CC2E2E] hover:text-white transition">
+                    Confidențialitate
+                </a>
+            </nav>
+        </div>
+
+        {{-- Rând 2: Linie fină + text mic --}}
+        <div class="mt-3 pt-3 border-t border-dashed border-gray-200 dark:border-gray-800 flex flex-col md:flex-row md:items-center md:justify-between gap-2 text-[10px] text-gray-400 dark:text-gray-500">
+            <p class="text-center md:text-left">
+                &copy; {{ date('Y') }} MeseriasBun.ro – Toate drepturile rezervate.
+            </p>
+            <p class="text-center md:text-right">
+                Platformă de anunțuri pentru servicii. Verifică întotdeauna meseriașul înainte de colaborare.
+            </p>
+        </div>
+    </div>
+</footer>
+
+
+
 
 
     {{-- SCRIPTURI --}}
