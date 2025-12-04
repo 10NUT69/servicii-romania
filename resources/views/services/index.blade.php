@@ -8,42 +8,57 @@
 @section('hero')
 <div class="relative w-full bg-gray-900 group">
     
-    {{-- A. IMAGINE + GRADIENT --}}
-    <div class="absolute inset-0 h-[400px] md:h-[480px] w-full overflow-hidden z-0">
+    {{-- A. IMAGINE + OVERLAY --}}
+    <div class="absolute inset-0 h-[450px] md:h-[480px] w-full overflow-hidden z-0">
+        {{-- Imagine Desktop --}}
         <img src="{{ asset('images/hero-desktop.webp') }}" alt="Meserias Bun Fundal" 
              class="hidden md:block w-full h-full object-cover object-center transform transition duration-1000 group-hover:scale-105">
+        
+        {{-- Imagine Mobile --}}
         <img src="{{ asset('images/hero-mobile.webp') }}" alt="Meserias Bun Fundal" 
              class="block md:hidden w-full h-full object-cover object-center">
              
-        {{-- Gradient simplu pentru lizibilitate --}}
-        <div class="absolute inset-0 bg-gradient-to-b from-black/70 via-transparent to-transparent md:bg-gradient-to-r md:from-black/90 md:via-black/50 md:to-transparent"></div>
+        {{-- 
+            OVERLAY SIMPLU (FĂRĂ GRADIENT COMPLEX):
+            Un strat negru uniform cu 50% opacitate. 
+            Este cel mai sigur pentru lizibilitate pe orice dispozitiv.
+        --}}
+        <div class="absolute inset-0 bg-black/50"></div>
     </div>
 
     {{-- B. CONȚINUT TEXT --}}
     {{-- 
-        MOBIL (pt-20): Padding mic, urcă textul sus de tot, imediat sub header.
-        DESKTOP (md:justify-center, md:pt-16): Textul e centrat vertical pe imagine, așa cum ai vrut.
-    --}}
-    <div class="relative z-10 max-w-7xl mx-auto px-4 h-[400px] md:h-[480px] flex flex-col justify-start md:justify-center items-start pt-20 md:pt-16 pb-8">
+        MODIFICARE CRITICĂ MOBIL:
+        h-auto (pe mobil): Containerul are înălțimea strict cât textul.
+        md:h-[480px] (pe desktop): Are înălțime fixă pentru centrare.
         
-        <h1 class="text-white font-extrabold tracking-tight drop-shadow-xl text-left mb-4 max-w-2xl animate-in slide-in-from-left-4 duration-700">
-            <span class="block text-3xl md:text-4xl lg:text-5xl mb-2">GĂSEȘTI MEȘTERI</span>
+        pt-24 (pe mobil): Împinge textul puțin sub header.
+        md:justify-center: Centrează vertical doar pe desktop.
+    --}}
+    <div class="relative z-10 max-w-7xl mx-auto px-4 h-auto md:h-[480px] flex flex-col justify-start md:justify-center items-start pt-24 pb-4 md:pt-16 md:pb-8">
+        
+        <h1 class="text-white font-extrabold tracking-tight drop-shadow-xl text-left mb-2 md:mb-4 max-w-2xl animate-in slide-in-from-left-4 duration-700">
+            <span class="block text-3xl md:text-4xl lg:text-5xl mb-1 md:mb-2">GĂSEȘTI MEȘTERI</span>
             
-            {{-- TEXT ALB SIMPLU (FĂRĂ GRADIENT) --}}
+            {{-- TEXT ALB CURAT (FĂRĂ GRADIENT) --}}
             <span class="block text-3xl md:text-4xl lg:text-5xl text-white font-black">
                 VERIFICAȚI, RAPID!
             </span>
         </h1>
 
-        <p class="text-gray-200 text-sm md:text-lg max-w-xl font-medium mb-8 leading-relaxed shadow-black drop-shadow-md hidden md:block">
+        <p class="text-gray-200 text-sm md:text-lg max-w-xl font-medium mb-4 md:mb-8 leading-relaxed shadow-black drop-shadow-md hidden md:block">
             Cea mai simplă metodă să găsești profesioniști pentru proiectul tău, oriunde în România.
         </p>
 
     </div>
 
     {{-- C. BARA DE CĂUTARE --}}
-    {{-- -mt-32 pe mobil trage bara foarte mult în sus peste poză --}}
-    <div class="relative z-30 max-w-7xl mx-auto px-4 -mt-32 md:-mt-32 pb-4">
+    {{-- 
+        MODIFICARE CRITICĂ MOBIL:
+        mt-4 (pe mobil): O margine mică pozitivă. Deoarece textul de sus e h-auto, bara vine imediat sub el.
+        md:-mt-32 (pe desktop): Margine negativă mare ca să urce peste textul centrat.
+    --}}
+    <div class="relative z-30 max-w-7xl mx-auto px-4 mt-4 md:-mt-32 pb-4">
         
         <form id="search-form" onsubmit="event.preventDefault(); loadServices(1);"
             class="relative w-full transition-all duration-300 ease-out grid grid-cols-1 md:grid-cols-12 gap-3 md:gap-4 bg-transparent p-0">
@@ -145,11 +160,10 @@
 
 {{-- TITLU - SPAȚIERE MOBIL --}}
 {{-- 
-    mt-4 pe mobil: deoarece search-ul e tras mult în sus (-mt-32), 
-    avem nevoie de puțin spațiu aici ca să nu se suprapună cu titlul "Anunțuri recente".
-    Dacă se suprapun, schimbă mt-4 în mt-8 sau mt-12.
+    mt-8 pe mobil: Deoarece bara de căutare nu mai are margine negativă, 
+    ea ocupă spațiu fizic. Nu avem nevoie de margine mare aici.
 --}}
-<div class="mt-4 md:mt-12 mb-8 flex items-center gap-3 max-w-7xl mx-auto px-4">
+<div class="mt-8 md:mt-12 mb-8 flex items-center gap-3 max-w-7xl mx-auto px-4">
     <span class="w-1.5 h-8 bg-[#CC2E2E] rounded-full shadow-sm"></span>      
     <h2 class="text-2xl md:text-3xl font-bold text-gray-900 dark:text-[#F2F2F2]">
         Anunțuri recente
@@ -162,7 +176,6 @@
 </div>
 
 {{-- LOADING & SCRIPTS (IDENTICE CU CELE ANTERIOARE) --}}
-{{-- Te rog să păstrezi script-urile de jos din fișierul anterior (sunt neschimbate) --}}
 <div id="loading-indicator" class="text-center py-8 {{ $services->isEmpty() || !$hasMore ? 'hidden' : '' }}">
     <svg class="animate-spin h-8 w-8 text-[#CC2E2E] mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
       <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
