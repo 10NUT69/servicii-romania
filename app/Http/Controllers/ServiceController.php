@@ -403,10 +403,33 @@ class ServiceController extends Controller
     // RENEW (ORIGINAL)
     public function renew($id)
     {
-        $service = Service::where('id', $id)->where('user_id', auth()->id())->firstOrFail();
-        $service->status = 'active';
-        $service->created_at = now();
-        $service->save();
-        return back()->with('success', 'Reînnoit!');
+        try {
+            $service = Service::where('id', $id)
+                ->where('user_id', auth()->id())
+                ->firstOrFail();
+
+            // Actualizăm data creării pentru a urca anunțul primul în listă
+            $service->created_at = now();
+            
+            // Opțional: Dacă anunțul expirase sau era inactiv, îl reactivăm
+            if ($service->status !== 'active') {
+                $service->status = 'active';
+            }
+
+            $service->save();
+
+            // Returnăm JSON pentru Javascript-ul din frontend
+            return response()->json([
+                'status'  => 'success',
+                'message' => 'Anunțul a fost reactualizat cu succes!'
+            ]);
+
+        } catch (\Exception $e) {
+            // În caz de eroare
+            return response()->json([
+                'status'  => 'error',
+                'message' => 'Eroare la actualizare.'
+            ], 500);
+        }
     }
 }

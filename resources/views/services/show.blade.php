@@ -28,7 +28,7 @@
     $seoImage = $service->main_image_url; 
 
     // --- USER INFO ---
-    $displayName = $service->author_name;      
+    $displayName = $service->author_name;       
     $displayInitial = $service->author_initial;
 
     // --- LOGICĂ TELEFON ---
@@ -43,6 +43,20 @@
         } else {
             $formattedPhone = $service->phone;
         }
+    }
+
+    // --- IMAGINI PENTRU GALERIE (PREGĂTIRE ARRAY) ---
+    // 1. Luăm imaginile secundare
+    $userImages = is_string($service->images) ? json_decode($service->images, true) : ($service->images ?? []);
+    $userImages = array_filter((array)$userImages);
+    
+    // 2. Construim lista completă pentru JS (Main + Secundare)
+    $galleryUrls = [];
+    // Adăugăm imaginea principală prima
+    $galleryUrls[] = $service->main_image_url;
+    // Adăugăm restul
+    foreach($userImages as $img) {
+        $galleryUrls[] = asset('storage/services/' . $img);
     }
 
     // --- SCHEMA ---
@@ -68,9 +82,9 @@
             ["@type" => "ListItem", "position" => 3, "name" => \Illuminate\Support\Str::limit($service->title, 20)]
         ]
     ];
-	    // --- DATA PUBLICARII (ASTĂZI / IERI / DATA) ---
-    $createdAt = $service->created_at;
 
+    // --- DATA PUBLICARII ---
+    $createdAt = $service->created_at;
     if ($createdAt->isToday()) {
         $postedAtLabel = 'astăzi';
     } elseif ($createdAt->isYesterday()) {
@@ -78,7 +92,6 @@
     } else {
         $postedAtLabel = $createdAt->format('d.m.Y');
     }
-
 @endphp
 
 @section('title', $fullSeoTitle)
@@ -196,95 +209,117 @@
             </nav>
 
             <div class="mb-6">
-             <div class="flex flex-wrap gap-2 mb-3">
-    {{-- CATEGORIE: /electrician --}}
-    <a href="{{ route('category.index', ['category' => $service->category->slug]) }}" 
-       class="px-2.5 py-0.5 text-xs font-bold rounded text-blue-700 bg-blue-50 dark:text-blue-200 dark:bg-blue-900/30 border border-blue-100 dark:border-blue-800 uppercase tracking-wide hover:bg-blue-100 transition">
-        {{ $service->category->name }}
-    </a>
+                <div class="flex flex-wrap gap-2 mb-3">
+                    {{-- CATEGORIE --}}
+                    <a href="{{ route('category.index', ['category' => $service->category->slug]) }}" 
+                       class="px-2.5 py-0.5 text-xs font-bold rounded text-blue-700 bg-blue-50 dark:text-blue-200 dark:bg-blue-900/30 border border-blue-100 dark:border-blue-800 uppercase tracking-wide hover:bg-blue-100 transition">
+                        {{ $service->category->name }}
+                    </a>
 
-    {{-- CATEGORIE + JUDEȚ: /electrician/arges --}}
-    <a href="{{ route('category.location', ['category' => $service->category->slug, 'county' => $service->county->slug]) }}" 
-       class="px-2.5 py-0.5 text-xs font-bold rounded text-purple-700 bg-purple-50 dark:text-purple-200 dark:bg-purple-900/30 border border-purple-100 dark:border-purple-800 flex items-center gap-1 uppercase tracking-wide hover:bg-purple-100 transition">
-        <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/></svg>
-        {{ $service->county->name }}
-    </a>
+                    {{-- JUDEȚ --}}
+                    <a href="{{ route('category.location', ['category' => $service->category->slug, 'county' => $service->county->slug]) }}" 
+                       class="px-2.5 py-0.5 text-xs font-bold rounded text-purple-700 bg-purple-50 dark:text-purple-200 dark:bg-purple-900/30 border border-purple-100 dark:border-purple-800 flex items-center gap-1 uppercase tracking-wide hover:bg-purple-100 transition">
+                        <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/></svg>
+                        {{ $service->county->name }}
+                    </a>
 
-    @if($isDeleted)
-        <span class="px-2.5 py-0.5 text-xs font-bold rounded text-gray-600 bg-gray-200 border border-gray-300 uppercase tracking-wide">
-            INDISPONIBIL
-        </span>
-    @endif
-</div>
+                    @if($isDeleted)
+                        <span class="px-2.5 py-0.5 text-xs font-bold rounded text-gray-600 bg-gray-200 border border-gray-300 uppercase tracking-wide">
+                            INDISPONIBIL
+                        </span>
+                    @endif
+                </div>
 
                 <h1 class="text-2xl md:text-3xl lg:text-4xl font-extrabold text-gray-900 dark:text-[#F2F2F2] leading-tight mb-2">
                     {{ $service->title }}
                 </h1>
                 
-               <p class="text-xs md:text-sm text-gray-500 dark:text-gray-400 flex items-center gap-2">
-    Postat {{ $postedAtLabel }}
-    <span class="w-1 h-1 rounded-full bg-gray-300"></span>
-    ID: {{ $service->id }}
-    <span class="w-1 h-1 rounded-full bg-gray-300"></span>
-    Vizualizări: {{ $service->views ?? 0 }}
-</p>
-{{-- SHARE PE MOBIL --}}
-@if(!$isDeleted)
-    <div class="lg:hidden flex items-center justify-between mt-3 mb-4">
-        <span class="text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
-            Distribuie anunțul
-        </span>
-        <div class="flex items-center gap-3">
-            <button onclick="shareFacebook()" class="text-gray-400 hover:text-blue-600 transition p-1.5" title="Facebook">
-                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M18 2h-3a5 5 0 00-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 011-1h3z"></path>
-                </svg>
-            </button>
-            <button onclick="shareWhatsapp()" class="text-gray-400 hover:text-green-500 transition p-1.5" title="WhatsApp">
-                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884"/>
-                </svg>
-            </button>
-            <button onclick="copyLink()" class="text-gray-400 hover:text-gray-900 dark:hover:text-white transition p-1.5" title="Copiază linkul">
-                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 012-2v-8a2 2 0 01-2-2h-8a2 2 0 01-2 2v8a2 2 0 012 2z" />
-                </svg>
-            </button>
-        </div>
-    </div>
-@endif
+                <p class="text-xs md:text-sm text-gray-500 dark:text-gray-400 flex items-center gap-2">
+                    Postat {{ $postedAtLabel }}
+                    <span class="w-1 h-1 rounded-full bg-gray-300"></span>
+                    ID: {{ $service->id }}
+                    <span class="w-1 h-1 rounded-full bg-gray-300"></span>
+                    Vizualizări: {{ $service->views ?? 0 }}
+                </p>
 
-
+                {{-- SHARE PE MOBIL --}}
+                @if(!$isDeleted)
+                    <div class="lg:hidden flex items-center justify-between mt-3 mb-4">
+                        <span class="text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                            Distribuie anunțul
+                        </span>
+                        <div class="flex items-center gap-3">
+                            <button onclick="shareFacebook()" class="text-gray-400 hover:text-blue-600 transition p-1.5" title="Facebook">
+                                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                                    <path d="M18 2h-3a5 5 0 00-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 011-1h3z"></path>
+                                </svg>
+                            </button>
+                            <button onclick="shareWhatsapp()" class="text-gray-400 hover:text-green-500 transition p-1.5" title="WhatsApp">
+                                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                                    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884"/>
+                                </svg>
+                            </button>
+                            <button onclick="copyLink()" class="text-gray-400 hover:text-gray-900 dark:hover:text-white transition p-1.5" title="Copiază linkul">
+                                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 012-2v-8a2 2 0 01-2-2h-8a2 2 0 01-2 2v8a2 2 0 012 2z" />
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                @endif
             </div>
 
-            {{-- GALERIE FOTO --}}
+            {{-- GALERIE FOTO OPTIMIZATĂ --}}
             <div class="space-y-4 mb-10">
-                <div class="relative w-full aspect-video md:aspect-[16/10] bg-gray-100 dark:bg-[#121212] rounded-2xl overflow-hidden shadow-sm border border-gray-100 dark:border-[#333333] group select-none">
+                <div id="galleryContainer" class="relative w-full aspect-video md:aspect-[16/10] bg-gray-100 dark:bg-[#121212] rounded-2xl overflow-hidden shadow-sm border border-gray-100 dark:border-[#333333] group select-none touch-pan-y">
+                    
+                    {{-- BLUR BACKDROP --}}
                     <img id="mainImageBlur" 
                          src="{{ $service->main_image_url }}" 
                          class="absolute inset-0 w-full h-full object-cover blur-xl opacity-50 scale-110 dark:opacity-30 transition-all duration-500"
                          alt=""> 
                     
+                    {{-- MAIN IMAGE --}}
                     <img id="mainImage" 
                          src="{{ $service->main_image_url }}" 
-                         class="relative w-full h-full object-contain z-10 transition-transform duration-500" 
+                         class="relative w-full h-full object-contain z-10 transition-transform duration-300" 
                          alt="{{ $service->title }}"
                          fetchpriority="high">
+
+                    {{-- BUTOANE NAVIGARE (SĂGEȚI) --}}
+                    @if(count($galleryUrls) > 1)
+                        <button onclick="prevImage(event)" class="absolute left-2 top-1/2 -translate-y-1/2 z-20 p-2 rounded-full bg-white/70 dark:bg-black/50 hover:bg-white dark:hover:bg-black/80 text-gray-800 dark:text-white transition shadow-lg backdrop-blur-sm hidden md:flex items-center justify-center group-hover:opacity-100 opacity-60">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                            </svg>
+                        </button>
+                        
+                        <button onclick="nextImage(event)" class="absolute right-2 top-1/2 -translate-y-1/2 z-20 p-2 rounded-full bg-white/70 dark:bg-black/50 hover:bg-white dark:hover:bg-black/80 text-gray-800 dark:text-white transition shadow-lg backdrop-blur-sm hidden md:flex items-center justify-center group-hover:opacity-100 opacity-60">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                            </svg>
+                        </button>
+
+                        {{-- INDICATOR MOBIL (OPTIONAL - BULINE) --}}
+                        <div class="absolute bottom-3 left-1/2 -translate-x-1/2 z-20 flex gap-1.5 md:hidden">
+                            @foreach($galleryUrls as $index => $img)
+                                <div class="w-1.5 h-1.5 rounded-full transition-colors {{ $index === 0 ? 'bg-white' : 'bg-white/40' }}" id="dot-{{$index}}"></div>
+                            @endforeach
+                        </div>
+                    @endif
                 </div>
 
-                @php
-                    $userImages = is_string($service->images) ? json_decode($service->images, true) : ($service->images ?? []);
-                    $userImages = array_filter((array)$userImages);
-                @endphp
-
-                @if(!$isDeleted && count($userImages) > 0)
+                {{-- THUMBNAILS SCROLL --}}
+                @if(!$isDeleted && count($galleryUrls) > 1)
                     <div class="flex gap-2 overflow-x-auto pb-2 custom-scrollbar snap-x">
-                        @foreach($userImages as $img)
-                            <div class="snap-start shrink-0 w-16 h-16 md:w-20 md:h-20 rounded-xl overflow-hidden border-2 border-transparent hover:border-[#CC2E2E] cursor-pointer transition-all"
-                                 onclick="changeImage('{{ asset('storage/services/' . $img) }}')">
-                                <img src="{{ asset('storage/services/' . $img) }}" 
+                        @foreach($galleryUrls as $index => $img)
+                            {{-- Notă: Afișăm toate imaginile aici, inclusiv cea principală pentru consistență --}}
+                            <div class="snap-start shrink-0 w-16 h-16 md:w-20 md:h-20 rounded-xl overflow-hidden border-2 cursor-pointer transition-all thumbnail-item {{ $index === 0 ? 'border-[#CC2E2E]' : 'border-transparent hover:border-gray-300' }}"
+                                 id="thumb-{{ $index }}"
+                                 onclick="goToImage({{ $index }})">
+                                <img src="{{ $img }}" 
                                      class="w-full h-full object-cover"
-                                     alt="Galerie foto">
+                                     alt="Galerie foto {{ $index + 1 }}">
                             </div>
                         @endforeach
                     </div>
@@ -386,7 +421,7 @@
                     </div>
                     @endif
 
-                    {{-- Share Icons (DEZACTIVAT DACĂ E ȘTERS) --}}
+                    {{-- Share Icons --}}
                     <div class="flex justify-center gap-3 mt-4 pt-3 border-t border-gray-100 dark:border-[#333333]">
                         @if($isDeleted)
                             <button disabled class="text-gray-200 dark:text-gray-700 cursor-not-allowed p-1"><svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M18 2h-3a5 5 0 00-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 011-1h3z"></path></svg></button>
@@ -418,11 +453,113 @@
 
 {{-- SCRIPTURI FUNCȚIONALITATE --}}
 <script>
-    function changeImage(src) {
-        document.getElementById('mainImage').src = src;
-        document.getElementById('mainImageBlur').src = src;
+    // --- GALERIE FOTO LOGIC ---
+    // Preluăm array-ul de imagini generat din PHP
+    const galleryImages = {!! json_encode($galleryUrls) !!};
+    let currentIndex = 0;
+
+    function updateMainImage() {
+        const src = galleryImages[currentIndex];
+        const mainImg = document.getElementById('mainImage');
+        const blurImg = document.getElementById('mainImageBlur');
+        
+        // Efect simplu de fade
+        mainImg.style.opacity = '0.7';
+        setTimeout(() => {
+            mainImg.src = src;
+            blurImg.src = src;
+            mainImg.style.opacity = '1';
+        }, 150);
+
+        // Update thumbnails active state
+        document.querySelectorAll('.thumbnail-item').forEach((el, idx) => {
+            if(idx === currentIndex) {
+                el.classList.add('border-[#CC2E2E]');
+                el.classList.remove('border-transparent');
+                // Scroll thumbnail into view
+                el.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+            } else {
+                el.classList.remove('border-[#CC2E2E]');
+                el.classList.add('border-transparent');
+            }
+        });
+
+        // Update dots (mobile)
+        galleryImages.forEach((_, idx) => {
+            const dot = document.getElementById(`dot-${idx}`);
+            if(dot) {
+                if(idx === currentIndex) {
+                    dot.classList.remove('bg-white/40');
+                    dot.classList.add('bg-white');
+                } else {
+                    dot.classList.add('bg-white/40');
+                    dot.classList.remove('bg-white');
+                }
+            }
+        });
     }
-    
+
+    function changeImage(src) {
+        // Găsim indexul imaginii selectate
+        const idx = galleryImages.indexOf(src);
+        if (idx !== -1) {
+            currentIndex = idx;
+            updateMainImage();
+        }
+    }
+
+    function goToImage(index) {
+        currentIndex = index;
+        updateMainImage();
+    }
+
+    function nextImage(e) {
+        if(e) e.stopPropagation();
+        currentIndex++;
+        if (currentIndex >= galleryImages.length) {
+            currentIndex = 0; // Loop back to start
+        }
+        updateMainImage();
+    }
+
+    function prevImage(e) {
+        if(e) e.stopPropagation();
+        currentIndex--;
+        if (currentIndex < 0) {
+            currentIndex = galleryImages.length - 1; // Loop to end
+        }
+        updateMainImage();
+    }
+
+    // --- SWIPE LOGIC FOR MOBILE ---
+    let touchStartX = 0;
+    let touchEndX = 0;
+    const galleryContainer = document.getElementById('galleryContainer');
+
+    if(galleryContainer) {
+        galleryContainer.addEventListener('touchstart', function(e) {
+            touchStartX = e.changedTouches[0].screenX;
+        }, {passive: true});
+
+        galleryContainer.addEventListener('touchend', function(e) {
+            touchEndX = e.changedTouches[0].screenX;
+            handleSwipe();
+        }, {passive: true});
+    }
+
+    function handleSwipe() {
+        const threshold = 50; // distanța minimă pentru a considera swipe
+        if (touchEndX < touchStartX - threshold) {
+            // Swipe Left -> Next
+            nextImage();
+        }
+        if (touchEndX > touchStartX + threshold) {
+            // Swipe Right -> Prev
+            prevImage();
+        }
+    }
+
+    // --- RESTUL SCRIPTURILOR ---
     function revealPhone(type, rawPhone, formattedPhone) {
         const wrapperId = type === 'desktop' ? 'phone-wrapper-desktop' : 'phone-wrapper-mobile';
         const wrapper = document.getElementById(wrapperId);

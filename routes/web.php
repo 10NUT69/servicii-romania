@@ -62,7 +62,8 @@ Route::middleware('auth')->group(function () {
 
     Route::delete('/services/{id}/image', [ServiceController::class, 'deleteImage'])->name('services.deleteImage');
 
-    Route::post('/anunt/{id}', [ServiceController::class, 'renew'])->name('services.renew');
+    //Route::post('/anunt/{id}', [ServiceController::class, 'renew'])->name('services.renew');
+Route::post('/services/{id}/renew', [ServiceController::class, 'renew'])->name('services.renew');
 
     Route::post('/favorite/toggle', [FavoriteController::class, 'toggle'])->name('favorite.toggle');
 });
