@@ -127,7 +127,7 @@
     <img id="lightboxImage" 
          src="" 
          class="w-full h-full max-w-[95vw] max-h-[95vh] object-contain transition-transform duration-300 drop-shadow-2xl" 
-         alt="Full screen image">
+         alt="{{ $service->title }}">
 		 {{-- Săgeți Lightbox --}}
     @if(count($galleryUrls) > 1)
         <button onclick="prevImage(event)" class="absolute left-3 md:left-8 top-1/2 -translate-y-1/2 z-[110] p-3 text-white bg-black/40 hover:bg-black/70 rounded-full backdrop-blur-sm border border-white/10 transition-all active:scale-95">
@@ -308,7 +308,7 @@
                     <img id="mainImageBlur" 
                          src="{{ $service->main_image_url }}" 
                          class="absolute inset-0 w-full h-full object-cover blur-xl opacity-50 scale-110 dark:opacity-30 transition-all duration-500"
-                         alt=""> 
+                         alt="{{ $service->title }}"> 
                     
                     {{-- MAIN IMAGE --}}
                     <img id="mainImage" 
