@@ -5,47 +5,28 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
-    {{-- 
-       1. TITLU DINAMIC
-       Logica: Dacă avem 'meta_title' (calculat pentru SEO), îl afișăm.
-       Dacă nu, luăm titlul simplu al paginii și adăugăm numele site-ului.
-       Dacă niciunul nu există, afișăm default-ul.gv
-    --}}
     <title>@yield('meta_title', view()->hasSection('title') ? view()->getSection('title') . ' - MeseriasBun.ro' : 'Servicii România - MeseriasBun.ro')</title>
-    
-    {{-- 2. DESCRIERE --}}
     <meta name="description" content="@yield('meta_description', 'Găsește rapid meseriașul potrivit în zona ta. Electricieni, instalatori, constructori și multe altele pe MeseriasBun.ro')">
 
-    {{-- 
-       🔥 3. CANONICAL LINK (MODIFICARE CRITICĂ) 🔥
-       Aici era problema. Acum verificăm dacă pagina curentă (ex: show.blade.php) 
-       oferă un link canonical specific. Dacă da, îl folosim pe acela.
-       Dacă nu, folosim URL-ul curent.
-    --}}
     @hasSection('canonical')
         @yield('canonical')
     @else
         <link rel="canonical" href="{{ url()->current() }}">
     @endif
 
-    {{-- 4. OPEN GRAPH (Facebook / WhatsApp) --}}
     <meta property="og:type" content="website">
     <meta property="og:site_name" content="MeseriasBun.ro">
     <meta property="og:url" content="{{ url()->current() }}">
     <meta property="og:title" content="@yield('meta_title', view()->hasSection('title') ? view()->getSection('title') : 'Servicii România')">
     <meta property="og:description" content="@yield('meta_description', 'Găsește meseriași verificați în zona ta.')">
     <meta property="og:image" content="@yield('meta_image', asset('images/logo.webp'))">
-
-    {{-- 5. TWITTER CARDS --}}
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="@yield('meta_title', view()->hasSection('title') ? view()->getSection('title') : 'Servicii România')">
     <meta name="twitter:description" content="@yield('meta_description', 'Găsește meseriași verificați în zona ta.')">
     <meta name="twitter:image" content="@yield('meta_image', asset('images/logo.webp'))">
 
-    {{-- 6. SCHEMA.ORG (JSON-LD) --}}
     @yield('schema')
 
-    {{-- GOOGLE ANALYTICS (Doar pe PRODUCȚIE) --}}
     @if(app()->environment('production') && config('services.google.analytics_id'))
         <script async src="https://www.googletagmanager.com/gtag/js?id={{ config('services.google.analytics_id') }}"></script>
         <script>
@@ -62,7 +43,7 @@
 <body class="bg-[#f6f7fb] dark:bg-[#121212] text-gray-900 dark:text-[#E5E5E5] font-inter antialiased min-h-screen flex flex-col">
 
     {{-- HEADER FIX --}}
-    <nav id="main-nav" class="fixed top-0 left-0 w-full z-[999] h-14 md:h-[72px] transition-all duration-500 ease-in-out
+    <nav id="main-nav" class="fixed top-0 left-0 w-full z-50 h-14 md:h-[72px] transition-all duration-500 ease-in-out
                             emag-gradient text-white border-b border-transparent dark:border-gray-800 flex items-center shadow-md will-change-transform">
         
         <div class="w-full max-w-7xl mx-auto px-3 sm:px-4 flex items-center justify-between">
@@ -139,80 +120,77 @@
         </div>
     </nav>
 
-    {{-- SPACER STATIC --}}
-    <div class="h-14 md:h-[72px] w-full shrink-0"></div>
-
+    {{-- HERO INJECTION POINT --}}
+    @yield('hero')
 
     {{-- MAIN CONTENT --}}
-    <main class="max-w-7xl mx-auto px-4 py-6 w-full flex-grow relative z-0">
+    {{-- Condiția care protejează paginile interne să nu intre sub header --}}
+    <main class="max-w-7xl mx-auto px-4 py-6 w-full flex-grow relative z-0 {{ !View::hasSection('hero') ? 'pt-20 md:pt-24' : '' }}">
         @yield('content')
     </main>
 
 
-{{-- FOOTER --}}
-<footer class="mt-auto border-t border-gray-200 dark:border-gray-800 bg-white/95 dark:bg-[#050505]/95 backdrop-blur">
-    <div class="max-w-7xl mx-auto px-4 md:px-0 py-4 md:py-5 text-xs text-gray-600 dark:text-gray-400">
+    {{-- FOOTER --}}
+    <footer class="mt-auto border-t border-gray-200 dark:border-gray-800 bg-white/95 dark:bg-[#050505]/95 backdrop-blur">
+        <div class="max-w-7xl mx-auto px-4 md:px-0 py-4 md:py-5 text-xs text-gray-600 dark:text-gray-400">
 
-        {{-- Rând 1: Brand + slogan --}}
-        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-            <div class="text-center md:text-left space-y-1">
-                <span class="text-sm font-extrabold tracking-tight text-[#CC2E2E]">
-                    MeseriasBun.ro
-                </span>
-                <p class="text-[11px] text-gray-500 dark:text-gray-500 leading-tight">
-                    Găsești rapid meseriași și servicii în toată țara – simplu și fără bătăi de cap.
-                </p>
+            {{-- Rând 1: Brand + slogan --}}
+            <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+                <div class="text-center md:text-left space-y-1">
+                    <span class="text-sm font-extrabold tracking-tight text-[#CC2E2E]">
+                        MeseriasBun.ro
+                    </span>
+                    <p class="text-[11px] text-gray-500 dark:text-gray-500 leading-tight">
+                        Găsești rapid meseriași și servicii în toată țara – simplu și fără bătăi de cap.
+                    </p>
+                </div>
+
+                {{-- Navigație utilă --}}
+                <nav class="flex flex-wrap justify-center md:justify-end gap-2 md:gap-3">
+                    <a href="{{ route('page.about') }}"
+                       class="px-3 py-1 rounded-full bg-gray-100/80 dark:bg-[#18181B] text-[11px] hover:bg-[#CC2E2E] hover:text-white transition">
+                        Despre noi
+                    </a>
+                    <a href="{{ route('page.contact') }}"
+                       class="px-3 py-1 rounded-full bg-gray-100/80 dark:bg-[#18181B] text-[11px] hover:bg-[#CC2E2E] hover:text-white transition">
+                        Contact
+                    </a>
+                    <a href="{{ route('page.terms') }}"
+                       class="px-3 py-1 rounded-full bg-gray-100/80 dark:bg-[#18181B] text-[11px] hover:bg-[#CC2E2E] hover:text-white transition">
+                        Termeni &amp; condiții
+                    </a>
+                    <a href="{{ route('page.privacy') }}"
+                       class="px-3 py-1 rounded-full bg-gray-100/80 dark:bg-[#18181B] text-[11px] hover:bg-[#CC2E2E] hover:text-white transition">
+                        Confidențialitate
+                    </a>
+                </nav>
             </div>
 
-            {{-- Navigație utilă --}}
-            <nav class="flex flex-wrap justify-center md:justify-end gap-2 md:gap-3">
-                <a href="{{ route('page.about') }}"
-                   class="px-3 py-1 rounded-full bg-gray-100/80 dark:bg-[#18181B] text-[11px] hover:bg-[#CC2E2E] hover:text-white transition">
-                    Despre noi
-                </a>
-                <a href="{{ route('page.contact') }}"
-                   class="px-3 py-1 rounded-full bg-gray-100/80 dark:bg-[#18181B] text-[11px] hover:bg-[#CC2E2E] hover:text-white transition">
-                    Contact
-                </a>
-                <a href="{{ route('page.terms') }}"
-                   class="px-3 py-1 rounded-full bg-gray-100/80 dark:bg-[#18181B] text-[11px] hover:bg-[#CC2E2E] hover:text-white transition">
-                    Termeni &amp; condiții
-                </a>
-                <a href="{{ route('page.privacy') }}"
-                   class="px-3 py-1 rounded-full bg-gray-100/80 dark:bg-[#18181B] text-[11px] hover:bg-[#CC2E2E] hover:text-white transition">
-                    Confidențialitate
-                </a>
-            </nav>
+            {{-- Rând 2: Linie fină + text mic --}}
+            <div class="mt-3 pt-3 border-t border-dashed border-gray-200 dark:border-gray-800 flex flex-col md:flex-row md:items-center md:justify-between gap-2 text-[10px] text-gray-400 dark:text-gray-500">
+                <p class="text-center md:text-left">
+                    &copy; {{ date('Y') }} MeseriasBun.ro – Toate drepturile rezervate.
+                </p>
+                <p class="text-center md:text-right">
+                    Platformă de anunțuri pentru servicii. Verifică întotdeauna meseriașul înainte de colaborare.
+                </p>
+            </div>
         </div>
-
-        {{-- Rând 2: Linie fină + text mic --}}
-        <div class="mt-3 pt-3 border-t border-dashed border-gray-200 dark:border-gray-800 flex flex-col md:flex-row md:items-center md:justify-between gap-2 text-[10px] text-gray-400 dark:text-gray-500">
-            <p class="text-center md:text-left">
-                &copy; {{ date('Y') }} MeseriasBun.ro – Toate drepturile rezervate.
-            </p>
-            <p class="text-center md:text-right">
-                Platformă de anunțuri pentru servicii. Verifică întotdeauna meseriașul înainte de colaborare.
-            </p>
-        </div>
-    </div>
-</footer>
-
-
-
+    </footer>
 
 
     {{-- SCRIPTURI --}}
     <script>
-   function goToFavorites() {
-    @if(auth()->check())
-        // Generează: /contul-meu?tab=favorite
-        window.location.href = "{{ route('account.index', ['tab' => 'favorite']) }}"; 
-    @else
-        alert("Trebuie să fii autentificat.");
-    @endif
-}
+       function goToFavorites() {
+        @if(auth()->check())
+            window.location.href = "{{ route('account.index', ['tab' => 'favorite']) }}"; 
+        @else
+            alert("Trebuie să fii autentificat.");
+        @endif
+    }
+    
     // ============================================================
-    // LOGICA HIBRIDĂ (START H-18 -> SHRINK H-14)
+    // LOGICA HEADER SCROLL & MOBILE HIDE
     // ============================================================
     
     const isHomepage = {{ request()->routeIs('services.index') ? 'true' : 'false' }};
@@ -250,7 +228,7 @@
             }
         }
 
-        // --- 2. LOGICA OLX (ASCUNDE/ARATĂ) ---
+        // --- 2. LOGICA OLX (ASCUNDE/ARATĂ PE MOBIL) ---
         if (isHomepage && isMobile) {
             
             if (Math.abs(currentScrollY - lastScrollY) < threshold) return;
