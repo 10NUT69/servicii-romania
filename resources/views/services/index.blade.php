@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
-@section('title', 'Găsește Meseriașul Potrivit: Electrician, Instalator și Zugrav')
-@section('meta_description', 'Ai nevoie de un  Electrician, Instalator sau Zugrav? Găsește rapid oferte pentru construcții, renovări și instalații sau publică anunț gratuit pe MeseriasBun.ro.')
+@section('title', 'Găsește Meseriașul Potrivit: Electrician, Instalator, Zugrav')
+@section('meta_description', 'Ai nevoie de un  Electrician, Instalator sau Zugrav? Găsește rapid oferte pentru construcții, renovări și instalații sau Publică anunț gratuit pe MeseriasBun.ro.')
 @section('meta_image', asset('images/social-share.webp'))
 
 {{-- SECȚIUNEA HERO --}}
