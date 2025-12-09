@@ -10,6 +10,7 @@ use App\Http\Controllers\Admin\AdminDashboardController;
 use App\Http\Controllers\Admin\AdminUserController;
 use App\Http\Controllers\Admin\AdminServiceController;
 use App\Http\Controllers\Admin\AdminCategoryController;
+use App\Http\Controllers\SitemapController;
 
 /*
 |--------------------------------------------------------------------------
@@ -153,3 +154,6 @@ Route::get('/{category}/{county}', [ServiceController::class, 'indexLocation'])
 Route::get('/{category}/{county}/{slug}-{id}', [ServiceController::class, 'show'])
     ->where(['id' => '[0-9]+', 'slug' => '.*'])
     ->name('service.show');
+	
+Route::get('/sitemap.xml', [SitemapController::class, 'index'])
+    ->name('sitemap');
