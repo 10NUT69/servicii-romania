@@ -47,13 +47,23 @@
 
     // --- IMAGINI PENTRU GALERIE ---
     $userImages = is_string($service->images) ? json_decode($service->images, true) : ($service->images ?? []);
-    $userImages = array_filter((array)$userImages);
-    
-    $galleryUrls = [];
+$userImages = array_filter((array)$userImages);
+
+$galleryUrls = [];
+
+// adaugă imaginea principală doar dacă există
+if (!empty($service->main_image_url)) {
     $galleryUrls[] = $service->main_image_url;
-    foreach($userImages as $img) {
-        $galleryUrls[] = asset('storage/services/' . $img);
+}
+
+// adaugă restul imaginilor, fără dubluri
+foreach ($userImages as $img) {
+    $url = asset('storage/services/' . $img);
+
+    if (!in_array($url, $galleryUrls, true)) {
+        $galleryUrls[] = $url;
     }
+}
 
     // --- SCHEMA ---
     $schemaData = [
