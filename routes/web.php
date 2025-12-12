@@ -22,8 +22,14 @@ use App\Http\Controllers\SitemapController;
 Route::get('/', [ServiceController::class, 'index'])->name('services.index');
 
 // FORMULAR ADĂUGARE
+// FORMULAR ADĂUGARE
 Route::get('/adauga-anunt', [ServiceController::class, 'create'])->name('services.create');
-Route::post('/adauga-anunt', [ServiceController::class, 'store'])->name('services.store');
+
+Route::post('/adauga-anunt', [ServiceController::class, 'store'])
+    ->middleware(['pretty.throttle', 'throttle:create-ad'])
+    ->name('services.store');
+
+
 
 // CONTUL MEU
 Route::get('/contul-meu', function () {

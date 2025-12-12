@@ -6,6 +6,8 @@ use App\Models\Service;
 use App\Models\Category;
 use App\Models\County;
 use App\Models\User;
+use App\Jobs\PublishServiceJob;
+use App\Jobs\ProcessServiceImagesJob;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Intervention\Image\ImageManager;
@@ -147,9 +149,10 @@ class ServiceController extends Controller
         ]);
     }
 
-    // STORE (ORIGINAL - STRICT CODUL TAU)
+    // STORE (ADAPTAT - QUEUE PUBLISH)
     public function store(Request $request)
     {
+
         $rules = [
             'title'       => 'required|max:255',
             'description' => 'required',
@@ -159,8 +162,8 @@ class ServiceController extends Controller
             'price_value' => 'nullable|numeric',
             'price_type'  => 'required|in:fixed,negotiable',
             'currency'    => 'required|in:RON,EUR',
-            'name'        => 'nullable|string|max:255', 
-            'images.*'    => 'image|mimes:jpeg,png,jpg,webp|max:15360', 
+            'name'        => 'nullable|string|max:255',
+            'images.*'    => 'image|mimes:jpeg,png,jpg,webp|max:15360',
         ];
 
         if (!Auth::check() && $request->filled('email') && $request->filled('password')) {
@@ -176,10 +179,10 @@ class ServiceController extends Controller
         $validated = $request->validate($rules, $messages);
 
         // 1. CALCULARE NUME
-        $calculatedName = $request->input('name'); 
+        $calculatedName = $request->input('name');
         if (empty($calculatedName) && $request->filled('email')) {
             $emailParts = explode('@', $request->input('email'));
-            $rawName = $emailParts[0]; 
+            $rawName = $emailParts[0];
             $nameParts = preg_split('/[\.\_\-\d]/', $rawName);
             if (!empty($nameParts[0])) {
                 $calculatedName = ucfirst($nameParts[0]);
@@ -197,17 +200,17 @@ class ServiceController extends Controller
             $userId = Auth::id();
         } elseif ($request->filled('email') && $request->filled('password')) {
             $user = User::create([
-                'name'      => $calculatedName,
-                'email'     => $request->email,
-                'password'  => Hash::make($request->password),
+                'name'     => $calculatedName,
+                'email'    => $request->email,
+                'password' => Hash::make($request->password),
             ]);
             Auth::login($user);
             $userId = $user->id;
         }
 
-        // 3. SALVARE SERVICIU
+        // 3. SALVARE SERVICIU (fără procesare imagini în request)
         $service = new Service();
-        $service->user_id     = $userId;
+        $service->user_id = $userId;
         if (!$userId) {
             $service->contact_name = $calculatedName;
         }
@@ -220,11 +223,12 @@ class ServiceController extends Controller
         $service->price_value = $request->price_value;
         $service->price_type  = $validated['price_type'];
         $service->currency    = $validated['currency'];
-        
+
         if ($request->filled('email')) {
             $service->email = $request->email;
         }
 
+        // slug logic (păstrată 1:1)
         $words = Str::of($validated['title'])->explode(' ')->take(5)->implode(' ');
         $baseSlug = Str::slug($words);
         $uniqueSlug = $baseSlug;
@@ -234,35 +238,50 @@ class ServiceController extends Controller
             $i++;
         }
         $service->slug = $uniqueSlug;
-        $service->status = 'active';
-        
-        $savedImages = [];
+
+        // NOUA LOGICĂ: intră în așteptare
+        $service->status = 'pending';
+        $service->queued_at = now();
+
+        // încă nu avem imaginile finale
+        $service->images = [];
+        $service->images_tmp = [];
+        $service->fail_reason = null;
+
+        // salvăm ca să avem ID pentru folderul tmp
+        $service->save();
+
+        // 4. Upload RAW în tmp (fără Intervention)
+        $tmpNames = [];
         if ($request->hasFile('images')) {
-            $manager = new ImageManager(new Driver());
-            $seoBaseName = $baseSlug; 
+            $tmpDir = storage_path("app/services-tmp/{$service->id}");
+            if (!file_exists($tmpDir)) {
+                mkdir($tmpDir, 0755, true);
+            }
 
             foreach ($request->file('images') as $image) {
-                if (count($savedImages) >= 10) break;
-                
-                $name = $seoBaseName . '-' . Str::random(6) . '.jpg';
-                $path = storage_path('app/public/services/' . $name);
-                
-                if (!file_exists(dirname($path))) mkdir(dirname($path), 0755, true);
+                if (count($tmpNames) >= 10) break;
 
-                $manager->read($image->getRealPath())
-                        ->scaleDown(1600)
-                        ->toJpeg(75)
-                        ->save($path);
-                        
-                $savedImages[] = $name;
+                $tmpName = Str::random(20) . '.' . $image->getClientOriginalExtension();
+                $image->move($tmpDir, $tmpName);
+                $tmpNames[] = $tmpName;
             }
         }
 
-        $service->images = $savedImages; 
+        $service->images_tmp = $tmpNames;
         $service->save();
 
-        return redirect()->to($service->public_url)
-                         ->with('success', 'Anunțul a fost publicat!');
+        // 5. Trimitem job-ul care procesează imaginile și activează anunțul
+        PublishServiceJob::dispatch($service->id)->onQueue('services');
+
+        // 6. Redirect + mesaj (conform noua logică)
+        if (Auth::check()) {
+            return redirect('/contul-meu?tab=anunturi')
+                ->with('success', '✅ Anunțul tău a fost trimis spre procesare și va apărea în câteva momente.');
+        }
+
+        return redirect('/')
+            ->with('success', '✅ Anunțul tău a fost trimis spre procesare și va apărea în câteva momente.');
     }
 
     // EDIT (ORIGINAL)
@@ -278,69 +297,81 @@ class ServiceController extends Controller
 
     // UPDATE (ORIGINAL - STRICT CODUL TAU)
     public function update(Request $request, $id)
-    {
-        $service = Service::where('id', $id)
-            ->where('user_id', auth()->id())
-            ->firstOrFail();
+{
+    $service = Service::where('id', $id)
+        ->where('user_id', auth()->id())
+        ->firstOrFail();
 
-        $validated = $request->validate([
-            'title'       => 'required|max:255',
-            'description' => 'required',
-            'category_id' => 'required|exists:categories,id',
-            'county_id'   => 'required|exists:counties,id',
-            'phone'       => 'nullable|string|max:30',
-            'email'       => 'nullable|email|max:120',
-            'price_value' => 'nullable|numeric',
-            'price_type'  => 'required|in:fixed,negotiable',
-            'currency'    => 'required|in:RON,EUR',
-            'images.*'    => 'image|mimes:jpeg,png,jpg,webp|max:15360', 
-        ]);
+    $validated = $request->validate([
+        'title'       => 'required|max:255',
+        'description' => 'required',
+        'category_id' => 'required|exists:categories,id',
+        'county_id'   => 'required|exists:counties,id',
+        'phone'       => 'nullable|string|max:30',
+        'email'       => 'nullable|email|max:120',
+        'price_value' => 'nullable|numeric',
+        'price_type'  => 'required|in:fixed,negotiable',
+        'currency'    => 'required|in:RON,EUR',
+        'images.*'    => 'image|mimes:jpeg,png,jpg,webp|max:15360',
+    ]);
 
-        $finalImages = $service->images;
-        // Păstrăm logica ta de verificare array/string
-        if (is_string($finalImages)) $finalImages = json_decode($finalImages, true);
-        if (!is_array($finalImages)) $finalImages = [];
+    // Păstrăm imaginile existente (nu procesăm aici)
+    unset($validated['images']);
+    $service->fill($validated);
 
-        unset($validated['images']);
-        $service->fill($validated);
+    // Dacă s-a urcat email, îl păstrăm (similar cu store)
+    if ($request->filled('email')) {
+        $service->email = $request->email;
+    }
 
-        if ($request->hasFile('images')) {
-            $manager = new ImageManager(new Driver());
-            $countyName = County::find($validated['county_id'])->name ?? 'romania';
-            $seoBaseName = Str::slug($validated['title'] . '-' . $countyName);
+    // NU schimbăm slug aici (ca în codul tău original)
 
-            foreach ($request->file('images') as $image) {
-                if (count($finalImages) >= 10) break;
+    // Dacă sunt imagini noi -> le urcăm RAW în tmp + job
+    if ($request->hasFile('images')) {
 
-                $name = $seoBaseName . '-' . Str::random(6) . '.jpg';
-                $path = storage_path('app/public/services/' . $name);
-
-                if (!file_exists(dirname($path))) {
-                    mkdir(dirname($path), 0755, true);
-                }
-
-                $manager->read($image->getRealPath())
-                    ->scaleDown(1600)
-                    ->toJpeg(75)
-                    ->save($path);
-
-                $finalImages[] = $name;
-            }
+        $tmpDir = storage_path("app/services-tmp/{$service->id}");
+        if (!file_exists($tmpDir)) {
+            mkdir($tmpDir, 0755, true);
         }
 
-        $service->images = $finalImages;
+        $tmpNames = [];
+
+        foreach ($request->file('images') as $image) {
+            if (count($tmpNames) >= 10) break;
+
+            $tmpName = Str::random(20) . '.' . $image->getClientOriginalExtension();
+            $image->move($tmpDir, $tmpName);
+            $tmpNames[] = $tmpName;
+        }
+
+        // salvăm tmp list (o să fie procesată în job)
+        $service->images_tmp  = $tmpNames;
+        $service->queued_at   = now();
+        $service->fail_reason = null;
+
         $service->save();
 
+        // procesăm asincron (poze noi se adaugă la cele existente până la max 10)
+        ProcessServiceImagesJob::dispatch($service->id)->onQueue('services');
+
         return redirect('/contul-meu?tab=anunturi')
-            ->with('success', 'Modificat cu succes!');
+            ->with('success', '✅ Modificările au fost salvate. Imaginile se procesează și vor apărea în câteva momente.');
     }
+
+    // fără imagini -> update instant (rapid)
+    $service->save();
+
+    return redirect('/contul-meu?tab=anunturi')
+        ->with('success', 'Modificat cu succes!');
+}
+
 
     // DELETE IMAGE (ORIGINAL)
     public function deleteImage(Request $request, $id)
     {
         $service = Service::where('id', $id)->where('user_id', auth()->id())->firstOrFail();
         $imageName = $request->input('image');
-        
+
         $currentImages = $service->images;
         if (is_string($currentImages)) $currentImages = json_decode($currentImages, true);
         if (!is_array($currentImages)) $currentImages = [];
@@ -365,10 +396,10 @@ class ServiceController extends Controller
     {
         try {
             $service = Service::where('id', $id)->where('user_id', auth()->id())->firstOrFail();
-            
+
             // 1. Ștergem imaginile fizic
             $images = $service->images; // Laravel face cast automat la array datorită Modelului
-            
+
             // Măsură de siguranță extra: dacă e null sau string ciudat
             if (is_null($images)) $images = [];
             elseif (is_string($images)) $images = json_decode($images, true) ?? [];
@@ -382,7 +413,7 @@ class ServiceController extends Controller
                     }
                 }
             }
-            
+
             // 2. Doar golim imaginile din DB (statusul îl lăsăm așa cum e)
             $service->images = null;
             $service->save();
@@ -410,7 +441,7 @@ class ServiceController extends Controller
 
             // Actualizăm data creării pentru a urca anunțul primul în listă
             $service->created_at = now();
-            
+
             // Opțional: Dacă anunțul expirase sau era inactiv, îl reactivăm
             if ($service->status !== 'active') {
                 $service->status = 'active';

@@ -126,7 +126,45 @@
     {{-- MAIN CONTENT --}}
     {{-- Condiția care protejează paginile interne să nu intre sub header --}}
     <main class="max-w-7xl mx-auto px-4 py-6 w-full flex-grow relative z-0 {{ !View::hasSection('hero') ? 'pt-20 md:pt-24' : '' }}">
-        @yield('content')
+         {{-- FLASH MESSAGES --}}
+    @if (session('success'))
+    <div id="flash-success" class="max-w-5xl mx-auto mt-6 px-4">
+        <div class="rounded-2xl border border-green-200 bg-green-50 text-green-800 px-6 py-4 shadow-sm flex items-center gap-3">
+            <span class="text-xl">✅</span>
+            <span>{{ session('success') }}</span>
+        </div>
+    </div>
+@endif
+
+@if (session('error'))
+    <div id="flash-error" class="max-w-5xl mx-auto mt-6 px-4">
+        <div class="rounded-2xl border border-red-200 bg-red-50 text-red-800 px-6 py-4 shadow-sm flex items-center gap-3">
+            <span class="text-xl">⚠️</span>
+            <span>{{ session('error') }}</span>
+        </div>
+    </div>
+@endif
+
+		@yield('content')
+		<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const ids = ['flash-success', 'flash-error'];
+
+    ids.forEach((id) => {
+        const el = document.getElementById(id);
+        if (!el) return;
+
+        setTimeout(() => {
+            el.style.transition = 'opacity 400ms ease, transform 400ms ease';
+            el.style.opacity = '0';
+            el.style.transform = 'translateY(-6px)';
+
+            setTimeout(() => el.remove(), 450);
+        }, 4000);
+    });
+});
+</script>
+
     </main>
 
 

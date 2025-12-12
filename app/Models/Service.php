@@ -25,17 +25,22 @@ class Service extends Model
         'phone',
         'email',
         'images',
+        'images_tmp',
         'status',
+        'queued_at',
+        'fail_reason',
         'views',
         'published_at',
         'expires_at',
     ];
 
     protected $casts = [
-        'images' => 'array',
+        'images'       => 'array',
+        'images_tmp'   => 'array',
+        'queued_at'    => 'datetime',
         'published_at' => 'datetime',
-        'expires_at' => 'datetime',
-        'price_value' => 'float',
+        'expires_at'   => 'datetime',
+        'price_value'  => 'float',
     ];
 
     public function category() { return $this->belongsTo(Category::class); }
@@ -92,7 +97,7 @@ class Service extends Model
         $catSlug = $this->category ? $this->category->slug : 'diverse';
         $countySlug = $this->county ? $this->county->slug : 'romania';
 
-        return route('service.show', [ 
+        return route('service.show', [
             'category' => $catSlug,
             'county'   => $countySlug,
             'slug'     => $this->smart_slug,
