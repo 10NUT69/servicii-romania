@@ -4,6 +4,20 @@
 @section('meta_description', 'Ai nevoie de un Electrician, Instalator, Zugrav? Găsește rapid oferte pentru construcții, renovări și instalații sau Publică anunț gratuit pe MeseriasBun.ro')
 @section('meta_image', asset('images/social-share.webp'))
 
+@php
+    // Valorile selectate inițial (din URL SEO sau din query)
+    $selectedCategoryId = request('category') ?? optional($currentCategory)->id ?? null;
+    $selectedCountyId   = request('county') ?? optional($currentCounty)->id ?? null;
+
+    $selectedCategoryName = $selectedCategoryId
+        ? optional($categories->firstWhere('id', $selectedCategoryId))->name
+        : null;
+
+    $selectedCountyName = $selectedCountyId
+        ? optional($counties->firstWhere('id', $selectedCountyId))->name
+        : null;
+@endphp
+
 {{-- SECȚIUNEA HERO --}}
 @section('hero')
 <div class="relative w-full bg-gray-900 group">
@@ -18,29 +32,15 @@
         <img src="{{ asset('images/hero-mobile.webp') }}" alt="Meserias Bun Fundal" 
              class="block md:hidden w-full h-full object-cover object-center">
              
-        {{-- 
-            OVERLAY SIMPLU (FĂRĂ GRADIENT COMPLEX):
-            Un strat negru uniform cu 50% opacitate. 
-            Este cel mai sigur pentru lizibilitate pe orice dispozitiv.
-        --}}
+        {{-- Overlay simplu pentru lizibilitate --}}
         <div class="absolute inset-0 bg-black/50"></div>
     </div>
 
     {{-- B. CONȚINUT TEXT --}}
-    {{-- 
-        MODIFICARE CRITICĂ MOBIL:
-        h-auto (pe mobil): Containerul are înălțimea strict cât textul.
-        md:h-[480px] (pe desktop): Are înălțime fixă pentru centrare.
-        
-        pt-24 (pe mobil): Împinge textul puțin sub header.
-        md:justify-center: Centrează vertical doar pe desktop.
-    --}}
     <div class="relative z-10 max-w-7xl mx-auto px-4 h-auto md:h-[480px] flex flex-col justify-start md:justify-center items-start pt-24 pb-4 md:pt-16 md:pb-8">
         
         <h1 class="text-white font-extrabold tracking-tight drop-shadow-xl text-left mb-2 md:mb-4 max-w-2xl animate-in slide-in-from-left-4 duration-700">
             <span class="block text-3xl md:text-4xl lg:text-5xl mb-1 md:mb-2">GĂSEȘTI MEȘTERI</span>
-            
-            {{-- TEXT ALB CURAT (FĂRĂ GRADIENT) --}}
             <span class="block text-3xl md:text-4xl lg:text-5xl text-white font-black">
                 VERIFICAȚI, RAPID!
             </span>
@@ -53,11 +53,6 @@
     </div>
 
     {{-- C. BARA DE CĂUTARE --}}
-    {{-- 
-        MODIFICARE CRITICĂ MOBIL:
-        mt-4 (pe mobil): O margine mică pozitivă. Deoarece textul de sus e h-auto, bara vine imediat sub el.
-        md:-mt-32 (pe desktop): Margine negativă mare ca să urce peste textul centrat.
-    --}}
     <div class="relative z-30 max-w-7xl mx-auto px-4 mt-4 md:-mt-32 pb-4">
         
         <form id="search-form" onsubmit="event.preventDefault(); loadServices(1);"
@@ -75,23 +70,27 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                     </svg>
                     <div class="flex-1 min-w-0">
-                        <input type="text" name="search" id="search-input" placeholder="Ce cauți? (ex: Instalator...)" value="{{ request('search') }}"
-                            class="w-full bg-transparent border-none p-0 focus:ring-0 text-base truncate leading-normal font-medium text-gray-900 dark:text-white placeholder-gray-400"
-                            oninput="checkResetVisibility(); debounceLoad()">
+                        <input type="text"
+                               name="search"
+                               id="search-input"
+                               placeholder="Ce cauți? (ex: Instalator...)"
+                               value="{{ request('search') }}"
+                               class="w-full bg-transparent border-none p-0 focus:ring-0 text-base truncate leading-normal font-medium text-gray-900 dark:text-white placeholder-gray-400"
+                               oninput="checkResetVisibility(); debounceLoad()">
                     </div>
                 </div>
             </div>
 
             {{-- 2. CATEGORY DROPDOWN --}}
             <div id="cat-col" class="col-span-1 md:col-span-3 relative group">
-                <input type="hidden" name="category" id="category-input" value="{{ request('category') }}">
+                <input type="hidden" name="category" id="category-input" value="{{ $selectedCategoryId }}">
                 <button type="button" onclick="toggleCategoryDropdown()" 
                     class="flex items-center justify-between h-[3.25rem] w-full rounded-xl px-4 transition-all duration-200 outline-none text-left whitespace-nowrap
                            bg-white dark:bg-[#1E1E1E] border border-gray-100 dark:border-[#333333] shadow-lg shadow-gray-200/20
                            hover:bg-gray-50 dark:hover:bg-[#252525]
                            group-focus:ring-2 group-focus:ring-[#CC2E2E]/20">
                     <span id="category-display" class="font-medium text-gray-700 dark:text-gray-200 truncate mr-2">
-                        {{ $categories->firstWhere('id', request('category'))->name ?? 'Toate categoriile' }}
+                        {{ $selectedCategoryName ?? 'Toate categoriile' }}
                     </span>
                     <svg id="category-arrow" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-400 transform transition-transform duration-200 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
@@ -101,7 +100,11 @@
                     <div class="p-1.5">
                         <div onclick="selectCategory('', 'Toate categoriile')" class="px-3 py-2.5 rounded-lg cursor-pointer text-base font-medium transition-all select-none mb-1 text-gray-700 dark:text-gray-300 hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-[#CC2E2E]">Toate categoriile</div>
                         @foreach($categories as $category)
-                        <div onclick="selectCategory('{{ $category->id }}', '{{ $category->name }}')" class="px-3 py-2.5 rounded-lg cursor-pointer text-base font-medium transition-all select-none {{ request('category') == $category->id ? 'bg-red-50 dark:bg-red-900/20 text-[#CC2E2E]' : 'text-gray-700 dark:text-gray-300 hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-[#CC2E2E]' }}">{{ $category->name }}</div>
+                            <div onclick="selectCategory('{{ $category->id }}', '{{ $category->name }}')"
+                                 class="px-3 py-2.5 rounded-lg cursor-pointer text-base font-medium transition-all select-none
+                                 {{ (string)$selectedCategoryId === (string)$category->id ? 'bg-red-50 dark:bg-red-900/20 text-[#CC2E2E]' : 'text-gray-700 dark:text-gray-300 hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-[#CC2E2E]' }}">
+                                {{ $category->name }}
+                            </div>
                         @endforeach
                     </div>
                 </div>
@@ -109,13 +112,13 @@
 
             {{-- 3. COUNTY DROPDOWN --}}
             <div id="county-col" class="col-span-1 md:col-span-3 relative group">
-                <input type="hidden" name="county" id="county-input" value="{{ request('county') }}">
+                <input type="hidden" name="county" id="county-input" value="{{ $selectedCountyId }}">
                 <button type="button" onclick="toggleCountyDropdown()" 
                     class="flex items-center justify-between h-[3.25rem] w-full rounded-xl px-4 transition-all duration-200 outline-none text-left whitespace-nowrap
                            bg-white dark:bg-[#1E1E1E] border border-gray-100 dark:border-[#333333] shadow-lg shadow-gray-200/20
                            hover:bg-gray-50 dark:hover:bg-[#252525]">
                     <span id="county-display" class="font-medium text-gray-700 dark:text-gray-200 truncate mr-2">
-                        {{ $counties->firstWhere('id', request('county'))->name ?? 'Toate județele' }}
+                        {{ $selectedCountyName ?? 'Toate județele' }}
                     </span>
                     <svg id="county-arrow" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-400 transform transition-transform duration-200 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
@@ -123,9 +126,13 @@
                 </button>
                 <div id="county-list" class="hidden absolute top-full left-0 right-0 mt-2 bg-white dark:bg-[#252525] rounded-xl shadow-2xl z-[999] overflow-hidden origin-top animate-in fade-in zoom-in-95 duration-100 border border-gray-100 dark:border-[#404040] max-h-80 overflow-y-auto custom-scrollbar">
                     <div class="p-1.5">
-                        <div onclick="selectCounty('', 'Toate județele')" class="px-3 py-2.5 rounded-lg cursor-pointer transition-all text-base font-medium select-none mb-1 text-gray-700 dark:text-gray-300 hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-[#CC2E2E]">Toate județele</div>
+                        <div onclick="selectCounty('', 'Toate județele')" class="px-3 py-2.5 rounded-lg cursor-pointer transition-all text-base font-medium select-none mb-1 text-gray-700 dark:text-gray-300 hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-[#CC2E2E]">Toată țara</div>
                         @foreach($counties as $county)
-                            <div onclick="selectCounty('{{ $county->id }}', '{{ $county->name }}')" class="px-3 py-2.5 rounded-lg cursor-pointer transition-all text-base font-medium select-none {{ request('county') == $county->id ? 'bg-red-50 dark:bg-red-900/20 text-[#CC2E2E]' : 'text-gray-700 dark:text-gray-300 hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-[#CC2E2E]' }}">{{ $county->name }}</div>
+                            <div onclick="selectCounty('{{ $county->id }}', '{{ $county->name }}')"
+                                 class="px-3 py-2.5 rounded-lg cursor-pointer transition-all text-base font-medium select-none
+                                 {{ (string)$selectedCountyId === (string)$county->id ? 'bg-red-50 dark:bg-red-900/20 text-[#CC2E2E]' : 'text-gray-700 dark:text-gray-300 hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-[#CC2E2E]' }}">
+                                {{ $county->name }}
+                            </div>
                         @endforeach
                     </div>
                 </div>
@@ -158,11 +165,7 @@
 
 @section('content')
 
-{{-- TITLU - SPAȚIERE MOBIL --}}
-{{-- 
-    mt-8 pe mobil: Deoarece bara de căutare nu mai are margine negativă, 
-    ea ocupă spațiu fizic. Nu avem nevoie de margine mare aici.
---}}
+{{-- TITLU LISTĂ --}}
 <div class="mt-8 md:mt-12 mb-8 flex items-center gap-3 max-w-7xl mx-auto px-4">
     <span class="w-1.5 h-8 bg-[#CC2E2E] rounded-full shadow-sm"></span>      
     <h2 class="text-2xl md:text-3xl font-bold text-gray-900 dark:text-[#F2F2F2]">
@@ -170,12 +173,12 @@
     </h2>
 </div>
 
-{{-- CONTAINER CARDURI --}}
+{{-- GRID ANUNȚURI --}}
 <div id="services-container" class="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-6 pb-10 relative z-0 max-w-7xl mx-auto px-4">
     @include('services.partials.service_cards', ['services' => $services])
 </div>
 
-{{-- LOADING & SCRIPTS (IDENTICE CU CELE ANTERIOARE) --}}
+{{-- LOADING --}}
 <div id="loading-indicator" class="text-center py-8 {{ $services->isEmpty() || !$hasMore ? 'hidden' : '' }}">
     <svg class="animate-spin h-8 w-8 text-[#CC2E2E] mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
       <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
@@ -184,18 +187,83 @@
     <p class="text-sm text-gray-500 mt-2">Se încarcă...</p>
 </div>
 
-<div id="load-more-trigger" data-next-page="2" data-has-more="{{ $hasMore ? 'true' : 'false' }}" style="height: 1px;"></div>
+<div id="load-more-trigger"
+     data-next-page="2"
+     data-has-more="{{ $hasMore ? 'true' : 'false' }}"
+     style="height: 1px;"></div>
 
 <script>
-    let isLoading = false;
-    let currentPage = 2; 
-    let hasMore = document.getElementById('load-more-trigger').dataset.hasMore === 'true';
+    // ========= Hărți ID → slug pentru URL SEO =========
+    const baseUrl = "{{ url('/') }}";
+    const categoriesSlugMap = @json($categories->mapWithKeys(fn($c) => [$c->id => $c->slug]));
+    const countiesSlugMap   = @json($counties->mapWithKeys(fn($c) => [$c->id => $c->slug]));
+
+    let isLoading   = false;
+    let currentPage = 2;
+    let hasMore     = document.getElementById('load-more-trigger').dataset.hasMore === 'true';
     let debounceTimer;
 
     document.addEventListener('DOMContentLoaded', () => {
         checkResetVisibility();
+        observer.observe(document.getElementById('load-more-trigger'));
+        // Setăm state inițial (search + category + county) în istoric
+        updateUrl(false);
     });
 
+    // ========= BUILD SEO URL DIN FILTRE =========
+    function buildSeoUrlFromFilters(categoryId, countyId) {
+        categoryId = categoryId || null;
+        countyId   = countyId || null;
+
+        if (!categoryId) {
+            return baseUrl; // fără categorie -> home
+        }
+
+        const catSlug = categoriesSlugMap[categoryId];
+        if (!catSlug) {
+            return baseUrl;
+        }
+
+        if (!countyId) {
+            return `${baseUrl}/${catSlug}`;
+        }
+
+        const countySlug = countiesSlugMap[countyId];
+        if (!countySlug) {
+            return `${baseUrl}/${catSlug}`;
+        }
+
+        return `${baseUrl}/${catSlug}/${countySlug}`;
+    }
+
+    // ========= UPDATE URL (HISTORY API) =========
+    // push = true  -> pushState (categorie/județ schimbate)
+    // push = false -> replaceState (doar search modificat)
+    function updateUrl(push = false) {
+        const categoryId = document.getElementById('category-input').value || null;
+        const countyId   = document.getElementById('county-input').value || null;
+        const search     = document.getElementById('search-input').value.trim();
+
+        const seoUrl = buildSeoUrlFromFilters(categoryId, countyId);
+
+        const params = new URLSearchParams();
+        if (search) {
+            params.set('search', search);
+        }
+
+        const newUrl = params.toString() ? `${seoUrl}?${params.toString()}` : seoUrl;
+        const state  = { categoryId, countyId, search };
+
+        if (push) {
+            window.history.pushState(state, '', newUrl);
+        } else {
+            window.history.replaceState(state, '', newUrl);
+        }
+    }
+
+    // back/forward: browser restaurează singur DOM-ul, nu avem nevoie de extra cod
+
+    // ========= VIZIBILITATE BUTON RESET + LAYOUT =========
     function checkResetVisibility() {
         const s = document.getElementById('search-input').value;
         const c = document.getElementById('category-input').value;
@@ -220,18 +288,22 @@
         }
     }
 
+    // ========= RESET FILTRE =========
     function resetFilters() {
         document.getElementById('search-input').value = '';
         document.getElementById('category-input').value = '';
         document.getElementById('county-input').value = '';
         document.getElementById('category-display').innerText = 'Toate categoriile';
-        document.getElementById('county-display').innerText = 'Toate județele';
+        document.getElementById('county-display').innerText   = 'Toate județele';
         document.getElementById('category-list').classList.add('hidden');
         document.getElementById('county-list').classList.add('hidden');
+
         checkResetVisibility();
+        updateUrl(true);    // schimbare mare → pushState
         loadServices(1);
     }
 
+    // ========= ÎNCĂRCARE ANUNȚURI (AJAX) =========
     function loadServices(page) {
         const isNewFilter = page === 1;
         if (isLoading) return;
@@ -250,9 +322,9 @@
         isLoading = true;
 
         const params = new URLSearchParams({
-            search: document.getElementById('search-input').value,
+            search:  document.getElementById('search-input').value,
             category: document.getElementById('category-input').value,
-            county: document.getElementById('county-input').value,
+            county:   document.getElementById('county-input').value,
             page: page,
             ajax: 1
         });
@@ -262,23 +334,35 @@
         })
         .then(res => res.json())
         .then(data => {
+            const container = document.getElementById('services-container');
+
             if (isNewFilter) {
-                document.getElementById('services-container').innerHTML = data.html;
-                document.getElementById('services-container').style.opacity = '1';
+                container.innerHTML = data.html;
+                container.style.opacity = '1';
+
                 if (data.loadedCount === 0) {
-                     document.getElementById('services-container').innerHTML = `
+                    container.innerHTML = `
                         <div class="col-span-full flex flex-col items-center justify-center py-20 px-4 text-center bg-white dark:bg-[#1E1E1E] rounded-3xl border-2 border-dashed border-gray-200 dark:border-[#333333]">
                             <h3 class="text-2xl font-bold text-gray-900 dark:text-white mb-3">Nu am găsit anunțuri</h3>
-                            <button type="button" onclick="resetFilters()" class="px-8 py-3.5 bg-[#CC2E2E] hover:bg-[#B72626] text-white font-bold rounded-xl shadow-lg">Resetează Filtrele</button>
+                            <p class="text-gray-500 dark:text-gray-400 mb-6 text-sm max-w-md mx-auto">
+                                Încearcă să modifici criteriile sau revino la toate anunțurile.
+                            </p>
+                            <button type="button"
+                                    onclick="resetFilters()"
+                                    class="px-8 py-3.5 bg-[#CC2E2E] hover:bg-[#B72626] text-white font-bold rounded-xl shadow-lg">
+                                Resetează filtrele
+                            </button>
                         </div>
                     `;
                 }
             } else {
-                document.getElementById('services-container').insertAdjacentHTML('beforeend', data.html);
+                container.insertAdjacentHTML('beforeend', data.html);
             }
+
             hasMore = data.hasMore;
             document.getElementById('load-more-trigger').dataset.hasMore = hasMore;
             if (hasMore) currentPage++;
+
             if (hasMore) {
                 observer.unobserve(document.getElementById('load-more-trigger'));
                 observer.observe(document.getElementById('load-more-trigger'));
@@ -290,39 +374,43 @@
         });
     }
 
+    // ========= DEBOUNCE PENTRU SEARCH =========
     function debounceLoad() {
         clearTimeout(debounceTimer);
-        debounceTimer = setTimeout(() => loadServices(1), 500);
+        debounceTimer = setTimeout(() => {
+            updateUrl(false); // doar search → replaceState
+            loadServices(1);
+        }, 500);
     }
 
+    // ========= INFINITE SCROLL =========
     const observer = new IntersectionObserver((entries) => {
         if (entries[0].isIntersecting && !isLoading && hasMore) {
             loadServices(currentPage);
         }
     }, { rootMargin: '0px 0px 400px 0px' });
 
-    document.addEventListener('DOMContentLoaded', () => {
-        observer.observe(document.getElementById('load-more-trigger'));
-    });
-
+    // ========= SELECTARE COUNTY / CATEGORY =========
     function selectCounty(id, name) {
-        document.getElementById('county-input').value = id;
+        document.getElementById('county-input').value   = id;
         document.getElementById('county-display').innerText = name;
         toggleCountyDropdown(); 
         checkResetVisibility();
+        updateUrl(true);   // schimbare path → pushState
         loadServices(1);
     }
 
     function selectCategory(id, name) {
-        document.getElementById('category-input').value = id;
+        document.getElementById('category-input').value   = id;
         document.getElementById('category-display').innerText = name;
         toggleCategoryDropdown(); 
         checkResetVisibility();
+        updateUrl(true);   // schimbare path → pushState
         loadServices(1);
     }
     
     function toggleCountyDropdown() { 
-        const list = document.getElementById('county-list');
+        const list  = document.getElementById('county-list');
         const arrow = document.getElementById('county-arrow');
         document.getElementById('category-list').classList.add('hidden');
         list.classList.toggle('hidden');
@@ -330,34 +418,38 @@
     }
     
     function toggleCategoryDropdown() { 
-        const list = document.getElementById('category-list');
+        const list  = document.getElementById('category-list');
         const arrow = document.getElementById('category-arrow');
         document.getElementById('county-list').classList.add('hidden');
         list.classList.toggle('hidden');
         arrow.style.transform = list.classList.contains('hidden') ? 'rotate(0deg)' : 'rotate(180deg)';
     }
 
+    // Închidem dropdown-urile când dăm click în afara lor
     document.addEventListener('click', function(event) {
-        const catGroup = document.getElementById('cat-col');
+        const catGroup    = document.getElementById('cat-col');
         const countyGroup = document.getElementById('county-col');
         
         if (catGroup && !catGroup.contains(event.target)) {
             document.getElementById('category-list').classList.add('hidden');
             const arrow = document.getElementById('category-arrow');
-            if(arrow) arrow.style.transform = 'rotate(0deg)';
+            if (arrow) arrow.style.transform = 'rotate(0deg)';
         }
         if (countyGroup && !countyGroup.contains(event.target)) {
             document.getElementById('county-list').classList.add('hidden');
-             const arrow = document.getElementById('county-arrow');
-            if(arrow) arrow.style.transform = 'rotate(0deg)';
+            const arrow = document.getElementById('county-arrow');
+            if (arrow) arrow.style.transform = 'rotate(0deg)';
         }
     });
 
+    // ========= FAVORITE (INIMIOARĂ) =========
     function toggleHeart(btn, serviceId) {
-         @if(!auth()->check())
-            window.location.href = "{{ route('login') }}"; return;
+        @if(!auth()->check())
+            window.location.href = "{{ route('login') }}"; 
+            return;
         @endif
-        const icon = btn.querySelector('svg');
+
+        const icon   = btn.querySelector('svg');
         const isLiked = icon.classList.contains('text-[#CC2E2E]');
         if (isLiked) {
             icon.classList.remove('text-[#CC2E2E]', 'fill-[#CC2E2E]', 'scale-110');
@@ -365,8 +457,12 @@
         } else {
             icon.classList.remove('text-gray-600', 'dark:text-gray-300', 'fill-none');
             icon.classList.add('text-[#CC2E2E]', 'fill-[#CC2E2E]', 'scale-125');
-            setTimeout(() => { icon.classList.remove('scale-125'); icon.classList.add('scale-110'); }, 200);
+            setTimeout(() => {
+                icon.classList.remove('scale-125');
+                icon.classList.add('scale-110');
+            }, 200);
         }
+
         fetch("{{ route('favorite.toggle') }}", {
             method: "POST",
             headers: {
