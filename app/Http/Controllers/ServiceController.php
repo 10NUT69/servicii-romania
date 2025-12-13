@@ -27,9 +27,9 @@ class ServiceController extends Controller
     |     - filtrare județ (county_id)
     |     - infinite scroll AJAX (page + ajax=1)
     */
-    public function index(Request $request)
+  public function index(Request $request)
 {
-    // 1. Paginare variabilă (Logica ta originală)
+    // 1. Paginare
     $page         = (int) $request->get('page', 1);
     $perPageFirst = 10;
     $perPageNext  = 8;
@@ -42,118 +42,145 @@ class ServiceController extends Controller
         $offset = $perPageFirst + (($page - 2) * $perPageNext);
     }
 
-    // 2. Query de bază
-    $query = Service::where('status', 'active');
+    // 2. Query de bază (Eager Loading)
+    $query = Service::with(['category', 'county'])->where('status', 'active');
 
-    // Variabilă pentru a ști dacă sortăm după relevanță sau dată
-    $isSearch = false; 
+    $hasRelevance = false; 
 
-    // ... în interiorul metodei index ...
-
-    // 3. CĂUTARE INTELIGENTĂ (FULL-TEXT + RELAȚII)
+    // 3. CĂUTARE AVANSATĂ
     if ($request->filled('search')) {
-        $isSearch = true;
-        $rawSearchTerm = $request->search; // Termenul original pentru LIKE (ex: "Bucuresti")
+        $rawSearchTerm = $request->search;
 
-        // 1. Pregătim termenul pentru Full-Text (ex: "+Bucuresti*")
+        // Curățare
         $cleanTerm = preg_replace('/[+\-><\(\)~*\"@]+/', ' ', $rawSearchTerm);
         $words = explode(' ', $cleanTerm);
-        $searchParts = [];
+        
+        $searchParts = []; // Pentru Full Text (+root*)
+        $rootsList   = []; // Pentru Categorii (root)
+        
         foreach($words as $word) {
-            if (strlen(trim($word)) > 2) {
-                $searchParts[] = '+' . $word . '*';
+            $word = trim($word);
+            $wordLower = mb_strtolower($word);
+            $len = mb_strlen($word);
+
+            if ($len > 2) {
+                $root = $word;
+
+                // --- REGULI RĂDĂCINI (ACELAȘI LOGIC CA ÎNAINTE) ---
+                if (str_starts_with($wordLower, 'electr')) { $root = 'electr'; } 
+                elseif (str_starts_with($wordLower, 'instal')) { $root = 'instal'; }
+                elseif (str_starts_with($wordLower, 'constr')) { $root = 'constr'; }
+                elseif (str_starts_with($wordLower, 'amenaj')) { $root = 'amenaj'; }
+                elseif (str_starts_with($wordLower, 'acoperi')) { $root = 'acoperi'; }
+                elseif (str_starts_with($wordLower, 'parchet')) { $root = 'parchet'; }
+                elseif (str_starts_with($wordLower, 'termopan')) { $root = 'termopan'; }
+                elseif (str_starts_with($wordLower, 'frigo')) { $root = 'frigo'; }
+                elseif (str_starts_with($wordLower, 'curat')) { $root = 'curat'; }
+                elseif (str_starts_with($wordLower, 'mobil')) { $root = 'mobil'; }
+                elseif (str_starts_with($wordLower, 'faian')) { $root = 'faian'; } // faiantar/faianta
+                elseif (str_starts_with($wordLower, 'zugrav')) { $root = 'zugrav'; } // zugravi/zugrav
+                else {
+                    // Fallback generic
+                    if ($len > 5 && str_ends_with($wordLower, 'uri')) {
+                        $root = mb_substr($word, 0, -3);
+                    } elseif ($len > 4 && str_ends_with($wordLower, 'i')) {
+                        $root = mb_substr($word, 0, -1);
+                        if (str_ends_with(mb_strtolower($root), 'ien')) {
+                            $root = mb_substr($root, 0, -3);
+                        }
+                    } elseif ($len > 5 && str_ends_with($wordLower, 'ele')) {
+                        $root = mb_substr($word, 0, -3);
+                    } elseif ($len > 8) {
+                        $root = mb_substr($word, 0, 7);
+                    }
+                }
+
+                if (mb_strlen($root) < 3) { $root = $word; }
+
+                // Adăugăm în listele de căutare
+                $searchParts[] = '+' . $root . '*'; // Pentru MySQL FullText
+                $rootsList[]   = $root;            // Pentru Categorii/Județe
             }
         }
+        
         $fullTextQuery = implode(' ', $searchParts);
 
-        // 2. Construim Query-ul Compus
-        $query->where(function($q) use ($fullTextQuery, $rawSearchTerm) {
+        // --- CONSTRUCȚIA QUERY-ULUI ---
+        $query->where(function($q) use ($fullTextQuery, $rawSearchTerm, $rootsList) {
             
-            // A. Căutare în Titlu și Descriere (Prioritară - Full Text)
+            // A. Full Text Search (Titlu/Descriere)
             if (!empty($fullTextQuery)) {
                 $q->whereRaw("MATCH(title, description) AGAINST(? IN BOOLEAN MODE)", [$fullTextQuery]);
             } else {
-                // Fallback la LIKE dacă cuvântul e prea scurt
                 $q->where('title', 'like', "%{$rawSearchTerm}%")
                   ->orWhere('description', 'like', "%{$rawSearchTerm}%");
             }
 
-            // B. Căutare în Numele Categoriei (ex: caută "Electrician")
-            $q->orWhereHas('category', function ($catQ) use ($rawSearchTerm) {
-                $catQ->where('name', 'like', "%{$rawSearchTerm}%");
-            });
+            // B. Căutare în Categorie folosind RĂDĂCINILE (Aici era problema!)
+            if (!empty($rootsList)) {
+                $q->orWhereHas('category', function ($catQ) use ($rootsList) {
+                    $catQ->where(function($subQ) use ($rootsList) {
+                        foreach ($rootsList as $root) {
+                            // Caută dacă numele categoriei conține rădăcina (ex: "electr" în "Electrician")
+                            $subQ->orWhere('name', 'like', "%{$root}%");
+                        }
+                    });
+                });
 
-            // C. Căutare în Numele Județului (ex: caută "Bucuresti")
-            $q->orWhereHas('county', function ($countyQ) use ($rawSearchTerm) {
-                $countyQ->where('name', 'like', "%{$rawSearchTerm}%");
-            });
-            
-            // D. (Opțional) Căutare în Oraș (dacă ai coloana city în services)
-            // $q->orWhere('city', 'like', "%{$rawSearchTerm}%");
+                // C. Căutare în Județ folosind RĂDĂCINILE
+                $q->orWhereHas('county', function ($countyQ) use ($rootsList) {
+                    $countyQ->where(function($subQ) use ($rootsList) {
+                        foreach ($rootsList as $root) {
+                            $subQ->orWhere('name', 'like', "%{$root}%");
+                        }
+                    });
+                });
+            } else {
+                // Fallback la termenul brut dacă nu avem rădăcini
+                 $q->orWhereHas('category', fn($c) => $c->where('name', 'like', "%{$rawSearchTerm}%"))
+                   ->orWhereHas('county', fn($c) => $c->where('name', 'like', "%{$rawSearchTerm}%"));
+            }
         });
 
-        // 3. Selectăm scorul de relevanță (Doar pentru partea de text)
-        // Notă: Dacă găsește doar în Categorie, relevanța va fi 0, dar anunțul va apărea.
+        // Calcul Relevanță
         if (!empty($fullTextQuery)) {
             $query->selectRaw("*, MATCH(title, description) AGAINST(? IN BOOLEAN MODE) as relevance", [$fullTextQuery]);
-            // Ordonăm: întâi după relevanță text, apoi cele mai noi
-            $query->orderByDesc('relevance')->orderByDesc('created_at');
-        } else {
-            $query->orderByDesc('created_at');
+            $hasRelevance = true;
         }
-
-    } else {
-        // Dacă nu se caută nimic, ordonare standard
-        $isSearch = false;
-        $query->orderBy('created_at', 'desc');
     }
 
-    // 4. Filtru județ
+    // 4. Filtre Standard
     if ($request->filled('county')) {
         $query->where('county_id', $request->county);
     }
-
-    // 5. Filtru categorie
     if ($request->filled('category')) {
         $query->where('category_id', $request->category);
     }
 
-    // 6. Total count (trebuie calculat înainte de limit/offset)
-    // Notă: La full-text search complex, count() poate fi tricky, dar Laravel se descurcă de obicei.
+    // 5. Sortare
     $totalCount = $query->count();
 
-    // 7. Sortare și Paginare finală
-    if ($isSearch) {
-        // Dacă a căutat ceva, cele mai relevante apar primele
-        $query->orderByDesc('relevance');
+    if ($hasRelevance) {
+        $query->orderByDesc('relevance')->orderByDesc('created_at');
     } else {
-        // Dacă navighează normal, cele mai noi apar primele
         $query->orderBy('created_at', 'desc');
     }
 
-    $services = $query
-        ->offset($offset)
-        ->limit($limit)
-        ->get();
-
+    // 6. Fetch
+    $services = $query->offset($offset)->limit($limit)->get();
     $loadedSoFar = $offset + $services->count();
     $hasMore     = $loadedSoFar < $totalCount;
 
-    // 8. Context SEO
-    $currentCategory = $request->attributes->get('currentCategory');
-    $currentCounty   = $request->attributes->get('currentCounty');
+    // 7. View Data
+    $categories = Category::orderBy('sort_order', 'asc')->get(); // Optimizare: nu le lua în fiecare request AJAX
+    $counties   = County::orderBy('name')->get();
 
-    if (!$currentCategory && $request->filled('category')) {
-        $currentCategory = Category::find($request->category);
-    }
-    if (!$currentCounty && $request->filled('county')) {
-        $currentCounty = County::find($request->county);
-    }
+    $currentCategory = $request->filled('category') ? $categories->firstWhere('id', $request->category) : null;
+    $currentCounty   = $request->filled('county')   ? $counties->firstWhere('id', $request->county)   : null;
 
-    // 9. RĂSPUNS AJAX
+    // 8. Răspuns
     if ($request->ajax() || $request->input('ajax') == 1) {
         $html = view('services.partials.service_cards', ['services' => $services])->render();
-
         return response()->json([
             'html'        => $html,
             'hasMore'     => $hasMore,
@@ -162,17 +189,8 @@ class ServiceController extends Controller
         ]);
     }
 
-    // 10. RĂSPUNS NORMAL
-    return view('services.index', [
-        'services'        => $services,
-        'counties'        => County::orderBy('name')->get(),
-        'categories'      => Category::orderBy('sort_order', 'asc')->get(),
-        'hasMore'         => $hasMore,
-        'currentCategory' => $currentCategory,
-        'currentCounty'   => $currentCounty,
-    ]);
+    return view('services.index', compact('services', 'categories', 'counties', 'hasMore', 'currentCategory', 'currentCounty'));
 }
-
     /*
     |--------------------------------------------------------------------------
     | INDEX LOCATION – RUTE SEO
