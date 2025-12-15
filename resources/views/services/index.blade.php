@@ -207,7 +207,7 @@
                         Vreau statusul de Fondator
                     </a>
                     <p class="text-xs text-gray-500">
-                        *Mai sunt <span class="font-bold text-gray-800 dark:text-gray-200" id="static-spots-count">842</span> locuri disponibile
+                        *Mai sunt <span class="font-bold text-gray-800 dark:text-gray-200" id="static-spots-count">998</span> locuri disponibile
                     </p>
                 </div>
             </div>
