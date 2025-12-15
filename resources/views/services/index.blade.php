@@ -164,6 +164,119 @@
 @endsection
 
 @section('content')
+{{-- BANNER PRE-LANSARE: MEMBRU FONDATOR (Structura simpla - Vizibilitate maxima) --}}
+<div class="max-w-7xl mx-auto px-4 mt-6 md:mt-10 mb-8">
+    <div class="relative overflow-hidden rounded-xl border border-red-100 dark:border-red-900/30 bg-white dark:bg-[#1E1E1E] shadow-lg">
+        
+        {{-- Background visual element (subtle) --}}
+        <div class="absolute top-0 right-0 -mt-4 -mr-4 w-24 h-24 rounded-full bg-red-500/10 blur-xl"></div>
+
+        <div class="flex flex-col md:flex-row items-center justify-between px-5 py-5 md:px-8 md:py-6 gap-6">
+            
+            {{-- ZONA 1: Text & Ofertă --}}
+            <div class="flex-1 text-center md:text-left z-10">
+                <div class="flex items-center justify-center md:justify-start gap-3 mb-2">
+                    <span class="bg-[#CC2E2E] text-white text-[10px] md:text-xs font-bold px-2 py-0.5 rounded uppercase tracking-wide">
+                        Funcțional 100%
+                    </span>
+                    <span class="text-red-600 dark:text-red-400 text-xs font-semibold animate-pulse">
+                        ● Live Acum
+                    </span>
+                </div>
+
+                <h3 class="text-lg md:text-2xl font-bold text-gray-900 dark:text-white leading-tight mb-2">
+                    Fii <span class="text-[#CC2E2E]">Membru Fondator</span> MeseriasBun.ro!
+                </h3>
+
+                <p class="text-sm text-gray-600 dark:text-gray-300 mb-4 max-w-2xl mx-auto md:mx-0">
+                    Lansarea oficială e pe 1 Februarie, dar poți publica anunțuri de azi! 
+                    <br class="hidden md:block">
+                    
+                    <span class="text-lg font-bold text-[#CC2E2E] dark:text-red-400">
+                        Primii 1.000 de utilizatori care <span class="underline">crează cont și publică un anunț</span>
+                    </span> primesc statusul de <em>Fondator</em>:
+                    
+                    <span class="inline-block bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-200 text-xs px-2 py-0.5 rounded font-bold border border-yellow-200 dark:border-yellow-800 ml-1 mt-1">
+                        Reactualizare Anunț Gratuită & Nelimitată
+                    </span>
+                </p>
+
+                {{-- Buton CTA --}}
+                <div class="flex flex-col sm:flex-row items-center gap-3 justify-center md:justify-start">
+                    <a href="{{ route('register') }}" class="w-full sm:w-auto px-6 py-2.5 bg-[#CC2E2E] hover:bg-[#a82424] text-white text-sm font-bold rounded-lg shadow-md transition-all transform hover:-translate-y-0.5 text-center">
+                        Vreau statusul de Fondator
+                    </a>
+                    <p class="text-xs text-gray-500">
+                        *Mai sunt <span class="font-bold text-gray-800 dark:text-gray-200" id="static-spots-count">842</span> locuri disponibile
+                    </p>
+                </div>
+            </div>
+
+            {{-- ZONA 2: Countdown Timer (CU SECUNDE) --}}
+            <div class="shrink-0 bg-gray-50 dark:bg-white/5 border border-gray-100 dark:border-gray-700 rounded-lg p-4 text-center min-w-[200px]">
+                <p class="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-2 uppercase tracking-wider">
+                    Lansare Oficială în:
+                </p>
+                <div class="flex items-center justify-center gap-1 text-[#CC2E2E]" id="countdown-timer">
+                    <div class="flex flex-col">
+                        <span class="text-xl md:text-2xl font-extrabold leading-none" id="days">00</span>
+                        <span class="text-[9px] text-gray-500 font-medium">ZILE</span>
+                    </div>
+                    <span class="text-lg font-bold -mt-2">:</span>
+                    <div class="flex flex-col">
+                        <span class="text-xl md:text-2xl font-extrabold leading-none" id="hours">00</span>
+                        <span class="text-[9px] text-gray-500 font-medium">ORE</span>
+                    </div>
+                    <span class="text-lg font-bold -mt-2">:</span>
+                    <div class="flex flex-col">
+                        <span class="text-xl md:text-2xl font-extrabold leading-none" id="minutes">00</span>
+                        <span class="text-[9px] text-gray-500 font-medium">MIN</span>
+                    </div>
+                    <span class="text-lg font-bold -mt-2">:</span>
+                    <div class="flex flex-col">
+                        <span class="text-xl md:text-2xl font-extrabold leading-none" id="seconds">00</span>
+                        <span class="text-[9px] text-gray-500 font-medium">SEC</span>
+                    </div>
+                </div>
+                <div class="mt-2 text-[10px] text-gray-400">
+                    1 Februarie 2026
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+{{-- SCRIPT PENTRU COUNTDOWN CU SECUNDE --}}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // DATA SETATA: 1 Februarie 2026
+        const launchDate = new Date(2026, 1, 1, 0, 0, 0).getTime();
+
+        const timer = setInterval(function() {
+            const now = new Date().getTime();
+            const distance = launchDate - now;
+
+            if (distance < 0) {
+                clearInterval(timer);
+                document.getElementById("countdown-timer").innerHTML = "<span class='text-lg font-bold text-green-600'>LANSAT!</span>";
+                return;
+            }
+
+            const days = Math.floor(distance / (1000 * 60 * 60 * 24));
+            const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+
+            const pad = (num) => num < 10 ? "0" + num : num;
+
+            document.getElementById("days").innerText = pad(days);
+            document.getElementById("hours").innerText = pad(hours);
+            document.getElementById("minutes").innerText = pad(minutes);
+            document.getElementById("seconds").innerText = pad(seconds);
+        }, 1000);
+    });
+</script>
 
 {{-- TITLU LISTĂ --}}
 <div class="mt-8 md:mt-12 mb-8 flex items-center gap-3 max-w-7xl mx-auto px-4">
