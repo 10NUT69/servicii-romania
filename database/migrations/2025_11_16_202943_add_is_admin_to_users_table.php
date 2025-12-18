@@ -9,15 +9,14 @@ return new class extends Migration
     /**
      * Run the migrations.
      */
-    public function up(): void
-    {
+   public function up(): void
+{
+    if (!Schema::hasColumn('users', 'is_admin')) {
         Schema::table('users', function (Blueprint $table) {
-            // Dacă nu există deja coloana, o adăugăm
-            if (!Schema::hasColumn('users', 'is_admin')) {
-                $table->boolean('is_admin')->default(0)->after('password');
-            }
+            $table->boolean('is_admin')->default(false)->after('password');
         });
     }
+}
 
     /**
      * Reverse the migrations.
