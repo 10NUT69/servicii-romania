@@ -131,6 +131,32 @@ class ProfileController extends Controller
         ]);
     }
 
+/**
+ * ------------------------------------------------------------
+ * LIVE CHECK — Email (PROFILE)
+ * ------------------------------------------------------------
+ */
+public function checkEmail(Request $request)
+{
+    $request->validate([
+        'email' => 'required|email|max:120'
+    ]);
+
+    $email = trim($request->email);
+
+    $exists = User::where('email', $email)
+        ->where('id', '!=', Auth::id()) // exclude userul curent (profil)
+        ->exists();
+
+    return response()->json([
+        'available' => !$exists,
+        'message'   => $exists
+            ? 'Emailul este deja utilizat.'
+            : 'Emailul este disponibil.'
+    ]);
+}
+
+
 
     /**
      * ------------------------------------------------------------
