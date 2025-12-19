@@ -42,18 +42,21 @@ Route::get('/contul-meu', function () {
 |--------------------------------------------------------------------------
 */
 
-// CHECK USERNAME
-Route::post('/profile/check-name', [ProfileController::class, 'checkName'])
-    ->name('profile.checkName');
+// Grupăm rutele care au nevoie de protecție anti-spam (30 cereri / minut)
+Route::middleware('throttle:30,1')->group(function () {
+    
+    // CHECK USERNAME
+    Route::post('/profile/check-name', [ProfileController::class, 'checkName'])
+        ->name('profile.checkName');
 
-// CHECK EMAIL
-Route::post('/profile/check-email', [ProfileController::class, 'checkEmail'])
-    ->name('profile.checkEmail');
+    // CHECK EMAIL
+    Route::post('/profile/check-email', [ProfileController::class, 'checkEmail'])
+        ->name('profile.checkEmail');
+});
 
-// AJAX UPDATE PROFIL
+// AJAX UPDATE PROFIL (Rămâne separat pentru că cere autentificare)
 Route::post('/profile/ajax-update', [ProfileController::class, 'ajaxUpdate'])
     ->middleware('auth')->name('profile.ajaxUpdate');
-
 
 /*
 |--------------------------------------------------------------------------
@@ -82,7 +85,8 @@ Route::post('/services/{id}/renew', [ServiceController::class, 'renew'])->name('
 */
 
 Route::middleware(['auth', 'admin.access'])
-    ->prefix('admin')
+    // 👇 AICI ESTE SCHIMBAREA: În loc de 'admin', punem numele secret
+    ->prefix('panou-secret-mb') 
     ->name('admin.')
     ->group(function () {
 
@@ -162,5 +166,4 @@ Route::get('/{category}/{county}/{slug}-{id}', [ServiceController::class, 'show'
     ->where(['id' => '[0-9]+', 'slug' => '.*'])
     ->name('service.show');
 	
-Route::get('/sitemap.xml', [SitemapController::class, 'index'])
-    ->name('sitemap');
+

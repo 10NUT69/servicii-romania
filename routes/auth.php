@@ -15,17 +15,23 @@ Route::middleware('guest')->group(function () {
     Route::get('register', [RegisteredUserController::class, 'create'])
         ->name('register');
 
-    Route::post('register', [RegisteredUserController::class, 'store']);
+    // 🔥 MODIFICAT: Limită strictă - 1 cont la 30 de minute
+    Route::post('register', [RegisteredUserController::class, 'store'])
+        ->middleware('throttle:1,30');
 
     Route::get('login', [AuthenticatedSessionController::class, 'create'])
         ->name('login');
 
-    Route::post('login', [AuthenticatedSessionController::class, 'store']);
+    // 🔥 MODIFICAT: Protecție Brute Force - 5 încercări pe minut
+    Route::post('login', [AuthenticatedSessionController::class, 'store'])
+        ->middleware('throttle:5,1');
 
     Route::get('forgot-password', [PasswordResetLinkController::class, 'create'])
         ->name('password.request');
 
+    // 🔥 MODIFICAT: Anti-Spam Email - 3 cereri pe minut
     Route::post('forgot-password', [PasswordResetLinkController::class, 'store'])
+        ->middleware('throttle:3,1')
         ->name('password.email');
 
     Route::get('reset-password/{token}', [NewPasswordController::class, 'create'])
