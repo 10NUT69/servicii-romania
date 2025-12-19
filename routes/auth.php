@@ -17,7 +17,7 @@ Route::middleware('guest')->group(function () {
 
     // 🔥 MODIFICAT: Limită strictă - 1 cont la 30 de minute
     Route::post('register', [RegisteredUserController::class, 'store'])
-        ->middleware('throttle:1,10');
+        ->middleware('throttle:3,10');
 
     Route::get('login', [AuthenticatedSessionController::class, 'create'])
         ->name('login');
