@@ -24,7 +24,7 @@ Route::middleware('guest')->group(function () {
 
     // 🔥 MODIFICAT: Protecție Brute Force - 5 încercări pe minut
     Route::post('login', [AuthenticatedSessionController::class, 'store'])
-        ->middleware('throttle:5,1');
+        ->middleware('throttle:5,10');
 
     Route::get('forgot-password', [PasswordResetLinkController::class, 'create'])
         ->name('password.request');
