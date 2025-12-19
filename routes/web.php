@@ -139,6 +139,17 @@ Route::view('/politica-confidentialitate', 'services.privacy')->name('page.priva
 
 Route::get('/sitemap.xml', [SitemapController::class, 'index'])
     ->name('sitemap');
+
+Route::get('/debug-ip', function () {
+    return response()->json([
+        'ip' => request()->ip(),
+        'cf_connecting_ip' => request()->header('CF-Connecting-IP'),
+        'x_forwarded_for' => request()->header('X-Forwarded-For'),
+        'remote_addr' => request()->server('REMOTE_ADDR'),
+    ]);
+});
+
+
 /*
 |--------------------------------------------------------------------------
 | SEO ROUTES (CATEGORIE / CATEGORIE + JUDEȚ / ANUNȚ)
@@ -166,12 +177,3 @@ Route::get('/{category}/{county}/{slug}-{id}', [ServiceController::class, 'show'
     ->where(['id' => '[0-9]+', 'slug' => '.*'])
     ->name('service.show');
 	
-Route::get('/debug-ip', function () {
-    return response()->json([
-        'ip' => request()->ip(),
-        'cf_connecting_ip' => request()->header('CF-Connecting-IP'),
-        'x_forwarded_for' => request()->header('X-Forwarded-For'),
-        'remote_addr' => request()->server('REMOTE_ADDR'),
-    ]);
-});
-
