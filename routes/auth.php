@@ -16,15 +16,15 @@ Route::middleware('guest')->group(function () {
         ->name('register');
 
     // 🔥 MODIFICAT: Limită strictă - 1 cont la 30 de minute
-    Route::post('register', [RegisteredUserController::class, 'store']);
-     
+    Route::post('register', [RegisteredUserController::class, 'store'])
+     >middleware('throttle:8,10');
 
     Route::get('login', [AuthenticatedSessionController::class, 'create'])
         ->name('login');
 
     // 🔥 MODIFICAT: Protecție Brute Force - 5 încercări pe minut
     Route::post('login', [AuthenticatedSessionController::class, 'store'])
-        ->middleware('throttle:5,10');
+        ->middleware('throttle:5,1');
 
     Route::get('forgot-password', [PasswordResetLinkController::class, 'create'])
         ->name('password.request');
