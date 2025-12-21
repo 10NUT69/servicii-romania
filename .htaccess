@@ -1,0 +1,55 @@
+<IfModule LiteSpeed>
+    # --- LSCache (SAFE START) ---
+    CacheLookup on
+    CacheEnable public /
+
+    # TTL global (începe conservator: 5 minute)
+    CacheTTL 300
+
+    # Nu cache-ui pagini când există sesiune / CSRF (user logat, formulare etc.)
+    CacheDisableCookie laravel_session
+    CacheDisableCookie XSRF-TOKEN
+
+    # --- Excluderi Auth ---
+    CacheDisable /login
+    CacheDisable /register
+    CacheDisable /forgot-password
+    CacheDisable /reset-password
+    CacheDisable /confirm-password
+    CacheDisable /verify-email
+
+    # --- Excluderi cont + creare/editare anunț ---
+    CacheDisable /contul-meu
+    CacheDisable /adauga-anunt
+    CacheDisable /anunt
+
+    # --- Excluderi admin ---
+    CacheDisable /panou-secret-mb
+
+    # --- Excluderi utilitare ---
+    CacheDisable /up
+
+    # Sitemap: îl poți lăsa cache-uit (e ok), sau îl poți exclude dacă îl generezi dinamic
+    # CacheDisable /sitemap.xml
+</IfModule>
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # Securitate de bază
+    Options -MultiViews -Indexes
+
+    # Permite Authorization Header (pentru API / tokens)
+    RewriteCond %{HTTP:Authorization} .
+    RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
+
+    # Elimină slash-ul final (pentru URL-uri care nu sunt directoare reale)
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteCond %{REQUEST_URI} (.+)/$
+    RewriteRule ^ %1 [L,R=301]
+
+    # Trimite totul către index.php (Laravel Front Controller)
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteRule ^ index.php [L]
+</IfModule>
