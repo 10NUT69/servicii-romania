@@ -293,7 +293,7 @@ if (auth()->check() || request()->hasCookie('laravel_session')) {
 }
 
 return $response
-    ->header('Cache-Control', 'public, max-age=300')
+    ->header('Cache-Control', 'public, max-age=600')
     ->header('Vary', 'Accept-Encoding, Cookie');
     }
 
