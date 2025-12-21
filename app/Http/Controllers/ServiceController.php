@@ -199,7 +199,16 @@ class ServiceController extends Controller
         $currentCategory = $request->filled('category') ? $categories->firstWhere('id', $request->category) : null;
         $currentCounty   = $request->filled('county')   ? $counties->firstWhere('id', $request->county)   : null;
 
-        return view('services.index', compact('services', 'categories', 'counties', 'hasMore', 'currentCategory', 'currentCounty'));
+        return response()
+    ->view('services.index', compact(
+        'services',
+        'categories',
+        'counties',
+        'hasMore',
+        'currentCategory',
+        'currentCounty'
+    ))
+    ->header('Cache-Control', 'public, max-age=300');
     }
     /*
     |--------------------------------------------------------------------------
@@ -263,7 +272,9 @@ class ServiceController extends Controller
             $service->increment('views');
         }
 
-        return view('services.show', compact('service'));
+        return response()
+    ->view('services.show', compact('service'))
+    ->header('Cache-Control', 'public, max-age=300');
     }
 
     /*
