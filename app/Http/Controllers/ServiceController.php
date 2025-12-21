@@ -181,15 +181,22 @@ class ServiceController extends Controller
         $hasMore     = $loadedSoFar < $totalCount;
 
         // 7. View Data & Response
-        if ($request->ajax() || $request->input('ajax') == 1) {
-            $html = view('services.partials.service_cards', ['services' => $services])->render();
-            return response()->json([
-                'html'        => $html,
-                'hasMore'     => $hasMore,
-                'total'       => $totalCount,
-                'loadedCount' => $services->count(),
-            ]);
-        }
+        if ($request->ajax() || (string) $request->input('ajax') === '1') {
+    $html = view('services.partials.service_cards', ['services' => $services])->render();
+
+    return response()
+        ->json([
+            'html'        => $html,
+            'hasMore'     => $hasMore,
+            'total'       => $totalCount,
+            'loadedCount' => $services->count(),
+        ])
+        ->header('Cache-Control', 'no-store, no-cache, must-revalidate')
+        ->header('Pragma', 'no-cache')
+        ->header('Expires', '0')
+        ->header('Vary', 'Accept-Encoding, Cookie, X-Requested-With');
+}
+
 
         // Pentru load normal (SSR)
         // Optimizare: cache sau doar interogare simplă
@@ -199,16 +206,23 @@ class ServiceController extends Controller
         $currentCategory = $request->filled('category') ? $categories->firstWhere('id', $request->category) : null;
         $currentCounty   = $request->filled('county')   ? $counties->firstWhere('id', $request->county)   : null;
 
-        return response()
-    ->view('services.index', compact(
-        'services',
-        'categories',
-        'counties',
-        'hasMore',
-        'currentCategory',
-        'currentCounty'
-    ))
-    ->header('Cache-Control', 'public, max-age=300');
+        $response = response()->view('services.index', compact(
+    'services',
+    'categories',
+    'counties',
+    'hasMore',
+    'currentCategory',
+    'currentCounty'
+));
+
+if (auth()->check() || $request->hasCookie('laravel_session')) {
+    return $response->header('Cache-Control', 'private, no-store, no-cache, must-revalidate');
+}
+
+return $response
+    ->header('Cache-Control', 'public, max-age=300')
+    ->header('Vary', 'Accept-Encoding, Cookie');
+
     }
     /*
     |--------------------------------------------------------------------------
@@ -272,9 +286,15 @@ class ServiceController extends Controller
             $service->increment('views');
         }
 
-        return response()
-    ->view('services.show', compact('service'))
-    ->header('Cache-Control', 'public, max-age=300');
+        $response = response()->view('services.show', compact('service'));
+
+if (auth()->check() || request()->hasCookie('laravel_session')) {
+    return $response->header('Cache-Control', 'private, no-store, no-cache, must-revalidate');
+}
+
+return $response
+    ->header('Cache-Control', 'public, max-age=300')
+    ->header('Vary', 'Accept-Encoding, Cookie');
     }
 
     /*
