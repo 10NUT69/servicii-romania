@@ -106,6 +106,12 @@ Route::middleware(['auth', 'admin.access'])
         Route::delete('/services/{id}', [AdminServiceController::class, 'destroy'])->name('services.destroy');
         Route::post('/services/{id}/toggle', [AdminServiceController::class, 'toggle'])->name('services.toggle');
         Route::post('/services/bulk', [AdminServiceController::class, 'bulkAction'])->name('services.bulk');
+		// SERVICES - EDIT (Admin)
+		Route::get('/services/{id}/edit', [AdminServiceController::class, 'edit'])->name('services.edit');
+		Route::put('/services/{id}', [AdminServiceController::class, 'update'])->name('services.update');
+		Route::delete('/services/{id}/image', [AdminServiceController::class, 'deleteImage'])->name('services.deleteImage');
+
+
 
         // CATEGORIES
         Route::get('/categories', [AdminCategoryController::class, 'index'])->name('categories.index');

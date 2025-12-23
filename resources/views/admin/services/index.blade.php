@@ -123,30 +123,44 @@
                                 </td>
 
                                 <td class="p-4 text-right">
-                                    <div class="flex items-center justify-end gap-2">
-                                        
-                                        @if(!$service->trashed())
-                                            {{-- Toggle --}}
-                                            <button type="button" onclick="toggleService({{ $service->id }})" 
-                                                    class="p-2 border rounded-lg hover:bg-slate-50 text-slate-500" title="Activează/Dezactivează">
-                                                <i class="fas {{ $service->is_active ? 'fa-pause' : 'fa-play' }}"></i>
-                                            </button>
+    <div class="flex items-center justify-end gap-2">
 
-                                            {{-- Soft Delete (Coș) --}}
-                                            <button type="button" onclick="deleteSoft({{ $service->id }})"
-                                                    class="p-2 border border-orange-200 text-orange-500 rounded-lg hover:bg-orange-50" title="Mută în Coș">
-                                                <i class="fas fa-archive"></i>
-                                            </button>
-                                        @endif
+        {{-- EDIT (ADMIN) --}}
+        <a href="{{ route('admin.services.edit', $service->id) }}"
+           class="p-2 border border-blue-200 text-blue-600 rounded-lg hover:bg-blue-50"
+           title="Editează anunț">
+            <i class="fas fa-pen"></i>
+        </a>
 
-                                        {{-- Force Delete (Definitiv) --}}
-                                        <button type="button" onclick="deleteForce({{ $service->id }})"
-                                                class="p-2 border border-red-200 text-red-600 rounded-lg hover:bg-red-50" title="Șterge DEFINITIV">
-                                            <i class="fas fa-trash-alt"></i>
-                                        </button>
+        @if(!$service->trashed())
+            {{-- Toggle --}}
+            <button type="button"
+                    onclick="toggleService({{ $service->id }})" 
+                    class="p-2 border rounded-lg hover:bg-slate-50 text-slate-500"
+                    title="Activează / Dezactivează">
+                <i class="fas {{ $service->is_active ? 'fa-pause' : 'fa-play' }}"></i>
+            </button>
 
-                                    </div>
-                                </td>
+            {{-- Soft Delete (Coș) --}}
+            <button type="button"
+                    onclick="deleteSoft({{ $service->id }})"
+                    class="p-2 border border-orange-200 text-orange-500 rounded-lg hover:bg-orange-50"
+                    title="Mută în Coș">
+                <i class="fas fa-archive"></i>
+            </button>
+        @endif
+
+        {{-- Force Delete (Definitiv) --}}
+        <button type="button"
+                onclick="deleteForce({{ $service->id }})"
+                class="p-2 border border-red-200 text-red-600 rounded-lg hover:bg-red-50"
+                title="Șterge DEFINITIV">
+            <i class="fas fa-trash-alt"></i>
+        </button>
+
+    </div>
+</td>
+
                             </tr>
                         @empty
                             <tr><td colspan="4" class="p-8 text-center text-slate-400">Nu există date.</td></tr>

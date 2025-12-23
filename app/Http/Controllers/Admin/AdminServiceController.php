@@ -4,8 +4,10 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Service;
+use App\Models\Category;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+
 
 class AdminServiceController extends Controller
 {
@@ -44,6 +46,80 @@ class AdminServiceController extends Controller
 
         return view('admin.services.index', compact('services'));
     }
+	// ==========================================================
+// 1B. EDIT FORM (Admin) - titlu, descriere, categorie
+// ==========================================================
+public function edit($id)
+{
+    $service = Service::withTrashed()
+        ->with(['category', 'county', 'user'])
+        ->findOrFail($id);
+
+    // Luăm categorii pentru dropdown
+    $categories = Category::orderBy('sort_order', 'asc')->get();
+
+    return view('admin.services.edit', compact('service', 'categories'));
+}
+
+// ==========================================================
+// 1C. UPDATE (Admin) - titlu, descriere, categorie
+// ==========================================================
+public function update(Request $request, $id)
+{
+    $service = Service::withTrashed()->findOrFail($id);
+
+    $data = $request->validate([
+        'title'       => 'required|string|max:255',
+        'description' => 'required|string|max:10000',
+        'category_id' => 'required|exists:categories,id',
+    ]);
+
+    // Update doar ce vrei tu (fără slug/status/is_active etc.)
+    $service->title = $data['title'];
+    $service->description = $data['description'];
+    $service->category_id = $data['category_id'];
+    $service->save();
+
+    return back()->with('success', 'Anunț actualizat.');
+}
+
+// ==========================================================
+// 1D. DELETE IMAGE (Admin) - șterge din DB + din server
+// ==========================================================
+public function deleteImage(Request $request, $id)
+{
+    $service = Service::withTrashed()->findOrFail($id);
+
+    $request->validate([
+        'image' => 'required|string',
+    ]);
+
+    $imageName = $request->input('image');
+
+    $images = $service->images;
+    if (is_string($images)) $images = json_decode($images, true);
+    if (!is_array($images)) $images = [];
+
+    // imaginea trebuie să existe în array
+    if (!in_array($imageName, $images, true)) {
+        return back()->with('error', 'Imaginea nu a fost găsită în acest anunț.');
+    }
+
+    // scoatem din array
+    $images = array_values(array_filter($images, fn($img) => $img !== $imageName));
+
+    // ștergem fizic fișierul (storage/app/public/services/)
+    $path = storage_path("app/public/services/" . $imageName);
+    if (file_exists($path)) {
+        @unlink($path);
+    }
+
+    // salvăm în DB: dacă rămâne gol, punem null (ca la logica ta)
+    $service->images = count($images) ? $images : null;
+    $service->save();
+
+    return back()->with('success', 'Imagine ștearsă.');
+}
 
     // ==========================================================
     // 2. BULK ACTIONS (LOGICA PRINCIPALĂ CERUTĂ)
