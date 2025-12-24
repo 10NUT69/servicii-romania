@@ -23,7 +23,7 @@
 <div class="relative w-full bg-gray-900 group">
     
     {{-- A. IMAGINE + OVERLAY --}}
-    <div class="absolute inset-0 h-[450px] md:h-[480px] w-full overflow-hidden z-0">
+    <div class="absolute inset-0 h-[440px] md:h-[350px] w-full overflow-hidden z-0">
         {{-- Imagine Desktop --}}
         <img src="{{ asset('images/hero-desktop.webp') }}" alt="Meserias Bun Fundal" 
              class="hidden md:block w-full h-full object-cover object-center transform transition duration-1000 group-hover:scale-105">
@@ -37,23 +37,23 @@
     </div>
 
     {{-- B. CONȚINUT TEXT --}}
-    <div class="relative z-10 max-w-7xl mx-auto px-4 h-auto md:h-[480px] flex flex-col justify-start md:justify-center items-start pt-24 pb-4 md:pt-16 md:pb-8">
-        
+<div class="relative z-10 max-w-7xl mx-auto px-4 h-auto md:h-[350px] flex flex-col justify-start md:justify-center items-start pt-20 pb-4 md:pt-10 md:pb-8">        
         <h1 class="text-white font-extrabold tracking-tight drop-shadow-xl text-left mb-2 md:mb-4 max-w-2xl animate-in slide-in-from-left-4 duration-700">
-            <span class="block text-3xl md:text-4xl lg:text-5xl mb-1 md:mb-2">GĂSEȘTI MEȘTERI</span>
-            <span class="block text-3xl md:text-4xl lg:text-5xl text-white font-black">
-                VERIFICAȚI, RAPID!
-            </span>
+           {{-- Am redus dimensiunile fonturilor --}}
+<span class="block text-2xl md:text-3xl lg:text-4xl mb-1 md:mb-2">GĂSEȘTI MEȘTERI</span>
+<span class="block text-2xl md:text-3xl lg:text-4xl text-white font-black">
+    VERIFICAȚI, RAPID!
+</span>
         </h1>
 
         <p class="text-gray-200 text-sm md:text-lg max-w-xl font-medium mb-4 md:mb-8 leading-relaxed shadow-black drop-shadow-md hidden md:block">
-            Cea mai simplă metodă să găsești profesioniști pentru proiectul tău, oriunde în România.
+            Găsești profesioniști pentru proiectul tău, oriunde în România.
         </p>
 
     </div>
 
     {{-- C. BARA DE CĂUTARE --}}
-    <div class="relative z-30 max-w-7xl mx-auto px-4 mt-4 md:-mt-32 pb-4">
+    <div class="relative z-30 max-w-7xl mx-auto px-4 mt-2 md:-mt-24 pb-4">
         
         <form id="search-form" onsubmit="event.preventDefault(); loadServices(1);"
             class="relative w-full transition-all duration-300 ease-out grid grid-cols-1 md:grid-cols-12 gap-3 md:gap-4 bg-transparent p-0">
@@ -165,7 +165,7 @@
 
 @section('content')
 {{-- BANNER PRE-LANSARE: MEMBRU FONDATOR (Structura simpla - Vizibilitate maxima) --}}
-<div class="max-w-7xl mx-auto px-4 mt-6 md:mt-10 mb-8">
+<div class="max-w-7xl mx-auto px-4 mt-1 md:mt-10 mb-8">
     <div class="relative overflow-hidden rounded-xl border border-red-100 dark:border-red-900/30 bg-white dark:bg-[#1E1E1E] shadow-lg">
         
         {{-- Background visual element (subtle) --}}
