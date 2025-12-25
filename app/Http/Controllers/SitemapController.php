@@ -8,13 +8,13 @@ use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Illuminate\Support\Str;
 
 class SitemapController extends Controller
 {
     public function index(): Response
     {
-        // --- 1. LOGICA DE CACHE (Rămâne neschimbată) ---
+        // --- 1. LOGICA DE CACHE (Standard) ---
+        // Verificăm data ultimei modificări pentru a nu regenera inutil
         $latestCategory = Category::query()
             ->select(['updated_at', 'created_at'])
             ->orderByDesc('updated_at')
@@ -40,10 +40,12 @@ class SitemapController extends Controller
         $todayKey = 'sitemap.xml:' . now()->toDateString();
         $yesterdayKey = 'sitemap.xml:' . now()->subDay()->toDateString();
 
+        // Dacă avem sitemap-ul de azi în cache, îl servim
         if (Cache::has($todayKey)) {
             return response(Cache::get($todayKey), 200)->header('Content-Type', 'text/xml');
         }
 
+        // Dacă nu s-a schimbat nimic de ieri, servim versiunea de ieri
         $yesterdayMetaKey = $yesterdayKey . ':generated_at';
         if (Cache::has($yesterdayKey) && Cache::has($yesterdayMetaKey)) {
             $yesterdayGeneratedAt = Cache::get($yesterdayMetaKey);
@@ -52,9 +54,10 @@ class SitemapController extends Controller
             }
         }
 
-        // --- 2. GENERARE XML ---
+        // --- 2. GENERARE SITEMAP NOU ---
         $xml = $this->buildSitemapXml();
 
+        // Salvăm în cache pentru 24h
         Cache::put($todayKey, $xml, now()->addDay());
         Cache::put($todayKey . ':generated_at', now(), now()->addDay());
 
@@ -65,7 +68,7 @@ class SitemapController extends Controller
     {
         $urls = [];
 
-        // 1. Home
+        // A. Homepage
         $urls[] = [
             'loc'        => url('/'),
             'lastmod'    => now()->toAtomString(),
@@ -73,7 +76,7 @@ class SitemapController extends Controller
             'priority'   => '1.0',
         ];
 
-        // 2. Static Pages
+        // B. Pagina Index Servicii
         if (Route::has('services.index')) {
             $urls[] = [
                 'loc'        => route('services.index'),
@@ -83,7 +86,7 @@ class SitemapController extends Controller
             ];
         }
 
-        // 3. Categorii
+        // C. Categorii
         Category::query()
             ->select(['id', 'slug', 'updated_at', 'created_at'])
             ->orderBy('id')
@@ -98,9 +101,11 @@ class SitemapController extends Controller
                 }
             });
 
-        // 4. SERVICII ACTIVE
+        // D. SERVICII ACTIVE
+        // Selectăm toate datele necesare pentru a construi URL-ul prin accessor
         $q = Service::query()
-            ->with(['category', 'county'])
+            ->with(['category', 'county']) // Eager Load critic pentru performanță
+            // Selectăm toate câmpurile necesare Modelului pentru a genera URL-ul (slug, id, relations)
             ->select(['id', 'slug', 'category_id', 'county_id', 'updated_at', 'created_at'])
             ->where('status', 'active')
             ->orderBy('id');
@@ -113,25 +118,16 @@ class SitemapController extends Controller
 
         $q->chunkById(1000, function ($services) use (&$urls) {
             foreach ($services as $service) {
+                // Siguranță: dacă lipsesc relațiile, public_url ar putea da eroare sau link generic
                 if (!$service->category || !$service->county) {
                     continue;
                 }
 
-                // --- AICI ESTE CHEIA ---
-                // $service->slug vine din DB cu 5 cuvinte: "execut-lucrari-de-constructii-interioare"
+                // --- SCHIMBAREA MAJORĂ ---
+                // Nu mai construim noi linkul aici. Îl luăm direct din Model.
+                // Asta garantează că Sitemap-ul este IDENTIC cu site-ul.
                 
-                // Explode după '-' => ['execut', 'lucrari', 'de', 'constructii', 'interioare']
-                // Take(3) => ['execut', 'lucrari', 'de']
-                // Join('-') => "execut-lucrari-de"
-                
-                $shortSlug = Str::of($service->slug)->explode('-')->take(3)->join('-');
-
-                // Construim URL-ul final
-                $url = url(
-                    $service->category->slug . '/' . 
-                    $service->county->slug . '/' . 
-                    $shortSlug . '-' . $service->id
-                );
+                $url = $service->public_url; 
 
                 $urls[] = [
                     'loc'        => $url,
