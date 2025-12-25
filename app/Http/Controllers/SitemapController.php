@@ -13,7 +13,7 @@ class SitemapController extends Controller
 {
     public function index(): Response
     {
-        // 1) Determinăm "ultima modificare" relevantă (categorii + servicii active)
+        // 1) Determinăm "ultima modificare"
         $latestCategory = Category::query()
             ->select(['updated_at', 'created_at'])
             ->orderByDesc('updated_at')
@@ -36,28 +36,23 @@ class SitemapController extends Controller
             optional($latestService?->updated_at ?? $latestService?->created_at),
         );
 
-        // 2) Chei: azi / ieri
+        // 2) Cache Logic
         $todayKey = 'sitemap.xml:' . now()->toDateString();
         $yesterdayKey = 'sitemap.xml:' . now()->subDay()->toDateString();
 
-        // 3) Dacă avem deja sitemap-ul de azi, îl returnăm direct (max 1 generare/zi)
         if (Cache::has($todayKey)) {
             return response(Cache::get($todayKey), 200)->header('Content-Type', 'text/xml');
         }
 
-        // 4) Dacă NU avem azi, dar avem ieri și NU există modificări după momentul generării de ieri,
-        //    returnăm sitemap-ul de ieri (zero regenerare).
         $yesterdayMetaKey = $yesterdayKey . ':generated_at';
-
         if (Cache::has($yesterdayKey) && Cache::has($yesterdayMetaKey)) {
-            $yesterdayGeneratedAt = Cache::get($yesterdayMetaKey); // Carbon string
-            // dacă nu există update-uri după generarea de ieri => nu regenerăm azi
+            $yesterdayGeneratedAt = Cache::get($yesterdayMetaKey);
             if (!$latestUpdate || $latestUpdate->lte($yesterdayGeneratedAt)) {
                 return response(Cache::get($yesterdayKey), 200)->header('Content-Type', 'text/xml');
             }
         }
 
-        // 5) Altfel, generăm sitemap-ul (o singură dată azi) și îl cache-uim până mâine.
+        // 3) Build & Cache
         $xml = $this->buildSitemapXml();
 
         Cache::put($todayKey, $xml, now()->addDay());
@@ -78,7 +73,7 @@ class SitemapController extends Controller
             'priority'   => '1.0',
         ];
 
-        // 2. Static
+        // 2. Static (Services Index)
         if (Route::has('services.index')) {
             $urls[] = [
                 'loc'        => route('services.index'),
@@ -88,7 +83,7 @@ class SitemapController extends Controller
             ];
         }
 
-        // 3. Categorii (chunk)
+        // 3. Categorii
         Category::query()
             ->select(['id', 'slug', 'updated_at', 'created_at'])
             ->orderBy('id')
@@ -103,9 +98,11 @@ class SitemapController extends Controller
                 }
             });
 
-        // 4. Servicii active (chunk) - link manual, ca în codul tău care funcționa
+        // 4. SERVICII ACTIVE (FIXED)
+        // Trebuie să încărcăm și relațiile (category, county) pentru URL
         $q = Service::query()
-            ->select(['id', 'slug', 'updated_at', 'created_at'])
+            ->with(['category:id,slug', 'county:id,slug']) // Eager loading necesar
+            ->select(['id', 'slug', 'category_id', 'county_id', 'updated_at', 'created_at'])
             ->where('status', 'active')
             ->orderBy('id');
 
@@ -117,8 +114,21 @@ class SitemapController extends Controller
 
         $q->chunkById(1000, function ($services) use (&$urls) {
             foreach ($services as $service) {
+                // Dacă cumva lipsește categoria sau județul, sărim peste (evităm erori)
+                if (!$service->category || !$service->county) {
+                    continue;
+                }
+
+                // URL CORE: categorie/judet/slug-id
+                // Construim manual URL-ul pentru siguranță și performanță
+                $correctUrl = url(
+                    $service->category->slug . '/' . 
+                    $service->county->slug . '/' . 
+                    $service->slug . '-' . $service->id
+                );
+
                 $urls[] = [
-                    'loc'        => url('/anunt/' . $service->slug),
+                    'loc'        => $correctUrl,
                     'lastmod'    => ($service->updated_at ?? $service->created_at)->toAtomString(),
                     'changefreq' => 'daily',
                     'priority'   => '0.7',
