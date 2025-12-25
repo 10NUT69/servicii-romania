@@ -5,6 +5,7 @@
     $isDeleted = $service->trashed(); 
 
     // --- SEO & DATA PREP ---
+    // 1. Extragem primele 3 cuvinte din titlul utilizatorului
     $cleanTitleString = preg_replace('/[^\p{L}\p{N}\s]/u', '', $service->title);
     $cleanTitleString = trim(preg_replace('/\s+/', ' ', $cleanTitleString));
     $words = explode(' ', $cleanTitleString);
@@ -13,22 +14,27 @@
     $categoryName = $service->category->name;
     $seoLocation = $service->city ?: $service->county->name;
     
-    $prefix = $isDeleted ? 'INDISPONIBIL - ' : '';
-    $fullSeoTitle = $prefix . $shortUserTitle . ' – ' . $categoryName . ' în ' . $seoLocation;
+    // --- NOUA LOGICĂ DE TITLU ---
+    // Ordine: [Categorie] în [Locație] – [Titlu Scurt User]
+    // Ex: Instalator în Buzău – Reparatii sanitare rapide
+    $fullSeoTitle = $categoryName . ' în ' . $seoLocation . ' – ' . $shortUserTitle;
     
+    // Dacă mai e loc până la 70 caractere, punem și brandul
     if (mb_strlen($fullSeoTitle) + mb_strlen(" | " . $brand) <= 70) {
         $fullSeoTitle .= " | " . $brand;
     }
 
+    // --- DESCRIEREA ---
+    // Rămâne neschimbată (Intro + Descriere user)
     $introPart = "Cauti {$categoryName} în {$seoLocation}? ";
     $userDescription = \Illuminate\Support\Str::limit(strip_tags($service->description), 120);
-    $seoDescription = $isDeleted ? 'Acest anunț nu mai este valabil. ' : ($introPart . $userDescription);
+    $seoDescription = $introPart . $userDescription;
     
     $pageUrl = $service->public_url;
     $seoImage = $service->main_image_url; 
 
     // --- USER INFO ---
-    $displayName = $service->author_name;       
+    $displayName = $service->author_name;        
     $displayInitial = $service->author_initial;
 
     // --- LOGICĂ TELEFON ---
@@ -47,23 +53,23 @@
 
     // --- IMAGINI PENTRU GALERIE ---
     $userImages = is_string($service->images) ? json_decode($service->images, true) : ($service->images ?? []);
-$userImages = array_filter((array)$userImages);
+    $userImages = array_filter((array)$userImages);
 
-$galleryUrls = [];
+    $galleryUrls = [];
 
-// adaugă imaginea principală doar dacă există
-if (!empty($service->main_image_url)) {
-    $galleryUrls[] = $service->main_image_url;
-}
-
-// adaugă restul imaginilor, fără dubluri
-foreach ($userImages as $img) {
-    $url = asset('storage/services/' . $img);
-
-    if (!in_array($url, $galleryUrls, true)) {
-        $galleryUrls[] = $url;
+    // adaugă imaginea principală doar dacă există
+    if (!empty($service->main_image_url)) {
+        $galleryUrls[] = $service->main_image_url;
     }
-}
+
+    // adaugă restul imaginilor, fără dubluri
+    foreach ($userImages as $img) {
+        $url = asset('storage/services/' . $img);
+
+        if (!in_array($url, $galleryUrls, true)) {
+            $galleryUrls[] = $url;
+        }
+    }
 
     // --- SCHEMA ---
     $schemaData = [
@@ -108,7 +114,6 @@ foreach ($userImages as $img) {
 @section('canonical')
     <link rel="canonical" href="{{ $pageUrl }}" />
 @endsection
-
 @section('schema')
 <script type="application/ld+json">
 {!! json_encode(array_filter($schemaData), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) !!}

@@ -1,24 +1,67 @@
 @extends('layouts.app')
 
-@section('title', 'Găsește Meseriașul: Electrician, Instalator, Zugrav')
-@section('meta_description', 'Ai nevoie de un Electrician, Instalator, Zugrav? Găsește rapid oferte pentru construcții, renovări și instalații sau Publică anunț gratuit pe MeseriasBun.ro')
-@section('meta_image', asset('images/social-share.webp'))
-
 @php
-    // Valorile selectate inițial (din URL SEO sau din query)
-    $selectedCategoryId = request('category') ?? optional($currentCategory)->id ?? null;
-    $selectedCountyId   = request('county') ?? optional($currentCounty)->id ?? null;
+    // --- 1. PRELUARE DATE (SECURIZATĂ) ---
+    // Păstrăm numele variabilelor exact cum le cere formularul tău de mai jos
+    $selectedCategoryId = request('category') ?? optional($currentCategory ?? null)->id ?? null;
+    $selectedCountyId   = request('county') ?? optional($currentCounty ?? null)->id ?? null;
 
-    $selectedCategoryName = $selectedCategoryId
-        ? optional($categories->firstWhere('id', $selectedCategoryId))->name
-        : null;
+    // Identificăm obiectele (Categorie / Județ)
+    $categoryObj = $selectedCategoryId ? $categories->firstWhere('id', $selectedCategoryId) : null;
+    $countyObj   = $selectedCountyId ? $counties->firstWhere('id', $selectedCountyId) : null;
 
-    $selectedCountyName = $selectedCountyId
-        ? optional($counties->firstWhere('id', $selectedCountyId))->name
-        : null;
+    $catName    = optional($categoryObj)->name;
+    $countyName = optional($countyObj)->name;
+    $year       = date('Y');
+
+    // --- 2. LOGICA SEO "SMART" (Optimizată pentru Conversie și Încredere) ---
+    
+    // SCENARIUL DEFAULT (Homepage)
+    // Titlu: Autoritate generală. Acoperă cele mai căutate 3 meserii.
+    $seoTitle = "Găsește Meseriași Verificați - Instalatori, Electricieni, Constructori";
+    $seoDesc  = "Platforma de servicii locale ➤ Profesioniști verificați în toată țara ➤ Publică anunț gratuit sau contactează direct meseriașul din zona ta ➤ Vezi recenzii și tarife.";
+
+    // SCENARIUL 1: Categorie + Județ (Ex: "Instalator București") -> "MONEY PAGE"
+    // Aceasta este pagina care îți aduce traficul cel mai valoros.
+    if ($catName && $countyName) {
+        // Titlu: [Meserie] [Oraș] - [Beneficiu 1], [Beneficiu 2] și [Încredere]
+        $seoTitle = "{$catName} {$countyName} - Prețuri, Recenzii și Meseriași Verificați";
+        
+        // Descriere: Întrebare (relevanță) + Săgeți (atenție) + CTA (acțiune)
+        $seoDesc  = "Cauți {$catName} în {$countyName}? ➤ Vezi lista cu profesioniști disponibili acum ➤ Compară tarife, citește recenzii reale și cere o ofertă gratuit.";
+    } 
+    
+    // SCENARIUL 2: Doar Categorie (Ex: "Acoperișuri" sau "Electrician")
+    elseif ($catName) {
+        // Titlu: Autoritate pe nișă + Anul curent (arată că ești activ)
+        $seoTitle = "{$catName} - Oferte și Firme Autorizate ({$year})";
+        
+        // Descriere: Focus pe portofoliu și siguranță
+        $seoDesc  = "Ai nevoie de {$catName}? ➤ Găsește rapid meseriași și firme autorizate în zona ta ➤ Vezi portofolii ➤ Cere oferte gratuite și alege informat.";
+    } 
+    
+    // SCENARIUL 3: Doar Județ (Ex: "Cluj")
+    elseif ($countyName) {
+        // Titlu: Diversitate locală
+        $seoTitle = "Meseriași și Constructori în {$countyName} - Disponibili Acum";
+        
+        // Descriere: Rezolvarea problemelor diverse
+        $seoDesc  = "Renovezi sau ai o urgență în {$countyName}? ➤ Găsește instalatori, zugravi, electricieni și alți profesioniști verificați ➤ Contactează-i direct.";
+    }
+
+    $canonicalUrl = url()->current(); 
 @endphp
 
-{{-- SECȚIUNEA HERO --}}
+{{-- --- 3. META TAGS --- --}}
+@section('meta_title', $seoTitle)
+@section('meta_description', $seoDesc)
+@section('meta_image', asset('images/social-share.webp'))
+
+@section('canonical')
+    <link rel="canonical" href="{{ $canonicalUrl }}">
+@endsection
+
+{{-- Aici începe secțiunea HERO --}}
 @section('hero')
 <div class="relative w-full bg-gray-900 group">
     
@@ -583,5 +626,5 @@
     .custom-scrollbar::-webkit-scrollbar { width: 6px; }
     .custom-scrollbar::-webkit-scrollbar-thumb { background-color: #e5e7eb; border-radius: 20px; }
 </style>
-
 @endsection
+
