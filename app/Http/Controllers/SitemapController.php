@@ -13,8 +13,7 @@ class SitemapController extends Controller
 {
     public function index(): Response
     {
-        // --- 1. LOGICA DE CACHE (Standard) ---
-        // Verificăm data ultimei modificări pentru a nu regenera inutil
+        // 1) Determinăm "ultima modificare" relevantă (categorii + servicii active)
         $latestCategory = Category::query()
             ->select(['updated_at', 'created_at'])
             ->orderByDesc('updated_at')
@@ -37,27 +36,30 @@ class SitemapController extends Controller
             optional($latestService?->updated_at ?? $latestService?->created_at),
         );
 
+        // 2) Chei: azi / ieri
         $todayKey = 'sitemap.xml:' . now()->toDateString();
         $yesterdayKey = 'sitemap.xml:' . now()->subDay()->toDateString();
 
-        // Dacă avem sitemap-ul de azi în cache, îl servim
+        // 3) Dacă avem deja sitemap-ul de azi, îl returnăm direct (max 1 generare/zi)
         if (Cache::has($todayKey)) {
             return response(Cache::get($todayKey), 200)->header('Content-Type', 'text/xml');
         }
 
-        // Dacă nu s-a schimbat nimic de ieri, servim versiunea de ieri
+        // 4) Dacă NU avem azi, dar avem ieri și NU există modificări după momentul generării de ieri,
+        //    returnăm sitemap-ul de ieri (zero regenerare).
         $yesterdayMetaKey = $yesterdayKey . ':generated_at';
+
         if (Cache::has($yesterdayKey) && Cache::has($yesterdayMetaKey)) {
-            $yesterdayGeneratedAt = Cache::get($yesterdayMetaKey);
+            $yesterdayGeneratedAt = Cache::get($yesterdayMetaKey); // Carbon string
+            // dacă nu există update-uri după generarea de ieri => nu regenerăm azi
             if (!$latestUpdate || $latestUpdate->lte($yesterdayGeneratedAt)) {
                 return response(Cache::get($yesterdayKey), 200)->header('Content-Type', 'text/xml');
             }
         }
 
-        // --- 2. GENERARE SITEMAP NOU ---
+        // 5) Altfel, generăm sitemap-ul (o singură dată azi) și îl cache-uim până mâine.
         $xml = $this->buildSitemapXml();
 
-        // Salvăm în cache pentru 24h
         Cache::put($todayKey, $xml, now()->addDay());
         Cache::put($todayKey . ':generated_at', now(), now()->addDay());
 
@@ -68,7 +70,7 @@ class SitemapController extends Controller
     {
         $urls = [];
 
-        // A. Homepage
+        // 1. Home
         $urls[] = [
             'loc'        => url('/'),
             'lastmod'    => now()->toAtomString(),
@@ -76,7 +78,7 @@ class SitemapController extends Controller
             'priority'   => '1.0',
         ];
 
-        // B. Pagina Index Servicii
+        // 2. Static
         if (Route::has('services.index')) {
             $urls[] = [
                 'loc'        => route('services.index'),
@@ -86,7 +88,7 @@ class SitemapController extends Controller
             ];
         }
 
-        // C. Categorii
+        // 3. Categorii (chunk)
         Category::query()
             ->select(['id', 'slug', 'updated_at', 'created_at'])
             ->orderBy('id')
@@ -101,12 +103,9 @@ class SitemapController extends Controller
                 }
             });
 
-        // D. SERVICII ACTIVE
-        // Selectăm toate datele necesare pentru a construi URL-ul prin accessor
+        // 4. Servicii active (chunk) - link manual, ca în codul tău care funcționa
         $q = Service::query()
-            ->with(['category', 'county']) // Eager Load critic pentru performanță
-            // Selectăm toate câmpurile necesare Modelului pentru a genera URL-ul (slug, id, relations)
-            ->select(['id', 'slug', 'category_id', 'county_id', 'updated_at', 'created_at'])
+            ->select(['id', 'slug', 'updated_at', 'created_at'])
             ->where('status', 'active')
             ->orderBy('id');
 
@@ -118,19 +117,8 @@ class SitemapController extends Controller
 
         $q->chunkById(1000, function ($services) use (&$urls) {
             foreach ($services as $service) {
-                // Siguranță: dacă lipsesc relațiile, public_url ar putea da eroare sau link generic
-                if (!$service->category || !$service->county) {
-                    continue;
-                }
-
-                // --- SCHIMBAREA MAJORĂ ---
-                // Nu mai construim noi linkul aici. Îl luăm direct din Model.
-                // Asta garantează că Sitemap-ul este IDENTIC cu site-ul.
-                
-                $url = $service->public_url; 
-
                 $urls[] = [
-                    'loc'        => $url,
+                    'loc'        => url('/anunt/' . $service->slug),
                     'lastmod'    => ($service->updated_at ?? $service->created_at)->toAtomString(),
                     'changefreq' => 'daily',
                     'priority'   => '0.7',
