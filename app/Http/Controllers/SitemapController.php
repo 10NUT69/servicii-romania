@@ -13,6 +13,8 @@ class SitemapController extends Controller
 {
     public function index(): Response
     {
+        // --- LOGICA DE CACHE RĂMÂNE NESCHIMBATĂ ---
+        
         // 1) Determinăm "ultima modificare"
         $latestCategory = Category::query()
             ->select(['updated_at', 'created_at'])
@@ -36,14 +38,16 @@ class SitemapController extends Controller
             optional($latestService?->updated_at ?? $latestService?->created_at),
         );
 
-        // 2) Cache Logic
+        // 2) Chei Cache
         $todayKey = 'sitemap.xml:' . now()->toDateString();
         $yesterdayKey = 'sitemap.xml:' . now()->subDay()->toDateString();
 
+        // 3) Returnăm din cache dacă există azi
         if (Cache::has($todayKey)) {
             return response(Cache::get($todayKey), 200)->header('Content-Type', 'text/xml');
         }
 
+        // 4) Verificăm cache-ul de ieri vs update-uri
         $yesterdayMetaKey = $yesterdayKey . ':generated_at';
         if (Cache::has($yesterdayKey) && Cache::has($yesterdayMetaKey)) {
             $yesterdayGeneratedAt = Cache::get($yesterdayMetaKey);
@@ -52,7 +56,7 @@ class SitemapController extends Controller
             }
         }
 
-        // 3) Build & Cache
+        // 5) Generăm sitemap nou
         $xml = $this->buildSitemapXml();
 
         Cache::put($todayKey, $xml, now()->addDay());
@@ -73,7 +77,7 @@ class SitemapController extends Controller
             'priority'   => '1.0',
         ];
 
-        // 2. Static (Services Index)
+        // 2. Static Pages
         if (Route::has('services.index')) {
             $urls[] = [
                 'loc'        => route('services.index'),
@@ -98,10 +102,10 @@ class SitemapController extends Controller
                 }
             });
 
-        // 4. SERVICII ACTIVE (FIXED)
-        // Trebuie să încărcăm și relațiile (category, county) pentru URL
+        // 4. SERVICII ACTIVE (AICI AM MODIFICAT)
         $q = Service::query()
-            ->with(['category:id,slug', 'county:id,slug']) // Eager loading necesar
+            // Încărcăm relațiile ca să avem acces la slug-urile de categorie și județ
+            ->with(['category', 'county']) 
             ->select(['id', 'slug', 'category_id', 'county_id', 'updated_at', 'created_at'])
             ->where('status', 'active')
             ->orderBy('id');
@@ -114,21 +118,23 @@ class SitemapController extends Controller
 
         $q->chunkById(1000, function ($services) use (&$urls) {
             foreach ($services as $service) {
-                // Dacă cumva lipsește categoria sau județul, sărim peste (evităm erori)
+                // Siguranță: Sărim peste dacă lipsește categoria sau județul (date corupte)
                 if (!$service->category || !$service->county) {
                     continue;
                 }
 
-                // URL CORE: categorie/judet/slug-id
-                // Construim manual URL-ul pentru siguranță și performanță
-                $correctUrl = url(
+                // --- GENERARE URL ÎN FORMAT LUNG ---
+                // Format: https://site.ro/{categorie}/{judet}/{slug}-{id}
+                // Se folosește exact logica din rutele tale web.php
+                
+                $longUrl = url(
                     $service->category->slug . '/' . 
                     $service->county->slug . '/' . 
                     $service->slug . '-' . $service->id
                 );
 
                 $urls[] = [
-                    'loc'        => $correctUrl,
+                    'loc'        => $longUrl,
                     'lastmod'    => ($service->updated_at ?? $service->created_at)->toAtomString(),
                     'changefreq' => 'daily',
                     'priority'   => '0.7',
