@@ -312,71 +312,55 @@
     const countiesSlugMap   = @json($counties->mapWithKeys(fn($c) => [$c->id => $c->slug]));
 
     let isLoading   = false;
-    let currentPage = 2;
+    let currentPage = 2; // Pagina următoare (pentru load initial PHP e pagina 1)
     let hasMore     = document.getElementById('load-more-trigger').dataset.hasMore === 'true';
     let debounceTimer;
 
+    // Observer setup
+    const observer = new IntersectionObserver((entries) => {
+        // Verificăm dacă elementul e vizibil, nu încărcăm deja ceva și mai avem pagini
+        if (entries[0].isIntersecting && !isLoading && hasMore) {
+            loadServices(currentPage);
+        }
+    }, { rootMargin: '0px 0px 400px 0px' }); // Declanseaza cu 400px inainte de final
+
     document.addEventListener('DOMContentLoaded', () => {
         checkResetVisibility();
-        observer.observe(document.getElementById('load-more-trigger'));
-        // Setăm state inițial (search + category + county) în istoric
+        const trigger = document.getElementById('load-more-trigger');
+        if(trigger) observer.observe(trigger);
         updateUrl(false);
     });
 
-    // ========= BUILD SEO URL DIN FILTRE =========
+    // ... [Funcțiile buildSeoUrlFromFilters, updateUrl, checkResetVisibility, resetFilters rămân neschimbate] ...
+    
+    // Copiază funcțiile tale existente: buildSeoUrlFromFilters, updateUrl, checkResetVisibility AICI
+    // Pentru claritate, rescriu doar loadServices si resetFilters care sunt importante
+
     function buildSeoUrlFromFilters(categoryId, countyId) {
         categoryId = categoryId || null;
         countyId   = countyId || null;
-
-        if (!categoryId) {
-            return baseUrl; // fără categorie -> home
-        }
-
+        if (!categoryId) return baseUrl;
         const catSlug = categoriesSlugMap[categoryId];
-        if (!catSlug) {
-            return baseUrl;
-        }
-
-        if (!countyId) {
-            return `${baseUrl}/${catSlug}`;
-        }
-
+        if (!catSlug) return baseUrl;
+        if (!countyId) return `${baseUrl}/${catSlug}`;
         const countySlug = countiesSlugMap[countyId];
-        if (!countySlug) {
-            return `${baseUrl}/${catSlug}`;
-        }
-
+        if (!countySlug) return `${baseUrl}/${catSlug}`;
         return `${baseUrl}/${catSlug}/${countySlug}`;
     }
 
-    // ========= UPDATE URL (HISTORY API) =========
-    // push = true  -> pushState (categorie/județ schimbate)
-    // push = false -> replaceState (doar search modificat)
     function updateUrl(push = false) {
         const categoryId = document.getElementById('category-input').value || null;
         const countyId   = document.getElementById('county-input').value || null;
         const search     = document.getElementById('search-input').value.trim();
-
         const seoUrl = buildSeoUrlFromFilters(categoryId, countyId);
-
         const params = new URLSearchParams();
-        if (search) {
-            params.set('search', search);
-        }
-
+        if (search) params.set('search', search);
         const newUrl = params.toString() ? `${seoUrl}?${params.toString()}` : seoUrl;
         const state  = { categoryId, countyId, search };
-
-        if (push) {
-            window.history.pushState(state, '', newUrl);
-        } else {
-            window.history.replaceState(state, '', newUrl);
-        }
+        if (push) window.history.pushState(state, '', newUrl);
+        else window.history.replaceState(state, '', newUrl);
     }
 
-    // back/forward: browser restaurează singur DOM-ul, nu avem nevoie de extra cod
-
-    // ========= VIZIBILITATE BUTON RESET + LAYOUT =========
     function checkResetVisibility() {
         const s = document.getElementById('search-input').value;
         const c = document.getElementById('category-input').value;
@@ -401,7 +385,6 @@
         }
     }
 
-    // ========= RESET FILTRE =========
     function resetFilters() {
         document.getElementById('search-input').value = '';
         document.getElementById('category-input').value = '';
@@ -412,19 +395,21 @@
         document.getElementById('county-list').classList.add('hidden');
 
         checkResetVisibility();
-        updateUrl(true);    // schimbare mare → pushState
+        updateUrl(true);
         loadServices(1);
     }
 
     // ========= ÎNCĂRCARE ANUNȚURI (AJAX) =========
     function loadServices(page) {
         const isNewFilter = page === 1;
+        
+        // Evităm request dublu, DAR permitem request nou dacă e filtrare (page 1)
         if (isLoading) return;
         if (!hasMore && !isNewFilter) return;
 
         if (isNewFilter) {
-            currentPage = 2;
-            hasMore = true;
+            // Nu resetăm currentPage aici la 2, îl setăm în callback după succes
+            hasMore = true; 
             document.getElementById('services-container').style.opacity = '0.5'; 
             document.getElementById('load-more-trigger').dataset.hasMore = 'true';
             checkResetVisibility();
@@ -437,7 +422,7 @@
         const params = new URLSearchParams({
             search:  document.getElementById('search-input').value,
             category: document.getElementById('category-input').value,
-            county:   document.getElementById('county-input').value,
+            county:    document.getElementById('county-input').value,
             page: page,
             ajax: 1
         });
@@ -452,33 +437,47 @@
             if (isNewFilter) {
                 container.innerHTML = data.html;
                 container.style.opacity = '1';
+                
+                // --- FIX 1: Resetare corectă a paginării ---
+                // Dacă am încărcat pagina 1, următoarea este 2.
+                currentPage = 2; 
 
                 if (data.loadedCount === 0) {
+                    // HTML-ul pentru "Nu s-au găsit anunțuri"
                     container.innerHTML = `
                         <div class="col-span-full flex flex-col items-center justify-center py-20 px-4 text-center bg-white dark:bg-[#1E1E1E] rounded-3xl border-2 border-dashed border-gray-200 dark:border-[#333333]">
                             <h3 class="text-2xl font-bold text-gray-900 dark:text-white mb-3">Nu am găsit anunțuri</h3>
                             <p class="text-gray-500 dark:text-gray-400 mb-6 text-sm max-w-md mx-auto">
                                 Încearcă să modifici criteriile sau revino la toate anunțurile.
                             </p>
-                            <button type="button"
-                                    onclick="resetFilters()"
-                                    class="px-8 py-3.5 bg-[#CC2E2E] hover:bg-[#B72626] text-white font-bold rounded-xl shadow-lg">
+                            <button type="button" onclick="resetFilters()" class="px-8 py-3.5 bg-[#CC2E2E] hover:bg-[#B72626] text-white font-bold rounded-xl shadow-lg">
                                 Resetează filtrele
                             </button>
-                        </div>
-                    `;
+                        </div>`;
                 }
             } else {
                 container.insertAdjacentHTML('beforeend', data.html);
+                // --- FIX 1: Incrementare doar dacă NU e filtru nou ---
+                currentPage++; 
             }
 
             hasMore = data.hasMore;
             document.getElementById('load-more-trigger').dataset.hasMore = hasMore;
-            if (hasMore) currentPage++;
 
+            // --- FIX 2: Re-verificare automată ---
+            // Dacă am încărcat date, dar nu sunt suficiente să umple ecranul,
+            // trigger-ul e vizibil dar observer-ul nu s-a mișcat. Îl forțăm.
             if (hasMore) {
-                observer.unobserve(document.getElementById('load-more-trigger'));
-                observer.observe(document.getElementById('load-more-trigger'));
+                const trigger = document.getElementById('load-more-trigger');
+                observer.unobserve(trigger);
+                observer.observe(trigger);
+                
+                // Verificare manuală suplimentară după randare
+                setTimeout(() => {
+                   if (trigger.getBoundingClientRect().top < window.innerHeight) {
+                       loadServices(currentPage);
+                   }
+                }, 200);
             }
         })
         .finally(() => {
@@ -491,25 +490,18 @@
     function debounceLoad() {
         clearTimeout(debounceTimer);
         debounceTimer = setTimeout(() => {
-            updateUrl(false); // doar search → replaceState
+            updateUrl(false);
             loadServices(1);
         }, 500);
     }
 
-    // ========= INFINITE SCROLL =========
-    const observer = new IntersectionObserver((entries) => {
-        if (entries[0].isIntersecting && !isLoading && hasMore) {
-            loadServices(currentPage);
-        }
-    }, { rootMargin: '0px 0px 400px 0px' });
-
-    // ========= SELECTARE COUNTY / CATEGORY =========
+    // ========= SELECTARE COUNTY / CATEGORY (Functions) =========
     function selectCounty(id, name) {
         document.getElementById('county-input').value   = id;
         document.getElementById('county-display').innerText = name;
         toggleCountyDropdown(); 
         checkResetVisibility();
-        updateUrl(true);   // schimbare path → pushState
+        updateUrl(true);   
         loadServices(1);
     }
 
@@ -518,7 +510,7 @@
         document.getElementById('category-display').innerText = name;
         toggleCategoryDropdown(); 
         checkResetVisibility();
-        updateUrl(true);   // schimbare path → pushState
+        updateUrl(true);   
         loadServices(1);
     }
     
@@ -538,7 +530,6 @@
         arrow.style.transform = list.classList.contains('hidden') ? 'rotate(0deg)' : 'rotate(180deg)';
     }
 
-    // Închidem dropdown-urile când dăm click în afara lor
     document.addEventListener('click', function(event) {
         const catGroup    = document.getElementById('cat-col');
         const countyGroup = document.getElementById('county-col');
@@ -555,14 +546,14 @@
         }
     });
 
-    // ========= FAVORITE (INIMIOARĂ) =========
+    // ========= FAVORITE =========
     function toggleHeart(btn, serviceId) {
         @if(!auth()->check())
             window.location.href = "{{ route('login') }}"; 
             return;
         @endif
 
-        const icon   = btn.querySelector('svg');
+        const icon    = btn.querySelector('svg');
         const isLiked = icon.classList.contains('text-[#CC2E2E]');
         if (isLiked) {
             icon.classList.remove('text-[#CC2E2E]', 'fill-[#CC2E2E]', 'scale-110');
