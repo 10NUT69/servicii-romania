@@ -23,6 +23,8 @@ class SitemapController extends Controller
         $serviceQuery = Service::query()->where('status', 'active');
         if (in_array(SoftDeletes::class, class_uses_recursive(Service::class))) {
             $serviceQuery->withoutTrashed();
+        } else {
+            $serviceQuery->whereNull('deleted_at');
         }
 
         $latestService = $serviceQuery
@@ -31,9 +33,10 @@ class SitemapController extends Controller
             ->orderByDesc('created_at')
             ->first();
 
+        // Carbon|null
         $latestUpdate = max(
-            optional($latestCategory?->updated_at ?? $latestCategory?->created_at),
-            optional($latestService?->updated_at ?? $latestService?->created_at),
+            ($latestCategory?->updated_at ?? $latestCategory?->created_at),
+            ($latestService?->updated_at ?? $latestService?->created_at),
         );
 
         // 2) Chei: azi / ieri
@@ -50,7 +53,13 @@ class SitemapController extends Controller
         $yesterdayMetaKey = $yesterdayKey . ':generated_at';
 
         if (Cache::has($yesterdayKey) && Cache::has($yesterdayMetaKey)) {
-            $yesterdayGeneratedAt = Cache::get($yesterdayMetaKey); // Carbon string
+            $yesterdayGeneratedAt = Cache::get($yesterdayMetaKey); // Carbon (dacă ai cache cu serialize) sau string
+
+            // Normalize (în caz că e string)
+            if (is_string($yesterdayGeneratedAt)) {
+                $yesterdayGeneratedAt = \Illuminate\Support\Carbon::parse($yesterdayGeneratedAt);
+            }
+
             // dacă nu există update-uri după generarea de ieri => nu regenerăm azi
             if (!$latestUpdate || $latestUpdate->lte($yesterdayGeneratedAt)) {
                 return response(Cache::get($yesterdayKey), 200)->header('Content-Type', 'text/xml');
@@ -70,7 +79,7 @@ class SitemapController extends Controller
     {
         $urls = [];
 
-        // 1. Home
+        // 1. Home (DOAR o dată)
         $urls[] = [
             'loc'        => url('/'),
             'lastmod'    => now()->toAtomString(),
@@ -78,22 +87,13 @@ class SitemapController extends Controller
             'priority'   => '1.0',
         ];
 
-        // 2. Static
-        if (Route::has('services.index')) {
-            $urls[] = [
-                'loc'        => route('services.index'),
-                'lastmod'    => now()->toAtomString(),
-                'changefreq' => 'daily',
-                'priority'   => '0.9',
-            ];
-        }
-
-        // 3. Categorii (chunk)
+        // 2. Categorii (chunk)
         Category::query()
             ->select(['id', 'slug', 'updated_at', 'created_at'])
             ->orderBy('id')
             ->chunkById(1000, function ($categories) use (&$urls) {
                 foreach ($categories as $category) {
+                    // category.index => /{category}
                     $urls[] = [
                         'loc'        => route('category.index', ['category' => $category->slug]),
                         'lastmod'    => ($category->updated_at ?? $category->created_at)->toAtomString(),
@@ -103,9 +103,11 @@ class SitemapController extends Controller
                 }
             });
 
-        // 4. Servicii active (chunk) - link manual, ca în codul tău care funcționa
+        // 3. Servicii active (chunk) - URL CANONIC LIVE: public_url
         $q = Service::query()
-            ->select(['id', 'slug', 'updated_at', 'created_at'])
+            // IMPORTANT: smart_slug folosește title => trebuie selectat
+            ->select(['id', 'title', 'category_id', 'county_id', 'updated_at', 'created_at'])
+            ->with(['category:id,slug', 'county:id,slug'])
             ->where('status', 'active')
             ->orderBy('id');
 
@@ -118,7 +120,8 @@ class SitemapController extends Controller
         $q->chunkById(1000, function ($services) use (&$urls) {
             foreach ($services as $service) {
                 $urls[] = [
-                    'loc'        => url('/anunt/' . $service->slug),
+                    // AICI e fixul: nu /anunt/{slug}, ci canonical-ul tău real
+                    'loc'        => $service->public_url,
                     'lastmod'    => ($service->updated_at ?? $service->created_at)->toAtomString(),
                     'changefreq' => 'daily',
                     'priority'   => '0.7',
