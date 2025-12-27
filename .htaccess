@@ -53,3 +53,19 @@
     RewriteCond %{REQUEST_FILENAME} !-f
     RewriteRule ^ index.php [L]
 </IfModule>
+# ==============================
+# Security hardening (Laravel)
+# ==============================
+
+# Block access to hidden files (.env, .git, etc.)
+<FilesMatch "^\.">
+    Require all denied
+</FilesMatch>
+
+# Explicitly protect common sensitive files (defense in depth)
+<FilesMatch "^(composer\.(json|lock)|package(-lock)?\.json|phpunit\.xml)$">
+    Require all denied
+</FilesMatch>
+
+# Block access to internal directories
+RedirectMatch 403 ^/(storage|vendor|node_modules|bootstrap/cache)/
