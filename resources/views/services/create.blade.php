@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Adaugă anunț gratuit - Servicii România')
+@section('title', 'Adaugă anunț gratuit - MeseriasBun.ro')
 @section('meta_description', 'Publică rapid anunțul tău. Formular simplu pentru meseriași și prestatori de servicii.')
 
 @section('content')
