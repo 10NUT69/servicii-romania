@@ -116,7 +116,7 @@
             </h2>
 
             <div class="mb-8">
-                <label class="block mb-2 font-semibold text-gray-700 dark:text-gray-300">Prețul estimativ (daca nu completezi un pret, se va afisa "Cere Ofertă"</label>
+                <label class="block mb-2 font-semibold text-gray-700 dark:text-gray-300">Prețul estimativ (Daca nu completezi prețul, afisăm "Cere Ofertă")</label>
                 <div class="flex flex-col sm:flex-row gap-4">
                     <div class="flex-1 relative">
                         <input type="number" name="price_value" step="0.01" placeholder="0.00" value="{{ old('price_value') }}"
