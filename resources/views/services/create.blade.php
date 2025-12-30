@@ -116,7 +116,7 @@
             </h2>
 
             <div class="mb-8">
-                <label class="block mb-2 font-semibold text-gray-700 dark:text-gray-300">Prețul estimativ</label>
+                <label class="block mb-2 font-semibold text-gray-700 dark:text-gray-300">Prețul estimativ (daca nu completezi un pret, se va afisa "Cere Ofertă"</label>
                 <div class="flex flex-col sm:flex-row gap-4">
                     <div class="flex-1 relative">
                         <input type="number" name="price_value" step="0.01" placeholder="0.00" value="{{ old('price_value') }}"
@@ -151,7 +151,7 @@
             <div>
                 <label class="block mb-2 font-semibold text-gray-700 dark:text-gray-300 flex justify-between items-center">
                     <span>Galerie Foto <span class="text-gray-400 font-normal ml-1">(Opțional)</span></span>
-                    <span class="text-xs font-normal text-gray-400">Poți publica și fără poze (se va folosi una generică)</span>
+                    <span class="text-xs font-normal text-gray-400">Poți publica și fără poze (O sa afisam noi o poza generica pt tine)</span>
                 </label>
                 
                 <div class="relative w-full group">
