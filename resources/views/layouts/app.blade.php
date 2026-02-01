@@ -15,7 +15,7 @@
     @endif
 
     <meta property="og:type" content="website">
-    <meta property="og:site_name" content="MeseriasBun.ro">
+    <meta property="og:site_name" content="Meserias Bun">
     <meta property="og:url" content="{{ url()->current() }}">
     <meta property="og:title" content="@yield('meta_title', view()->hasSection('title') ? view()->getSection('title') : 'Servicii România')">
     <meta property="og:description" content="@yield('meta_description', 'Găsește meseriași verificați în zona ta.')">
@@ -25,7 +25,19 @@
     <meta name="twitter:description" content="@yield('meta_description', 'Găsește meseriași verificați în zona ta.')">
     <meta name="twitter:image" content="@yield('meta_image', asset('images/logo.webp'))">
 
+@verbatim
+<script type="application/ld+json">
+{
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    "name": "Meserias Bun",
+    "alternateName": "MeseriasBun.ro",
+    "url": "https://meseriasbun.ro"
+}
+</script>
+@endverbatim
     @yield('schema')
+	
 {{-- FAVICONS --}}
 <link rel="icon" href="/favicon.ico" sizes="any">
 <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
