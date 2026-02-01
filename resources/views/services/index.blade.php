@@ -65,152 +65,132 @@
 @section('hero')
 <div class="relative w-full bg-gray-900 group">
     
-    {{-- A. IMAGINE + OVERLAY --}}
-    <div class="absolute inset-0 h-[440px] md:h-[350px] w-full overflow-hidden z-0">
-        {{-- Imagine Desktop --}}
+    {{-- A. IMAGINE + OVERLAY (Aceasta rămâne neschimbată) --}}
+    <div class="absolute inset-0 h-[280px] md:h-[350px] w-full overflow-hidden z-0">
         <img src="{{ asset('images/hero-desktop.webp') }}" alt="Meserias Bun Fundal" 
              class="hidden md:block w-full h-full object-cover object-center transform transition duration-1000 group-hover:scale-105">
-        
-        {{-- Imagine Mobile --}}
         <img src="{{ asset('images/hero-mobile.webp') }}" alt="Meserias Bun Fundal" 
              class="block md:hidden w-full h-full object-cover object-center">
-             
-        {{-- Overlay simplu pentru lizibilitate --}}
         <div class="absolute inset-0 bg-black/50"></div>
     </div>
 
     {{-- B. CONȚINUT TEXT --}}
-<div class="relative z-10 max-w-7xl mx-auto px-4 h-auto md:h-[350px] flex flex-col justify-start md:justify-center items-start pt-20 pb-4 md:pt-10 md:pb-8">        
+    <div class="relative z-10 max-w-7xl mx-auto px-4 h-auto md:h-[350px] flex flex-col justify-start md:justify-center items-start pt-14 pb-4 md:pt-10 md:pb-8
+">        
         <h1 class="text-white font-extrabold tracking-tight drop-shadow-xl text-left mb-2 md:mb-4 max-w-2xl animate-in slide-in-from-left-4 duration-700">
-           {{-- Am redus dimensiunile fonturilor --}}
-<span class="block text-2xl md:text-3xl lg:text-4xl mb-1 md:mb-2">GĂSEȘTI MEȘTERI</span>
-<span class="block text-2xl md:text-3xl lg:text-4xl text-white font-black">
-    VERIFICAȚI, RAPID!
-</span>
+            <span class="block text-2xl md:text-3xl lg:text-4xl mb-1 md:mb-2">GĂSEȘTI MEȘTERI</span>
+            <span class="block text-2xl md:text-3xl lg:text-4xl text-white font-black">
+                VERIFICAȚI, RAPID!
+            </span>
         </h1>
 
         <p class="text-gray-200 text-sm md:text-lg max-w-xl font-medium mb-4 md:mb-8 leading-relaxed shadow-black drop-shadow-md hidden md:block">
             Găsești profesioniști pentru proiectul tău, oriunde în România.
         </p>
-
     </div>
 
-    {{-- C. BARA DE CĂUTARE --}}
-    <div class="relative z-30 max-w-7xl mx-auto px-4 mt-2 md:-mt-24 pb-4">
+    {{-- C. BARA DE CĂUTARE NOUĂ (Compactă, Aliniată Stânga) --}}
+    <div class="relative z-30 max-w-7xl mx-auto px-4 mt-0 md:-mt-24 pb-2 md:pb-4">
         
         <form id="search-form" onsubmit="event.preventDefault(); loadServices(1);"
-            class="relative w-full transition-all duration-300 ease-out grid grid-cols-1 md:grid-cols-12 gap-3 md:gap-4 bg-transparent p-0">
+    class="relative w-full transition-all duration-300 ease-out grid grid-cols-2 md:grid-cols-12 gap-2 md:gap-4 bg-transparent p-0">
 
-            {{-- 1. SEARCH INPUT --}}
-            <div class="col-span-1 md:col-span-4 relative group">
-                <div class="flex items-center h-[3.25rem] w-full rounded-xl px-4 transition-all duration-200 cursor-text
-                              bg-white dark:bg-[#1E1E1E] border border-gray-100 dark:border-[#333333] shadow-lg shadow-gray-200/20
-                              hover:bg-gray-50 dark:hover:bg-[#252525]
-                              focus-within:bg-white dark:focus-within:bg-[#252525] 
-                              focus-within:ring-2 focus-within:ring-[#CC2E2E]/20 focus-within:border-[#CC2E2E]"
-                     onclick="this.querySelector('input').focus()">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-[#CC2E2E] opacity-80 group-focus-within:opacity-100 transition-opacity mr-3 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                    </svg>
-                    <div class="flex-1 min-w-0">
-                        <input type="text"
-                               name="search"
-                               id="search-input"
-                               placeholder="Ce cauți? (ex: Instalator...)"
-                               value="{{ request('search') }}"
-                               class="w-full bg-transparent border-none p-0 focus:ring-0 text-base truncate leading-normal font-medium text-gray-900 dark:text-white placeholder-gray-400"
-                               oninput="checkResetVisibility(); debounceLoad()">
+    {{-- 1. CATEGORY DROPDOWN --}}
+    {{-- Pe mobil: col-span-1 (50%), Pe desktop: md:col-span-3 (mai scurt, 25%) --}}
+    <div id="cat-col" class="col-span-1 md:col-span-3 relative group">
+        <input type="hidden" name="category" id="category-input" value="{{ $selectedCategoryId }}">
+        <button type="button" onclick="toggleCategoryDropdown()" 
+            class="flex items-center justify-between h-[3.25rem] w-full rounded-xl px-3 md:px-4 transition-all duration-200 outline-none text-left whitespace-nowrap
+                   bg-white dark:bg-[#1E1E1E] border border-gray-100 dark:border-[#333333] shadow-lg shadow-gray-200/20
+                   hover:bg-gray-50 dark:hover:bg-[#252525]
+                   group-focus:ring-2 group-focus:ring-[#CC2E2E]/20">
+            
+            <span id="category-display" class="font-medium text-gray-700 dark:text-gray-200 truncate mr-1 md:mr-2 text-sm md:text-base">
+    {{ $selectedCategoryName ?? 'Ce cauți? (ex: Instalator...)' }}
+</span>
+            
+            <svg id="category-arrow" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-400 transform transition-transform duration-200 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+            </svg>
+        </button>
+
+        {{-- Dropdown list --}}
+        <div id="category-list" class="hidden absolute top-full left-0 right-0 mt-2 bg-white dark:bg-[#252525] rounded-xl shadow-2xl z-[999] overflow-hidden origin-top animate-in fade-in zoom-in-95 duration-100 border border-gray-100 dark:border-[#404040] max-h-80 overflow-y-auto custom-scrollbar min-w-[200px] md:min-w-0">
+             {{-- (Notă: am pus min-w-[200px] ca pe mobil lista să fie puțin mai lată decât inputul dacă e nevoie) --}}
+            <div class="p-1.5">
+                <div onclick="selectCategory('', 'Ce cauți?')" class="px-3 py-2.5 rounded-lg cursor-pointer text-base font-medium transition-all select-none mb-1 text-gray-500 italic hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-[#CC2E2E]">Toate categoriile</div>
+                @foreach($categories as $category)
+                    <div onclick="selectCategory('{{ $category->id }}', '{{ $category->name }}')"
+                         class="px-3 py-2.5 rounded-lg cursor-pointer text-base font-medium transition-all select-none
+                         {{ (string)$selectedCategoryId === (string)$category->id ? 'bg-red-50 dark:bg-red-900/20 text-[#CC2E2E]' : 'text-gray-700 dark:text-gray-300 hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-[#CC2E2E]' }}">
+                        {{ $category->name }}
                     </div>
-                </div>
+                @endforeach
             </div>
+        </div>
+    </div>
 
-            {{-- 2. CATEGORY DROPDOWN --}}
-            <div id="cat-col" class="col-span-1 md:col-span-3 relative group">
-                <input type="hidden" name="category" id="category-input" value="{{ $selectedCategoryId }}">
-                <button type="button" onclick="toggleCategoryDropdown()" 
-                    class="flex items-center justify-between h-[3.25rem] w-full rounded-xl px-4 transition-all duration-200 outline-none text-left whitespace-nowrap
-                           bg-white dark:bg-[#1E1E1E] border border-gray-100 dark:border-[#333333] shadow-lg shadow-gray-200/20
-                           hover:bg-gray-50 dark:hover:bg-[#252525]
-                           group-focus:ring-2 group-focus:ring-[#CC2E2E]/20">
-                    <span id="category-display" class="font-medium text-gray-700 dark:text-gray-200 truncate mr-2">
-                        {{ $selectedCategoryName ?? 'Toate categoriile' }}
-                    </span>
-                    <svg id="category-arrow" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-400 transform transition-transform duration-200 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
-                    </svg>
-                </button>
-                <div id="category-list" class="hidden absolute top-full left-0 right-0 mt-2 bg-white dark:bg-[#252525] rounded-xl shadow-2xl z-[999] overflow-hidden origin-top animate-in fade-in zoom-in-95 duration-100 border border-gray-100 dark:border-[#404040] max-h-80 overflow-y-auto custom-scrollbar">
-                    <div class="p-1.5">
-                        <div onclick="selectCategory('', 'Toate categoriile')" class="px-3 py-2.5 rounded-lg cursor-pointer text-base font-medium transition-all select-none mb-1 text-gray-700 dark:text-gray-300 hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-[#CC2E2E]">Toate categoriile</div>
-                        @foreach($categories as $category)
-                            <div onclick="selectCategory('{{ $category->id }}', '{{ $category->name }}')"
-                                 class="px-3 py-2.5 rounded-lg cursor-pointer text-base font-medium transition-all select-none
-                                 {{ (string)$selectedCategoryId === (string)$category->id ? 'bg-red-50 dark:bg-red-900/20 text-[#CC2E2E]' : 'text-gray-700 dark:text-gray-300 hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-[#CC2E2E]' }}">
-                                {{ $category->name }}
-                            </div>
-                        @endforeach
+    {{-- 2. COUNTY DROPDOWN --}}
+    {{-- Pe mobil: col-span-1 (50%), Pe desktop: md:col-span-3 (mai scurt, 25%) --}}
+    <div id="county-col" class="col-span-1 md:col-span-3 relative group">
+        <input type="hidden" name="county" id="county-input" value="{{ $selectedCountyId }}">
+        <button type="button" onclick="toggleCountyDropdown()" 
+            class="flex items-center justify-between h-[3.25rem] w-full rounded-xl px-3 md:px-4 transition-all duration-200 outline-none text-left whitespace-nowrap
+                   bg-white dark:bg-[#1E1E1E] border border-gray-100 dark:border-[#333333] shadow-lg shadow-gray-200/20
+                   hover:bg-gray-50 dark:hover:bg-[#252525]">
+            <span id="county-display" class="font-medium text-gray-700 dark:text-gray-200 truncate mr-1 md:mr-2 text-sm md:text-base">
+    {{ $selectedCountyName ?? 'Toată Țara' }}
+</span>
+            <svg id="county-arrow" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-400 transform transition-transform duration-200 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+            </svg>
+        </button>
+        <div id="county-list" class="hidden absolute top-full left-0 right-0 mt-2 bg-white dark:bg-[#252525] rounded-xl shadow-2xl z-[999] overflow-hidden origin-top animate-in fade-in zoom-in-95 duration-100 border border-gray-100 dark:border-[#404040] max-h-80 overflow-y-auto custom-scrollbar min-w-[200px] md:min-w-0 text-left">
+             {{-- (Notă: added text-left to force alignment inside list) --}}
+            <div class="p-1.5">
+                <div onclick="selectCounty('', 'Județ')" class="px-3 py-2.5 rounded-lg cursor-pointer transition-all text-base font-medium select-none mb-1 text-gray-700 dark:text-gray-300 hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-[#CC2E2E]">Toată țara</div>
+                @foreach($counties as $county)
+                    <div onclick="selectCounty('{{ $county->id }}', '{{ $county->name }}')"
+                         class="px-3 py-2.5 rounded-lg cursor-pointer transition-all text-base font-medium select-none
+                         {{ (string)$selectedCountyId === (string)$county->id ? 'bg-red-50 dark:bg-red-900/20 text-[#CC2E2E]' : 'text-gray-700 dark:text-gray-300 hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-[#CC2E2E]' }}">
+                        {{ $county->name }}
                     </div>
-                </div>
+                @endforeach
             </div>
+        </div>
+    </div>
 
-            {{-- 3. COUNTY DROPDOWN --}}
-            <div id="county-col" class="col-span-1 md:col-span-3 relative group">
-                <input type="hidden" name="county" id="county-input" value="{{ $selectedCountyId }}">
-                <button type="button" onclick="toggleCountyDropdown()" 
-                    class="flex items-center justify-between h-[3.25rem] w-full rounded-xl px-4 transition-all duration-200 outline-none text-left whitespace-nowrap
-                           bg-white dark:bg-[#1E1E1E] border border-gray-100 dark:border-[#333333] shadow-lg shadow-gray-200/20
-                           hover:bg-gray-50 dark:hover:bg-[#252525]">
-                    <span id="county-display" class="font-medium text-gray-700 dark:text-gray-200 truncate mr-2">
-                        {{ $selectedCountyName ?? 'Toate județele' }}
-                    </span>
-                    <svg id="county-arrow" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-400 transform transition-transform duration-200 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
-                    </svg>
-                </button>
-                <div id="county-list" class="hidden absolute top-full left-0 right-0 mt-2 bg-white dark:bg-[#252525] rounded-xl shadow-2xl z-[999] overflow-hidden origin-top animate-in fade-in zoom-in-95 duration-100 border border-gray-100 dark:border-[#404040] max-h-80 overflow-y-auto custom-scrollbar">
-                    <div class="p-1.5">
-                        <div onclick="selectCounty('', 'Toate județele')" class="px-3 py-2.5 rounded-lg cursor-pointer transition-all text-base font-medium select-none mb-1 text-gray-700 dark:text-gray-300 hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-[#CC2E2E]">Toată țara</div>
-                        @foreach($counties as $county)
-                            <div onclick="selectCounty('{{ $county->id }}', '{{ $county->name }}')"
-                                 class="px-3 py-2.5 rounded-lg cursor-pointer transition-all text-base font-medium select-none
-                                 {{ (string)$selectedCountyId === (string)$county->id ? 'bg-red-50 dark:bg-red-900/20 text-[#CC2E2E]' : 'text-gray-700 dark:text-gray-300 hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-[#CC2E2E]' }}">
-                                {{ $county->name }}
-                            </div>
-                        @endforeach
-                    </div>
-                </div>
-            </div>
+    {{-- 3. ACTIONS --}}
+    {{-- Pe mobil: col-span-2 (Full width pe rând nou), Pe desktop: md:col-span-2 (Compact) --}}
+    <div id="actions-col" class="col-span-2 md:col-span-2 flex gap-2 h-[3.25rem] overflow-visible mt-1 md:mt-0">
+        <button type="button" id="reset-btn" onclick="resetFilters()"
+           class="hidden flex-1 h-full items-center justify-center gap-2 rounded-xl transition-all duration-300 group animate-in slide-in-from-right-4 fade-in whitespace-nowrap
+                  bg-white text-[#CC2E2E] border border-red-100 shadow-lg shadow-red-100/50 hover:bg-red-50 font-bold text-sm
+                  dark:bg-red-900/20 dark:text-red-400 dark:border-red-900/30 dark:hover:bg-red-900/40 dark:shadow-none">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 transition-transform group-hover:rotate-90 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+            <span class="md:hidden lg:inline">Șterge</span>
+        </button>
 
-            {{-- 4. ACTIONS --}}
-            <div id="actions-col" class="col-span-1 md:col-span-2 flex gap-2 h-[3.25rem] overflow-visible">
-                <button type="button" id="reset-btn" onclick="resetFilters()"
-                   class="hidden flex-1 h-full items-center justify-center gap-2 rounded-xl transition-all duration-300 group animate-in slide-in-from-right-4 fade-in whitespace-nowrap
-                          bg-white text-[#CC2E2E] border border-red-100 shadow-lg shadow-red-100/50 hover:bg-red-50 font-bold text-sm
-                          dark:bg-red-900/20 dark:text-red-400 dark:border-red-900/30 dark:hover:bg-red-900/40 dark:shadow-none">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 transition-transform group-hover:rotate-90 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                    <span>Șterge</span>
-                </button>
+        <button type="submit" class="flex-1 h-full bg-[#CC2E2E] text-white font-bold rounded-xl shadow-lg shadow-red-600/30 hover:bg-[#B72626] transition-all flex items-center gap-2 justify-center text-lg tracking-wide hover:-translate-y-0.5 active:translate-y-0 min-w-[100px]">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+            <span>Caută</span>
+        </button>
+    </div>
 
-                <button type="submit" class="flex-1 h-full bg-[#CC2E2E] text-white font-bold rounded-xl shadow-lg shadow-red-600/30 hover:bg-[#B72626] transition-all flex items-center gap-2 justify-center text-lg tracking-wide hover:-translate-y-0.5 active:translate-y-0 min-w-[120px]">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                    </svg>
-                    <span>Caută</span>
-                </button>
-            </div>
-
-        </form>
+</form>
     </div>
 </div>
 @endsection
 
 @section('content')
 {{-- === 1. BANNER MESERIAȘI (CLEAN - TEXT NOU) === --}}
-<div class="relative z-10 max-w-7xl mx-auto px-4 mt-6 mb-2">
+<div class="relative z-10 max-w-7xl mx-auto px-4 mt-1 md:mt-6 mb-2">
     {{-- Container Alb Complet, Rotunjit, cu Umbră fină --}}
-    <div class="bg-white border border-gray-100 rounded-xl shadow-lg shadow-gray-200/40 p-4 md:py-4 md:px-6 flex flex-col md:flex-row items-center justify-between gap-4 md:gap-8 transition-transform hover:-translate-y-0.5 duration-300 group">
+    <div class="bg-white border border-gray-100 rounded-xl shadow-lg shadow-gray-200/40 p-3 md:py-4 md:px-6 flex flex-col md:flex-row items-center justify-between gap-4 md:gap-8 transition-transform hover:-translate-y-0.5 duration-300 group">
         
         {{-- Partea Stângă: Text --}}
         <div class="flex flex-row items-center gap-4 text-center md:text-left">
@@ -248,7 +228,7 @@
     </div>
 </div>
 {{-- TITLU LISTĂ --}}
-<div class="mt-8 md:mt-12 mb-8 flex items-center gap-3 max-w-7xl mx-auto px-4">
+<div class="mt-5 md:mt-12 mb-8 flex items-center gap-3 max-w-7xl mx-auto px-4">
     <span class="w-1.5 h-8 bg-[#CC2E2E] rounded-full shadow-sm"></span>      
     <h2 class="text-2xl md:text-3xl font-bold text-gray-900 dark:text-[#F2F2F2]">
         Anunțuri recente
@@ -320,46 +300,44 @@
     function updateUrl(push = false) {
         const categoryId = document.getElementById('category-input').value || null;
         const countyId   = document.getElementById('county-input').value || null;
-        const search     = document.getElementById('search-input').value.trim();
+        // Nu mai există 'search-input'
+        
         const seoUrl = buildSeoUrlFromFilters(categoryId, countyId);
-        const params = new URLSearchParams();
-        if (search) params.set('search', search);
-        const newUrl = params.toString() ? `${seoUrl}?${params.toString()}` : seoUrl;
-        const state  = { categoryId, countyId, search };
-        if (push) window.history.pushState(state, '', newUrl);
-        else window.history.replaceState(state, '', newUrl);
+        // Nu mai avem parametri de query string (?search=...)
+        
+        const state  = { categoryId, countyId };
+        if (push) window.history.pushState(state, '', seoUrl);
+        else window.history.replaceState(state, '', seoUrl);
     }
 
+    // --- 2. CHECK RESET VISIBILITY (Simplificat) ---
     function checkResetVisibility() {
-        const s = document.getElementById('search-input').value;
         const c = document.getElementById('category-input').value;
         const j = document.getElementById('county-input').value;
         const btn = document.getElementById('reset-btn');
-        const catCol = document.getElementById('cat-col');
-        const countyCol = document.getElementById('county-col');
-        const actionsCol = document.getElementById('actions-col');
-
-        if (s || c || j) {
+        // Nu mai avem nevoie să redimensionăm coloanele, lăsăm layout-ul fix
+        // pentru că alinierea e la stânga și nu deranjează.
+        
+        if (c || j) {
             btn.classList.remove('hidden');
             btn.classList.add('flex');
-            catCol.classList.remove('md:col-span-3'); catCol.classList.add('md:col-span-2');
-            countyCol.classList.remove('md:col-span-3'); countyCol.classList.add('md:col-span-2');
-            actionsCol.classList.remove('md:col-span-2'); actionsCol.classList.add('md:col-span-4');
         } else {
             btn.classList.add('hidden');
             btn.classList.remove('flex');
-            catCol.classList.remove('md:col-span-2'); catCol.classList.add('md:col-span-3');
-            countyCol.classList.remove('md:col-span-2'); countyCol.classList.add('md:col-span-3');
-            actionsCol.classList.remove('md:col-span-4'); actionsCol.classList.add('md:col-span-2');
         }
     }
 
+    // --- 3. RESET FILTERS ---
     function resetFilters() {
-        document.getElementById('search-input').value = '';
+        // Reset inputs
         document.getElementById('category-input').value = '';
         document.getElementById('county-input').value = '';
-        document.getElementById('category-display').innerText = 'Toate categoriile';
-        document.getElementById('county-display').innerText   = 'Toate județele';
+        
+        // Reset display text
+        document.getElementById('category-display').innerText = 'Ce cauți? (ex: Instalator...)'; // Textul default
+        document.getElementById('county-display').innerText   = 'Toată Țara';
+        
+        // Hide lists
         document.getElementById('category-list').classList.add('hidden');
         document.getElementById('county-list').classList.add('hidden');
 
@@ -368,16 +346,14 @@
         loadServices(1);
     }
 
-    // ========= ÎNCĂRCARE ANUNȚURI (AJAX) =========
+    // --- 4. LOAD SERVICES (Fără parametrul search) ---
     function loadServices(page) {
         const isNewFilter = page === 1;
         
-        // Evităm request dublu, DAR permitem request nou dacă e filtrare (page 1)
         if (isLoading) return;
         if (!hasMore && !isNewFilter) return;
 
         if (isNewFilter) {
-            // Nu resetăm currentPage aici la 2, îl setăm în callback după succes
             hasMore = true; 
             document.getElementById('services-container').style.opacity = '0.5'; 
             document.getElementById('load-more-trigger').dataset.hasMore = 'true';
@@ -389,9 +365,9 @@
         isLoading = true;
 
         const params = new URLSearchParams({
-            search:  document.getElementById('search-input').value,
+            // search: document.getElementById('search-input').value, // Am scos linia asta
             category: document.getElementById('category-input').value,
-            county:    document.getElementById('county-input').value,
+            county:     document.getElementById('county-input').value,
             page: page,
             ajax: 1
         });
@@ -401,47 +377,29 @@
         })
         .then(res => res.json())
         .then(data => {
+            // ... (Restul funcției rămâne identic cu ce aveai înainte)
+            // Doar copiază corpul .then() din codul anterior, e perfect valabil.
             const container = document.getElementById('services-container');
-
             if (isNewFilter) {
                 container.innerHTML = data.html;
                 container.style.opacity = '1';
-                
-                // --- FIX 1: Resetare corectă a paginării ---
-                // Dacă am încărcat pagina 1, următoarea este 2.
                 currentPage = 2; 
-
                 if (data.loadedCount === 0) {
-                    // HTML-ul pentru "Nu s-au găsit anunțuri"
-                    container.innerHTML = `
-                        <div class="col-span-full flex flex-col items-center justify-center py-20 px-4 text-center bg-white dark:bg-[#1E1E1E] rounded-3xl border-2 border-dashed border-gray-200 dark:border-[#333333]">
-                            <h3 class="text-2xl font-bold text-gray-900 dark:text-white mb-3">Nu am găsit anunțuri</h3>
-                            <p class="text-gray-500 dark:text-gray-400 mb-6 text-sm max-w-md mx-auto">
-                                Încearcă să modifici criteriile sau revino la toate anunțurile.
-                            </p>
-                            <button type="button" onclick="resetFilters()" class="px-8 py-3.5 bg-[#CC2E2E] hover:bg-[#B72626] text-white font-bold rounded-xl shadow-lg">
-                                Resetează filtrele
-                            </button>
-                        </div>`;
+                     // Aici asigura-te ca HTML-ul de eroare nu cere sa scrii altceva, 
+                     // ci doar sa resetezi filtrele.
+                     container.innerHTML = `<div class="col-span-full... (HTML-ul tau de empty state)...</div>`;
                 }
             } else {
                 container.insertAdjacentHTML('beforeend', data.html);
-                // --- FIX 1: Incrementare doar dacă NU e filtru nou ---
                 currentPage++; 
             }
-
             hasMore = data.hasMore;
             document.getElementById('load-more-trigger').dataset.hasMore = hasMore;
-
-            // --- FIX 2: Re-verificare automată ---
-            // Dacă am încărcat date, dar nu sunt suficiente să umple ecranul,
-            // trigger-ul e vizibil dar observer-ul nu s-a mișcat. Îl forțăm.
+            
             if (hasMore) {
                 const trigger = document.getElementById('load-more-trigger');
                 observer.unobserve(trigger);
                 observer.observe(trigger);
-                
-                // Verificare manuală suplimentară după randare
                 setTimeout(() => {
                    if (trigger.getBoundingClientRect().top < window.innerHeight) {
                        loadServices(currentPage);
@@ -454,16 +412,7 @@
             document.getElementById('loading-indicator').classList.add('hidden');
         });
     }
-
-    // ========= DEBOUNCE PENTRU SEARCH =========
-    function debounceLoad() {
-        clearTimeout(debounceTimer);
-        debounceTimer = setTimeout(() => {
-            updateUrl(false);
-            loadServices(1);
-        }, 500);
-    }
-
+   
     // ========= SELECTARE COUNTY / CATEGORY (Functions) =========
     function selectCounty(id, name) {
         document.getElementById('county-input').value   = id;
