@@ -187,34 +187,36 @@
 @endsection
 
 @section('content')
-{{-- === 1. BANNER MESERIAȘI (CLEAN - TEXT NOU) === --}}
+{{-- === 1. BANNER MESERIAȘI (CLEAN - ADAPTAT DARK MODE) === --}}
 <div class="relative z-10 max-w-7xl mx-auto px-4 mt-1 md:mt-6 mb-2">
-    {{-- Container Alb Complet, Rotunjit, cu Umbră fină --}}
-    <div class="bg-white border border-gray-100 rounded-xl shadow-lg shadow-gray-200/40 p-3 md:py-4 md:px-6 flex flex-col md:flex-row items-center justify-between gap-4 md:gap-8 transition-transform hover:-translate-y-0.5 duration-300 group">
+    
+    {{-- Container: Adăugat dark:bg-[#1E1E1E], dark:border-[#333333] și dark:shadow-none --}}
+    <div class="bg-white dark:bg-[#1E1E1E] border border-gray-100 dark:border-[#333333] rounded-xl shadow-lg shadow-gray-200/40 dark:shadow-none p-3 md:py-4 md:px-6 flex flex-col md:flex-row items-center justify-between gap-4 md:gap-8 transition-transform hover:-translate-y-0.5 duration-300 group">
         
         {{-- Partea Stângă: Text --}}
         <div class="flex flex-row items-center gap-4 text-center md:text-left">
-            {{-- Iconiță Meseriaș --}}
-            <div class="hidden md:flex h-10 w-10 bg-red-50 rounded-full items-center justify-center text-[#CC2E2E] group-hover:scale-110 transition-transform flex-shrink-0">
+            
+            {{-- Iconiță Meseriaș: Adăugat dark:bg-red-900/20 --}}
+            <div class="hidden md:flex h-10 w-10 bg-red-50 dark:bg-red-900/20 rounded-full items-center justify-center text-[#CC2E2E] group-hover:scale-110 transition-transform flex-shrink-0">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z" />
                 </svg>
             </div>
 
             <div class="flex flex-col md:block">
-                {{-- TITLU: Gri închis (soft) combinat cu Roșu --}}
-                <span class="text-gray-700 font-bold text-lg md:text-xl tracking-tight leading-tight">
+                {{-- TITLU: Adăugat dark:text-gray-200 --}}
+                <span class="text-gray-700 dark:text-gray-200 font-bold text-lg md:text-xl tracking-tight leading-tight">
                     Oferi Servicii sau Ești <span class="text-[#CC2E2E] font-extrabold">Meseriaș?</span>
                 </span>
                 
-                {{-- SUBTITLU: Gri mediu, ușor de citit --}}
-                <span class="text-gray-500 text-sm md:text-base ml-0 md:ml-1 font-medium block md:inline mt-1 md:mt-0">
+                {{-- SUBTITLU: Adăugat dark:text-gray-400 --}}
+                <span class="text-gray-500 dark:text-gray-400 text-sm md:text-base ml-0 md:ml-1 font-medium block md:inline mt-1 md:mt-0">
                     Publică anunțuri <span class="text-[#CC2E2E] font-bold">Gratuit & Nelimitat</span> și clienții te vor contacta.
                 </span>
             </div>
         </div>
 
-        {{-- Partea Dreaptă: Buton --}}
+        {{-- Partea Dreaptă: Buton (Rămâne neschimbat, roșul arată bine pe dark) --}}
         <div class="w-full md:w-auto flex-shrink-0">
             <a href="/adauga-anunt" 
                class="w-full md:w-auto inline-flex items-center justify-center gap-2 px-6 py-2.5 bg-[#CC2E2E] hover:bg-[#b72626] text-white font-bold text-sm rounded-lg shadow-md hover:shadow-lg transition-all">
